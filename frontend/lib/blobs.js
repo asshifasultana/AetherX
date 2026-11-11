@@ -22,7 +22,7 @@ export function findBlobs({ significant, values, width, sigma }, { limit = 12, e
     if (!kind || seen[start]) continue;
     const stack = [start];
     seen[start] = 1;
-    let pixels = 0, weight = 0, sx = 0, sy = 0, peak = 0, edge = false;
+    let pixels = 0, weight = 0, sx = 0, sy = 0, peak = 0, edge = false, touchesMask = false;
     while (stack.length) {
       const index = stack.pop();
       const x = index % width, y = (index - x) / width;
@@ -35,6 +35,8 @@ export function findBlobs({ significant, values, width, sigma }, { limit = 12, e
         const nx = x + dx, ny = y + dy;
         if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
         const next = ny * width + nx;
+        // A NaN neighbour is a masked or saturated pixel (e.g. a bright star's core).
+        if (!Number.isFinite(values[next])) touchesMask = true;
         if (!seen[next] && significant[next] === kind) { seen[next] = 1; stack.push(next); }
       }
     }
@@ -45,11 +47,13 @@ export function findBlobs({ significant, values, width, sigma }, { limit = 12, e
       pixels,
       peakSigma: Number(peak.toFixed(1)),
       edge,
-      singlePixel: pixels === 1
+      singlePixel: pixels === 1,
+      touchesMask
     });
   }
-  // Strong, compact, multi-pixel changes first; single hot pixels last.
-  const score = blob => blob.peakSigma * Math.sqrt(Math.min(blob.pixels, 25)) * (blob.singlePixel ? 0.3 : 1) * (blob.edge ? 0.5 : 1);
+  // Strong, compact, multi-pixel changes first; single hot pixels and residuals
+  // next to masked (saturated) pixels last.
+  const score = blob => blob.peakSigma * Math.sqrt(Math.min(blob.pixels, 25)) * (blob.singlePixel ? 0.3 : 1) * (blob.edge ? 0.5 : 1) * (blob.touchesMask ? 0.3 : 1);
   return blobs.sort((a, b) => score(b) - score(a)).slice(0, limit);
 }
 

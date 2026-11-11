@@ -3,6 +3,6 @@
 export const AGENT_PUBLIC_FILES = Object.freeze([
   'agent-ui.js', 'agent-controller.js', 'agent-investigate.js',
   'lib/agent-tools.js', 'lib/agent-guard.js', 'lib/background-jobs.js', 'lib/spots.js', 'lib/blobs.js', 'lib/case-file.js',
-  'lib/ecliptic.js', 'lib/photometry.js', 'lib/spectral-hints.js', 'lib/quests.js', 'lib/tours.js',
+  'lib/ecliptic.js', 'lib/proper-motion.js', 'lib/photometry.js', 'lib/target-locate.js', 'lib/motion-fit.js', 'lib/epochs.js', 'mark-target.js', 'lib/spectral-hints.js', 'lib/quests.js', 'lib/tours.js',
   'data/planet-nine.json'
 ]);

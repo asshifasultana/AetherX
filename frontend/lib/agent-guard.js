@@ -26,7 +26,7 @@ const TOOL_PHRASES = Object.freeze({
   get_view_state: 'a look at the screen', set_display: 'a display change', set_view_mode: 'a view change',
   compare_frames: 'a frame comparison', playback: 'the time-lapse', set_view: 'a view change',
   go_to_target: 'a move to the target', make_share_link: 'a share link', take_snapshot: 'a snapshot', compare_side_by_side: 'a side-by-side comparison', find_changes: 'a search for changes',
-  mark_spot: 'a new spot', resize_spot: 'resizing a spot', remove_spots: 'removing spots', measure_source: 'a brightness measurement on every date',
+  mark_spot: 'a new spot', mark_target: 'marking the target star', confirm_motion: 'a motion check across many dates', resize_spot: 'resizing a spot', remove_spots: 'removing spots', measure_source: 'a brightness measurement on every date',
   get_spectrum: 'a colour (spectrum) measurement', crossmatch: 'a check against star and asteroid catalogues',
   get_case: 'the case file', pick_epochs: 'a comparison of dates six months apart',
   predict_parallax_pair: 'a parallax prediction', precover: 'a search of older photos',

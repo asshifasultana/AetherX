@@ -9,6 +9,9 @@ import { checkReply, stripProblems, forbiddenClaims, correctionPrompt, leakedToo
 import { spectralHints } from '../lib/spectral-hints.js';
 import { QUESTS, checkQuestAnswer, barnardTrack, distanceToTrackArcsec } from '../lib/quests.js';
 import { TOURS } from '../lib/tours.js';
+import { fastStarPasses, compassDirection, yearOf } from '../lib/proper-motion.js';
+import { propagateGaia } from '../gaia-core.js';
+import { presets } from '../presets.js';
 import { TOOL_NAMES, validateToolCall } from '../lib/agent-tools.js';
 import { encodeViewState, decodeViewState, viewStateSignature, DEFAULT_VIEW_STATE } from '../url-state.js';
 import { parseSbident, raToSbident, decToSbident, createKnownObjectsHandler } from '../api/known-objects.js';
@@ -75,14 +78,14 @@ test('case files are decided by measured evidence, and unexplained needs every m
   applyEvidence(file, 'measure_source', { measurements: [{ date: '2025-08-01', snr: 8, fluxMicroJy: 50, errorMicroJy: 5 }, { date: '2026-02-01', snr: 7, fluxMicroJy: 48, errorMicroJy: 5 }, { date: '2026-08-01', snr: 9, fluxMicroJy: 51, errorMicroJy: 5 }], variabilitySigma: 0.6 });
   assert.equal(file.suspects.glitch.status, 'ruled_out');
   assert.equal(file.suspects.variable_star.status, 'ruled_out');
-  applyEvidence(file, 'crossmatch', { gaia: { nearest: { sourceId: 'x', gMag: 17, separationArcsec: 40, pmra: 1, pmdec: 1 }, within: [{ sourceId: 'x', gMag: 17, separationArcsec: 40, pmra: 1, pmdec: 1 }] }, jpl: { checked: false } });
+  applyEvidence(file, 'crossmatch', { gaia: { nearest: { sourceId: 'x', gMag: 17, separationArcsec: 40, pmra: 1, pmdec: 1 }, within: [{ sourceId: 'x', gMag: 17, separationArcsec: 40, pmra: 1, pmdec: 1 }], movedThrough: [] }, jpl: { checked: false } });
   assert.equal(verdict(file).label, 'open', 'JPL not answering leaves known_asteroid open');
   assert.deepEqual(verdict(file).next, ['crossmatch']);
-  applyEvidence(file, 'crossmatch', { gaia: { nearest: null, within: [] }, jpl: { checked: true, date: '2026-08-01', nearest: null } });
+  applyEvidence(file, 'crossmatch', { gaia: { nearest: null, within: [], movedThrough: [] }, jpl: { checked: true, date: '2026-08-01', nearest: null } });
   assert.equal(verdict(file).label, 'unexplained — needs follow-up');
 
   const asteroid = createCase({ n: 2, raDeg: 10, decDeg: 5 });
-  applyEvidence(asteroid, 'crossmatch', { gaia: { nearest: null, within: [] }, jpl: { checked: true, date: '2026-08-01', nearest: { name: '(2014 XY)', separationArcsec: 4 } } });
+  applyEvidence(asteroid, 'crossmatch', { gaia: { nearest: null, within: [], movedThrough: [] }, jpl: { checked: true, date: '2026-08-01', nearest: { name: '(2014 XY)', separationArcsec: 4 } } });
   assert.equal(verdict(asteroid).label, 'known object');
 
   const ghost = createCase({ n: 3, raDeg: 10, decDeg: 5 });
@@ -98,6 +101,68 @@ test('case files are decided by measured evidence, and unexplained needs every m
   const first = book.ensure({ n: 1, raDeg: 1, decDeg: 1 });
   assert.equal(book.ensure({ n: 1, raDeg: 1, decDeg: 1 }), first);
   assert.notEqual(book.ensure({ n: 1, raDeg: 2, decDeg: 1 }), first, 'a moved spot starts a new case');
+});
+
+const measuredOn = (dates, detectedOn = []) => ({ measurements: dates.map(date => ({ date, snr: detectedOn.includes(date) ? 8 : 0.4, fluxMicroJy: 1, errorMicroJy: 1 })), variabilitySigma: null });
+const elevenDates = Array.from({ length: 11 }, (_, i) => `2025-${String(i + 1).padStart(2, '0')}-15`);
+
+test('case files: nothing on any date is "no source", not a glitch; one date only is still a glitch', () => {
+  const empty = createCase({ n: 1, raDeg: 10, decDeg: 5 });
+  applyEvidence(empty, 'measure_source', measuredOn(elevenDates));
+  assert.notEqual(empty.suspects.glitch.status, 'supported');
+  assert.equal(verdict(empty).label, 'no source');
+  assert.match(verdict(empty).detail, /any of 11 measured dates/);
+  assert.equal(verdict(empty).next, undefined, 'no source is final, so the guide does not loop on measuring');
+  applyEvidence(empty, 'measure_source', measuredOn(elevenDates, elevenDates.slice(0, 4)));
+  assert.notEqual(verdict(empty).label, 'no source', 'a later detection clears it');
+
+  const once = createCase({ n: 2, raDeg: 10, decDeg: 5 });
+  applyEvidence(once, 'measure_source', measuredOn(elevenDates.slice(0, 4), [elevenDates[0]]));
+  assert.equal(once.suspects.glitch.status, 'supported');
+  assert.equal(verdict(once).label, 'likely artefact');
+});
+
+// Barnard's Star: SIMBAD J2000 position and Gaia EDR3 proper motion (as in presets.js), moved to Gaia's 2016 epoch.
+const barnard2016 = (() => {
+  const j2000 = { raDeg: (17 + 57 / 60 + 48.4984700685 / 3600) * 15, decDeg: 4 + 41 / 60 + 36.113879676 / 3600, refEpoch: 2000, pmra: -801.551, pmdec: 10362.394 };
+  const at2016 = propagateGaia(j2000, 2016);
+  return { sourceId: '4472832130942575872', gMag: 8.2, raDeg: at2016.raDeg, decDeg: at2016.decDeg, refEpoch: 2016, pmra: j2000.pmra, pmdec: j2000.pmdec };
+})();
+
+test('proper motion: Barnard’s Star passed its J2000 spot in 2000 and is about 4.4′ north in August 2025', () => {
+  const year = yearOf(Date.parse('2025-08-21T12:00:00Z'));
+  const slow = { ...barnard2016, sourceId: '1', pmra: 5, pmdec: 5 };
+  const [pass, ...rest] = fastStarPasses(presets.barnard, [barnard2016, slow], { fromYear: 2000, toYear: year, nowYear: year });
+  assert.equal(rest.length, 0, 'slow stars are not tracked');
+  assert.ok(pass.closestArcsec < 1, `${pass.closestArcsec}″`);
+  assert.equal(pass.closestYear, 2000);
+  assert.ok(Math.abs(pass.now.offsetArcmin - 4.4) <= 0.1, `${pass.now.offsetArcmin}′`);
+  assert.equal(pass.now.direction, 'north');
+  assert.equal(pass.pmArcsecPerYear, 10.39);
+  assert.deepEqual(fastStarPasses({ raDeg: presets.barnard.raDeg + 1, decDeg: presets.barnard.decDeg }, [barnard2016], { toYear: year }), []);
+  assert.equal(compassDirection(-10, -10), 'south-west');
+});
+
+test('case files: an empty spot a fast star left is "moved away" and points to where the star is now', () => {
+  const year = yearOf(Date.parse('2025-08-21T12:00:00Z'));
+  const movedThrough = fastStarPasses(presets.barnard, [barnard2016], { toYear: year, nowYear: year });
+  const file = createCase({ n: 1, ...presets.barnard });
+  applyEvidence(file, 'measure_source', measuredOn(elevenDates));
+  applyEvidence(file, 'crossmatch', { date: '2025-08-21', gaia: { nearest: null, within: [], movedThrough, trackedSince: 2000 }, jpl: { checked: true, date: '2025-08-21', nearest: null } });
+  const result = verdict(file);
+  assert.equal(result.label, 'moved away');
+  assert.match(result.detail, /^Nothing is here now\. .*4\.4′ north/);
+  assert.equal(result.star.raDeg, movedThrough[0].now.raDeg);
+  assert.match(file.suspects.proper_motion_star.evidence.at(-1), /10\.39″ per year and was here around 2000/);
+
+  const onStar = createCase({ n: 2, ...movedThrough[0].now });
+  applyEvidence(onStar, 'crossmatch', { date: '2025-08-21', gaia: { nearest: { sourceId: barnard2016.sourceId, gMag: 8.2, separationArcsec: 0.4, pmra: barnard2016.pmra, pmdec: barnard2016.pmdec }, within: [], movedThrough }, jpl: { checked: true, date: '2025-08-21', nearest: null } });
+  assert.equal(verdict(onStar).label, 'known object');
+  assert.match(onStar.suspects.proper_motion_star.evidence.at(-1), /moves 10393 mas per year/);
+
+  const quiet = createCase({ n: 3, raDeg: 10, decDeg: 5 });
+  applyEvidence(quiet, 'crossmatch', { date: '2025-08-21', gaia: { nearest: null, within: [], movedThrough: [], truncated: true }, jpl: { checked: false } });
+  assert.match(quiet.suspects.proper_motion_star.evidence.at(-1), /passed within 12″ of here between 2000 and 2025-08-21 \(only the brightest 1000/);
 });
 
 test('the guard blocks discovery claims and unmeasured numbers but allows history and measurements', () => {
@@ -237,8 +302,8 @@ test('a slow JPL check answers "pending" and the finished result is served next 
 });
 
 test('capabilities report only the features with keys and models', async () => {
-  assert.deepEqual(capabilitiesOf({}), { agent: false, vision: false, critic: false, store: false });
-  assert.deepEqual(capabilitiesOf({ OPENROUTER_API_KEYS: 'a', OPENROUTER_VISION_MODEL: 'v', SUPABASE_URL: 'u', SUPABASE_SERVICE_KEY: 'k' }), { agent: true, vision: true, critic: false, store: true });
+  assert.deepEqual(capabilitiesOf({}), { agent: false, vision: false, critic: false, fast: false, store: false });
+  assert.deepEqual(capabilitiesOf({ OPENROUTER_API_KEYS: 'a', OPENROUTER_VISION_MODEL: 'v', SUPABASE_URL: 'u', SUPABASE_SERVICE_KEY: 'k' }), { agent: true, vision: true, critic: false, fast: false, store: true });
   const res = response();
   await createAgentHandler({ env: { OPENROUTER_API_KEY: 'k' } })(request('GET', undefined, { url: '/api/agent?capabilities=1' }), res);
   assert.equal(res.statusCode, 200);

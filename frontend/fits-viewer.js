@@ -1,5 +1,6 @@
 import { canvasToSky, skyToCanvas } from './sky-projection.js';
 import { createSpotList, MAX_SPOTS, spotRadius, MIN_SPOT_RADIUS_ARCSEC } from './lib/spots.js';
+import { snapToPeak } from './lib/peak.js';
 import { displayGrid } from './display-grid.js';
 import { initialViewState } from './share.js';
 import { QUALITY_FLAGS, FLAG_CATEGORIES, maskBitsFor } from './lib/pixel-quality.js';
@@ -706,11 +707,30 @@ window.addEventListener('sky:agent-spots', event => {
   for (const n of detail.remove || []) spots.remove(n);
   const added = (detail.add || []).map(spot => spots.add(spot, { origin: spot.origin || 'agent', label: spot.label, radiusArcsec: spot.radiusArcsec })).filter(Boolean);
   const resized = (detail.resize || []).map(({ n, radiusArcsec }) => spots.resize(n, radiusArcsec)).filter(Boolean);
+  const moved = (detail.move || []).map(({ n, raDeg, decDeg }) => spots.move(n, { raDeg, decDeg })).filter(Boolean);
   for (const { n, found } of detail.found || []) spots.setFound(n, found);
   publishSpots();
-  detail.respond?.({ added, resized, spots: spots.list() });
+  detail.respond?.({ added, resized, moved, spots: spots.list() });
 });
 window.addEventListener('sky:spots-requested', event => event.detail?.respond?.(spots.list()));
+
+// Snap a sky position onto the source under it: the flux-weighted centroid of
+// above-background pixels within radiusPx on the frame on screen (the current
+// frame, not the difference, in difference mode). Masked pixels are skipped,
+// so a saturated core still centres from its bright ring.
+window.addEventListener('sky:peak-requested', event => {
+  const { raDeg, decDeg, radiusPx = 2, respond } = event.detail || {};
+  if (!respond) return;
+  const values = shown?.kind === 'difference' ? shown.currentCanvas?.spherexGrid?.values : shown?.values;
+  const width = shown?.width;
+  if (!values || !width) { respond(null); return; }
+  const at = skyToCanvas({ raDeg, decDeg, size: width, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
+  if (!at) { respond(null); return; }
+  const peak = snapToPeak(values, width, at.x, at.y, radiusPx);
+  if (peak.noSource) { respond({ noSource: true }); return; }
+  const sky = canvasToSky({ x: peak.x, y: peak.y, size: width, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
+  respond(sky ? { raDeg: sky.raDeg, decDeg: sky.decDeg, peakSigma: peak.peakSigma, offsetArcsec: Number((Math.hypot(peak.x - at.x, peak.y - at.y) * PIXEL_ARCSEC).toFixed(1)) } : null);
+});
 
 // The AI guide's find_changes tool reads the difference image on screen.
 window.addEventListener('sky:difference-requested', event => {
@@ -769,9 +789,15 @@ window.addEventListener('sky:snapshot-requested', event => {
     const radius = Math.max(8, size / 50, spot.radiusArcsec ? spot.radiusArcsec / PIXEL_ARCSEC * scale : 0);
     context.lineWidth = Math.max(2, size / 280);
     context.strokeStyle = spot.found ? SPOT_COLOURS.found : SPOT_COLOURS[spot.origin] || SPOT_COLOURS.user;
-    context.setLineDash(spot.origin === 'predicted' ? [4, 3] : []);
-    context.beginPath(); context.arc(x, y, radius, 0, Math.PI * 2); context.stroke();
-    context.setLineDash([]);
+    if (spot.origin === 'predicted') {
+      context.setLineDash([4, 3]);
+      context.beginPath(); context.arc(x, y, radius, 0, Math.PI * 2); context.stroke();
+      context.setLineDash([]);
+    } else {
+      // Arcs with gaps at N, E, S and W (eight arcs for an area), as on screen.
+      const parts = spot.radiusArcsec ? 8 : 4, step = Math.PI * 2 / parts, gap = (spot.radiusArcsec ? 8 : 20) * Math.PI / 180;
+      for (let i = 0; i < parts; i++) { context.beginPath(); context.arc(x, y, radius, i * step + gap / 2, (i + 1) * step - gap / 2); context.stroke(); }
+    }
     context.lineWidth = 3; context.strokeStyle = '#000c';
     context.strokeText(String(spot.n), x, y - radius - 2);
     context.fillStyle = '#fff';

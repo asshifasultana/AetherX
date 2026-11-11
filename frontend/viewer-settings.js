@@ -34,7 +34,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   band: 2,
   viewMode: 'time-lapse',
   fovArcmin: 16,
-  followProperMotion: true,
+  followProperMotion: false,
   // Mode-specific
   maxStackFrames: 80,
   referenceFrame: 'previous',

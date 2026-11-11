@@ -429,6 +429,12 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     const dates = new Set(detections.map(entry => entry.date)).size;
     const motion = fit ? { motionArcsecPerYear: fit.motionArcsecPerYear, directionDeg: fit.directionDeg, significance: fit.significance, consistent: fit.consistent, rmsArcsec: fit.rmsArcsec, spanYears: fit.spanYears, offLine: fit.dates.filter(entry => !entry.agrees).map(entry => entry.date) } : { consistent: false };
     const comovers = fit && fit.significance >= 3 && fit.motionArcsecPerYear >= 0.1 ? await findComovers(spot, fit, signal) : [];
+    // A real, measured motion goes on the spot's track, so the viewer draws an
+    // arrow along the fitted line from the first date it was seen to the last.
+    if (fit?.consistent && fit.significance >= 3) {
+      const first = detections[0].time, last = detections.at(-1).time;
+      await request('sky:agent-spots', { track: [{ n, points: [{ ...fit.at(first), date: isoDay(first) }, { ...fit.at(last), date: isoDay(last) }] }] });
+    }
     const result = {
       ok: true, spot: n, seededFrom: seed, detectedOnDates: dates, of: order.length, ...motion,
       ...(comovers.length ? { comovers } : {}),

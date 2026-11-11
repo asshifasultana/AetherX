@@ -1282,3 +1282,19 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .case-next { margin-top:8px; width:100%; text-align:left; padding:7px 10px; border-radius:8px; border:1px solid #3f6b5c; background:#16231f; color:#cfe7dc; font-size:12.5px; line-height:1.35; }
 .case-next:hover { background:#1d2e29; border-color:#5f9c86; }
 @media (max-width:600px) { .mark-target-status { text-align:left; } }
+/* Track arrows: where a spot's star moved between frames, in the spot's colour. */
+.spot-tracks { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; color:#ffd479; }
+.spot-track { color:#5aa9ff; }
+.spot-track.is-agent { color:#ff6b6b; }
+.spot-track.is-predicted { color:#c9a7ff; }
+.spot-track.is-found { color:#7ee08a; }
+.spot-track-line { stroke:currentColor; stroke-linecap:round; filter:drop-shadow(0 0 1px #101b20); }
+.spot-track-dot { fill:#101b2080; stroke:currentColor; }
+.spot-track-head { fill:currentColor; filter:drop-shadow(0 0 1px #101b20); }
+.spot-track-label { fill:currentColor; stroke:#101b20e0; paint-order:stroke; font-family:Manrope, system-ui, sans-serif; font-weight:600; font-variant-numeric:tabular-nums; }
+.spot-track-dot.is-step { fill:currentColor; stroke:none; filter:drop-shadow(0 0 1px #101b20); }
+/* Track star while it is on: the button stays lit. */
+#mark-target-button[aria-pressed="true"] { background:#1d3a30; border-color:#5f9c86; color:#bff0d6; }
+#mark-target-button[aria-pressed="true"] svg { animation:track-pulse 1.6s ease-in-out infinite; }
+@keyframes track-pulse { 50% { opacity:.45; } }
+@media (prefers-reduced-motion:reduce) { #mark-target-button[aria-pressed="true"] svg { animation:none; } }

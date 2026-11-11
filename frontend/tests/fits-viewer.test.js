@@ -92,6 +92,10 @@ test('viewer paints previews, preserves every contributor and suppresses stale r
     assert.equal(elements.get('export-sky-png').disabled, true);
     emit('sky:target-selected', { targetId: 'barnard', raDeg: 269.4521, decDeg: 4.6934 });
     const dec = observedStartUtc => Number(new URL(cutoutRequestUrl({ ...exposure(0), observedStartUtc }), location.origin).searchParams.get('decDeg'));
+    // By default the sky is held fixed, so every date is cut out at one centre
+    // and the background does not jump between observing seasons.
+    assert.equal(dec('2025-08-27T00:00:00Z'), dec('2026-08-27T00:00:00Z'));
+    emit('sky:viewer-settings-changed', { followProperMotion: true });
     const early = dec('2025-08-27T00:00:00Z'), late = dec('2026-08-27T00:00:00Z');
     assert.ok(Math.abs(early - 4.76721) < 0.00001);
     assert.ok(Math.abs((late - early) * 3600 - 10.36) < 0.01);

@@ -1,6 +1,7 @@
 import { canvasToSky, skyToCanvas } from './sky-projection.js';
 import { createSpotList, MAX_SPOTS, spotRadius, MIN_SPOT_RADIUS_ARCSEC } from './lib/spots.js';
 import { snapToPeak } from './lib/peak.js';
+import { trackArrow, describeTrack, trackUpTo } from './lib/track-arrow.js';
 import { displayGrid } from './display-grid.js';
 import { initialViewState } from './share.js';
 import { QUALITY_FLAGS, FLAG_CATEGORIES, maskBitsFor } from './lib/pixel-quality.js';
@@ -13,7 +14,7 @@ import { imagePipeline } from './image-pipeline.js';
 import { loadCometEpsf } from './lib/comet-native-fit.js';
 import { gridPsf } from './lib/core-fill.js';
 import { ByteCache, assertStackBudget } from './lib/image-resources.js';
-import { observationKey } from './timelapse-core.js';
+import { observationKey, frameTime } from './timelapse-core.js';
 import { exposureCenter, presetMotion, viewerTarget } from './presets.js';
 
 const canvas = document.getElementById('sky-canvas');
@@ -357,7 +358,7 @@ function canvasPoint(event) {
 // draw a ring to scale; the handle on its edge resizes any spot.
 function positionMark() {
   if (!spotLayer) return;
-  const size = canvas.width, list = spots.list();
+  const size = canvas.width, list = spots.list().map(shownSpot);
   if (!list.length || !size || !document.querySelector('.viewer')?.classList.contains('has-image')) { spotLayer.hidden = true; return; }
   spotLayer.hidden = false;
   const elements = list.map(spot => {
@@ -387,7 +388,69 @@ function positionMark() {
     if (!offscreen) mark.append(resizeHandle(spot, mark, point, size));
     return mark;
   }).filter(Boolean);
-  spotLayer.replaceChildren(...elements);
+  const tracks = trackLayer(list, size);
+  spotLayer.replaceChildren(...(tracks ? [tracks] : []), ...elements);
+}
+
+// Arrows for spots followed across frames: from where the star was on the
+// oldest date to where it was on the newest. Drawn in canvas pixels, with
+// strokes sized for the canvas's current CSS scale (redrawn on resize).
+const SVG_NS = 'http://www.w3.org/2000/svg';
+// The day of the frame on screen: the path shows where the star had been by
+// then, not where it goes later. A deep stack spans every date, so it shows all.
+function shownDay() {
+  if (settings.viewMode === 'deep-stack' || !activeObservation) return null;
+  const time = frameTime(activeObservation);
+  return time > 0 ? new Date(time).toISOString().slice(0, 10) : null;
+}
+// A tracked spot as it was on the frame shown: its ring where the star was
+// that day and its path up to then. Before the first tracked date it sits at
+// the first place. Only drawing uses this; the stored spot is unchanged.
+function shownSpot(spot) {
+  if (!spot.track?.length) return spot;
+  const past = trackUpTo(spot.track, shownDay());
+  const here = past.at(-1) || spot.track[0];
+  return { ...spot, raDeg: here.raDeg, decDeg: here.decDeg, track: past };
+}
+
+function trackLayer(list, size) {
+  const followed = list.filter(spot => spot.track?.length >= 2);
+  const width = canvas.getBoundingClientRect().width;
+  if (!followed.length || !width) return null;
+  const unit = size / width;
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  svg.setAttribute('class', 'spot-tracks');
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('aria-hidden', 'true');
+  const make = (tag, attributes) => { const node = document.createElementNS(SVG_NS, tag); for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value)); return node; };
+  const toCanvas = sky => skyToCanvas({ raDeg: sky.raDeg, decDeg: sky.decDeg, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
+  const half = point => ({ x: point.x + 0.5, y: point.y + 0.5 });
+  for (const spot of followed) {
+    const center = toCanvas(spot);
+    if (!center || center.x < 0 || center.y < 0 || center.x >= size || center.y >= size) continue;
+    const points = spot.track.map(toCanvas);
+    if (points.some(point => !point)) continue;
+    const ringPx = Math.max(10 * unit, spot.radiusArcsec ? spot.radiusArcsec / PIXEL_ARCSEC : 0);
+    const arrow = trackArrow({ points: points.map(half), center: half(center), ringPx, unit });
+    const about = describeTrack(spot.track);
+    if (!arrow || !about) continue;
+    const group = make('g', { class: `spot-track is-${spot.origin}${spot.found ? ' is-found' : ''}` });
+    const title = make('title', {});
+    title.textContent = `Spot ${spot.n} moved ${about.text}${about.from && about.to ? ` (${about.from} to ${about.to})` : ''}`;
+    group.append(title);
+    for (const { line, head } of arrow.segments) {
+      group.append(make('line', { ...line, 'stroke-width': arrow.width, class: 'spot-track-line' }));
+      if (head) group.append(make('polygon', { points: head.map(p => `${p.x},${p.y}`).join(' '), class: 'spot-track-head' }));
+    }
+    // Dots last, so the hollow first place sits on top of the lines.
+    for (const dot of arrow.dots) group.append(make('circle', { cx: dot.x, cy: dot.y, r: dot.r, 'stroke-width': arrow.width, class: `spot-track-dot is-${dot.kind}` }));
+    const label = make('text', { x: arrow.label.x, y: arrow.label.y, 'text-anchor': arrow.label.anchor, 'dominant-baseline': 'middle', 'font-size': 11 * unit, 'stroke-width': 3 * unit, class: 'spot-track-label' });
+    label.textContent = about.text;
+    group.append(label);
+    svg.append(group);
+  }
+  return svg.childNodes.length ? svg : null;
 }
 
 // Drag the handle (or use arrow keys on it) to grow a spot into an area or
@@ -441,7 +504,7 @@ function ringUnder(event) {
   if (!rect.width || !size || spotLayer?.hidden) return null;
   const at = canvasPoint(event), cssPerPixel = rect.width / size;
   let best = null;
-  for (const spot of spots.list()) {
+  for (const spot of spots.list().map(shownSpot)) {
     const center = skyToCanvas({ raDeg: spot.raDeg, decDeg: spot.decDeg, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
     if (!center || center.x < 0 || center.y < 0 || center.x > size - 1 || center.y > size - 1) continue;
     // Matches the drawn ring: a 20px minimum diameter, else drawn to scale.
@@ -705,12 +768,14 @@ window.addEventListener('sky:agent-spots', event => {
   const detail = event.detail || {};
   if (detail.clear) spots.clear(detail.clear === 'all' ? null : detail.clear);
   for (const n of detail.remove || []) spots.remove(n);
-  const added = (detail.add || []).map(spot => spots.add(spot, { origin: spot.origin || 'agent', label: spot.label, radiusArcsec: spot.radiusArcsec })).filter(Boolean);
+  const added = (detail.add || []).map(spot => spots.add(spot, { origin: spot.origin || 'agent', label: spot.label, radiusArcsec: spot.radiusArcsec, date: spot.date })).filter(Boolean);
   const resized = (detail.resize || []).map(({ n, radiusArcsec }) => spots.resize(n, radiusArcsec)).filter(Boolean);
-  const moved = (detail.move || []).map(({ n, raDeg, decDeg }) => spots.move(n, { raDeg, decDeg })).filter(Boolean);
+  // A dated move is the star's motion between frames, kept on the spot's track.
+  const moved = (detail.move || []).map(({ n, raDeg, decDeg, date, restart }) => spots.move(n, { raDeg, decDeg }, { date, restart: Boolean(restart) })).filter(Boolean);
+  const tracked = (detail.track || []).map(({ n, points }) => spots.setTrack(n, points)).filter(Boolean);
   for (const { n, found } of detail.found || []) spots.setFound(n, found);
   publishSpots();
-  detail.respond?.({ added, resized, moved, spots: spots.list() });
+  detail.respond?.({ added, resized, moved, tracked, spots: spots.list() });
 });
 window.addEventListener('sky:spots-requested', event => event.detail?.respond?.(spots.list()));
 
@@ -782,7 +847,7 @@ window.addEventListener('sky:snapshot-requested', event => {
   context.font = `600 ${Math.round(size / 34)}px Manrope, system-ui, sans-serif`;
   context.textAlign = 'center';
   context.textBaseline = 'bottom';
-  for (const spot of spots.list()) {
+  for (const spot of spots.list().map(shownSpot)) {
     const point = skyToCanvas({ raDeg: spot.raDeg, decDeg: spot.decDeg, size: canvas.width, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
     if (!point || point.x < 0 || point.y < 0 || point.x >= canvas.width || point.y >= canvas.height) continue;
     const x = (point.x + 0.5) * scale, y = (point.y + 0.5) * scale;
@@ -802,9 +867,40 @@ window.addEventListener('sky:snapshot-requested', event => {
     context.strokeText(String(spot.n), x, y - radius - 2);
     context.fillStyle = '#fff';
     context.fillText(String(spot.n), x, y - radius - 2);
+    drawTrackOnCanvas(context, spot, { x, y }, radius, scale, size);
   }
   respond({ src: output.toDataURL('image/jpeg', 0.9), width: size, height: size });
 });
+
+// The same track arrow as on screen, for the snapshot.
+function drawTrackOnCanvas(context, spot, center, radius, scale, size) {
+  if (!(spot.track?.length >= 2)) return;
+  const points = spot.track.map(sky => skyToCanvas({ raDeg: sky.raDeg, decDeg: sky.decDeg, size: canvas.width, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg }));
+  if (points.some(point => !point)) return;
+  const unit = Math.max(1, size / 400);
+  const arrow = trackArrow({ points: points.map(p => ({ x: (p.x + 0.5) * scale, y: (p.y + 0.5) * scale })), center, ringPx: radius, unit });
+  const about = describeTrack(spot.track);
+  if (!arrow || !about) return;
+  const colour = spot.found ? SPOT_COLOURS.found : SPOT_COLOURS[spot.origin] || SPOT_COLOURS.user;
+  context.save();
+  context.strokeStyle = context.fillStyle = colour;
+  context.lineWidth = arrow.width; context.lineCap = 'round';
+  for (const { line, head } of arrow.segments) {
+    context.beginPath(); context.moveTo(line.x1, line.y1); context.lineTo(line.x2, line.y2); context.stroke();
+    if (head) { context.beginPath(); head.forEach((p, i) => i ? context.lineTo(p.x, p.y) : context.moveTo(p.x, p.y)); context.closePath(); context.fill(); }
+  }
+  for (const dot of arrow.dots) {
+    context.beginPath(); context.arc(dot.x, dot.y, dot.r, 0, Math.PI * 2);
+    if (dot.kind === 'step') context.fill(); else context.stroke();
+  }
+  context.font = `600 ${Math.round(11 * unit)}px Manrope, system-ui, sans-serif`;
+  context.textAlign = arrow.label.anchor === 'middle' ? 'center' : arrow.label.anchor === 'end' ? 'right' : 'left';
+  context.textBaseline = 'middle';
+  context.lineWidth = 3; context.strokeStyle = '#000c';
+  context.strokeText(about.text, arrow.label.x, arrow.label.y);
+  context.fillText(about.text, arrow.label.x, arrow.label.y);
+  context.restore();
+}
 
 // Noise of the image on screen (MAD), so a fake source can be set to a chosen
 // number of sigma once and keep that brightness in every exposure.
@@ -1576,6 +1672,8 @@ function updateHover() {
 
 if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => {
   drawOverlay();window.dispatchEvent(new CustomEvent('sky:display-grid-changed',{detail:publishedGrid}));
+  // Track arrows are sized for the canvas's CSS scale.
+  if (spots.list().some(spot => spot.track?.length >= 2)) positionMark();
 }).observe(canvas);
 
 // Lock the comparison scale to the frame on screen, so every later frame is

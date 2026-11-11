@@ -1,10 +1,10 @@
 // The UI positions also identify legacy shared links and index snapshots.
 export const presets = {
-  barnard: { name: 'Barnard’s Star', type: 'RED DWARF · OPHIUCHUS', description: 'One of our closest stellar neighbors. The preset follows its proper motion across observation dates.', raDeg: 269.4521, decDeg: 4.6934 },
+  barnard: { name: 'Barnard’s Star', type: 'RED DWARF · OPHIUCHUS', description: 'One of our closest stellar neighbors. Background stars hold still so you can watch it move across the dates.', raDeg: 269.4521, decDeg: 4.6934 },
   // The brown-dwarf pair, 6.7′ east of the bright primary Epsilon Indi A.
-  epsilon: { name: 'Epsilon Indi B', type: 'BROWN-DWARF SYSTEM · INDUS', description: 'Two faint companions. The preset follows their proper motion across observation dates.', raDeg: 331.0441, decDeg: -56.7828 },
+  epsilon: { name: 'Epsilon Indi B', type: 'BROWN-DWARF SYSTEM · INDUS', description: 'Two faint companions. Background stars hold still so you can watch them move across the dates.', raDeg: 331.0441, decDeg: -56.7828 },
   // The challenge's discovery-epoch coordinates; cutouts follow proper motion.
-  wise: { name: 'WISE 0855', type: 'SUBSTELLAR OBJECT · HYDRA', description: 'A cold, fast-moving neighbor. The preset follows its proper motion across observation dates.', raDeg: 133.79512916666666, decDeg: -7.245147222222222 },
+  wise: { name: 'WISE 0855', type: 'SUBSTELLAR OBJECT · HYDRA', description: 'A cold, fast-moving neighbor. Background stars hold still so you can watch it move across the dates.', raDeg: 133.79512916666666, decDeg: -7.245147222222222 },
   aurigae: { name: 'RW Aurigae', type: 'YOUNG STELLAR SYSTEM · AURIGA', description: 'A young stellar system with a changing story. A place to look for the unexpected.', raDeg: 76.9567, decDeg: 30.4043 },
   draconis: { name: 'R Draconis', type: 'VARIABLE STAR · DRACO', description: 'Follow the rhythm of a variable star and imagine the stories hidden between observations.', raDeg: 248.1676, decDeg: 66.7550 }
 };

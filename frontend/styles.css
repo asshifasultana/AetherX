@@ -1298,3 +1298,48 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 #mark-target-button[aria-pressed="true"] svg { animation:track-pulse 1.6s ease-in-out infinite; }
 @keyframes track-pulse { 50% { opacity:.45; } }
 @media (prefers-reduced-motion:reduce) { #mark-target-button[aria-pressed="true"] svg { animation:none; } }
+
+/* No header bar on the viewer: brand, links and icon buttons float over the
+   page. The frame reserves only the toolbar and playback row (about 200px)
+   below it, so the image grows while play/step controls stay on screen. */
+.viewer-page .viewer-header { background:transparent; border:0; box-shadow:none; }
+.viewer-page { --viewer-frame-width:min(100%,960px,max(280px,calc(100dvh - var(--workspace-header-height,64px) - 208px))); }
+@media (min-width:1200px) {
+  /* Wide screens: controls overlay the empty corners beside the square frame.
+     The 100% − 640px cap keeps the frame clear of both corner clusters. */
+  .viewer-page .viewer-header { position:absolute; inset:0 0 auto 0; pointer-events:none; }
+  .viewer-page .viewer-header > * { pointer-events:auto; }
+  .viewer-page .workspace-content { padding-top:16px; }
+  .viewer-page { --viewer-frame-width:min(100% - 640px,960px,max(280px,calc(100dvh - 216px))); }
+  /* A search or tracking error wraps the header; give it its own row again. */
+  .viewer-page .viewer-header:has(.viewer-search #lookup-status:not(:empty),.viewer-search #target-search-status:not(:empty)),
+  .viewer-page:has(#moving-status[data-error="true"]) .viewer-header { position:relative; }
+}
+/* Narrow screens stack the track under the buttons: reserve that extra row. */
+@media (max-width:760px) {
+  .viewer-page { --viewer-frame-width:min(100%,960px,max(260px,calc(100dvh - var(--workspace-header-height,64px) - 270px))); }
+}
+
+/* Image tool rail beside the frame: Select (pick, move, close a spot) and
+   Mark (create spots). It sits left of the image, or over its corner when the
+   image fills the width. */
+.viewer-page .spot-tools { position:absolute; top:0; right:calc(100% + 12px); z-index:5; display:flex; flex-direction:column; gap:6px; padding:4px; border:1px solid var(--line); border-radius:8px; background:#171c20; }
+.spot-tool { display:grid; place-items:center; width:40px; height:40px; margin:0; padding:0; border:1px solid transparent; border-radius:6px; background:transparent; color:var(--ink); }
+.spot-tool:hover { border-color:#80bfa8; background:#202a28; }
+.spot-tool[aria-pressed="true"] { border-color:#80bfa8; background:#304b42; color:#e9f7f1; }
+.spot-tool:focus-visible { outline:2px solid #e8efdf; outline-offset:2px; }
+.spot-tool svg { display:block; }
+.viewer-page .viewer-shell:fullscreen .spot-tools { top:12px; left:12px; right:auto; }
+@media (max-width:760px) {
+  .viewer-page .spot-tools { top:8px; left:8px; right:auto; flex-direction:row; padding:3px; gap:4px; background:#171c20d9; }
+  .spot-tool { width:36px; height:36px; }
+}
+/* Select shows the default pointer (move over a spot); Mark draws, so crosshair. */
+#sky-canvas[data-tool="select"] { cursor:default; }
+#sky-canvas[data-tool="mark"] { cursor:crosshair; }
+.viewer.is-quality-inspecting #sky-canvas { cursor:crosshair; }
+#sky-canvas[data-tool].sky-canvas-grab { cursor:move; }
+/* The selected spot: a solid, brighter ring with its close button always shown. */
+.spot-mark.is-selected .source-mark-ring::before { border-width:2.5px; -webkit-mask:none; mask:none; }
+.spot-mark.is-selected .source-mark-ring { filter:drop-shadow(0 0 1px #101b20) drop-shadow(0 0 6px currentColor); }
+.spot-mark.is-selected .spot-remove { opacity:1; }

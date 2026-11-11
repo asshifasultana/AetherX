@@ -40,7 +40,7 @@ export function mountWorkspace() {
   const backdrop = $('sidebar-backdrop');
   let settingsOpen = false, agentOpen = false, returnFocus = $('sidebar-toggle');
   // On wide screens the guide is a side panel beside the image, not a modal:
-  // visitors keep clicking the image to mark spots while they chat.
+  // visitors keep marking spots on the image while they chat.
   const agentModal = () => !globalThis.matchMedia || globalThis.matchMedia('(max-width: 899px)').matches;
   function renderDrawers({ focus = false } = {}) {
     workspace.dataset.sidebarOpen = String(settingsOpen);

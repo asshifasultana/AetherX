@@ -58,6 +58,8 @@ let deepTemplateCache = null;
 // changes and a new search. Only the field of view can move one (partly) out of
 // frame. Visitors add spots by clicking; the AI guide adds its own.
 const spots = createSpotList();
+// The image tool rail: Select picks, moves and closes spots; Mark creates them.
+let tool = 'select', selectedSpot = null;
 const PIXEL_ARCSEC = 6.15;
 // Decoded frames and their rendered canvases live in memory so playback can swap
 // frames with a single draw instead of re-fetching and re-parsing FITS.
@@ -326,6 +328,7 @@ async function drawImage(image) {
 
 
 function publishSpots() {
+  if (selectedSpot !== null && !spots.list().some(spot => spot.n === selectedSpot)) selectedSpot = null;
   positionMark();
   const list = spots.list();
   window.dispatchEvent(new CustomEvent('sky:spots-changed', { detail: { spots: list } }));
@@ -367,7 +370,8 @@ function positionMark() {
     const clamp = value => Math.max(0, Math.min(size - 1, value));
     const x = clamp(point.x), y = clamp(point.y), offscreen = x !== point.x || y !== point.y;
     const mark = document.createElement('div');
-    mark.className = `source-mark spot-mark is-${spot.origin}${spot.found ? ' is-found' : ''}${offscreen ? ' is-offscreen' : ''}`;
+    const selected = spot.n === selectedSpot;
+    mark.className = `source-mark spot-mark is-${spot.origin}${spot.found ? ' is-found' : ''}${offscreen ? ' is-offscreen' : ''}${selected ? ' is-selected' : ''}`;
     mark.style.left = `${((x + 0.5) / size) * 100}%`;
     mark.style.top = `${((y + 0.5) / size) * 100}%`;
     mark.dataset.spot = String(spot.n);
@@ -379,13 +383,18 @@ function positionMark() {
     label.textContent = `${spot.n}${offscreen ? ' · outside field' : ''}`;
     label.title = `Spot ${spot.n}${spot.label ? ` (${spot.label})` : ''} · ${formatSpot(spot)}${area}${offscreen ? ' · outside this field of view' : ''}. Click to ask the AI guide about it.`;
     label.setAttribute('aria-label', `Spot ${spot.n} at ${formatSpot(spot)}${area}. Ask the AI guide about it.`);
-    label.addEventListener('click', event => { event.stopPropagation(); window.dispatchEvent(new CustomEvent('sky:spot-selected', { detail: { ...spot } })); });
-    const remove = document.createElement('button');
-    remove.type = 'button'; remove.className = 'spot-remove'; remove.textContent = '×';
-    remove.setAttribute('aria-label', `Remove spot ${spot.n}`);
-    remove.addEventListener('click', event => { event.stopPropagation(); spots.remove(spot.n); publishSpots(); });
-    mark.append(ring, label, remove);
-    if (!offscreen) mark.append(resizeHandle(spot, mark, point, size));
+    label.addEventListener('click', event => { event.stopPropagation(); selectSpot(spot.n); window.dispatchEvent(new CustomEvent('sky:spot-selected', { detail: { ...spot } })); });
+    mark.append(ring, label);
+    // Only the selected spot shows its close button and resize handle.
+    if (selected) {
+      const remove = document.createElement('button');
+      remove.type = 'button'; remove.className = 'spot-remove'; remove.textContent = '×';
+      remove.title = `Close spot ${spot.n}`;
+      remove.setAttribute('aria-label', `Remove spot ${spot.n}`);
+      remove.addEventListener('click', event => { event.stopPropagation(); spots.remove(spot.n); publishSpots(); });
+      mark.append(remove);
+      if (!offscreen) mark.append(resizeHandle(spot, mark, point, size));
+    }
     return mark;
   }).filter(Boolean);
   const tracks = trackLayer(list, size);
@@ -491,15 +500,17 @@ function resizeHandle(spot, mark, center, size) {
   return handle;
 }
 
-// Click marks a point; press and drag outward marks a circular area whose
-// centre is where the drag began. Pressing on a spot's ring (its outer edge)
-// and dragging moves that spot instead.
+// Two tools on the rail beside the image. Mark: click marks a point; press and
+// drag outward marks a circular area whose centre is where the drag began.
+// Select: click a spot to select it (its close button and resize handle
+// appear), press inside it and drag to move it; clicking empty sky deselects.
 const DRAG_THRESHOLD_PX = 6;
 const EDGE_GRAB_PX = 7;
 let drawing = null, suppressClick = false;
 
-// The spot whose ring edge is under the pointer (nearest edge wins), or null.
-function ringUnder(event) {
+// The spot whose drawn ring contains the pointer, or null. The smallest ring
+// wins, so a small spot inside a large circle can still be picked.
+function spotUnder(event) {
   const rect = canvas.getBoundingClientRect(), size = canvas.width;
   if (!rect.width || !size || spotLayer?.hidden) return null;
   const at = canvasPoint(event), cssPerPixel = rect.width / size;
@@ -510,22 +521,54 @@ function ringUnder(event) {
     // Matches the drawn ring: a 20px minimum diameter, else drawn to scale.
     const ringCss = Math.max(10, spot.radiusArcsec ? spot.radiusArcsec / PIXEL_ARCSEC * cssPerPixel : 0);
     const fromCenterCss = Math.hypot(at.x - center.x - 0.5, at.y - center.y - 0.5) * cssPerPixel;
-    const gap = Math.abs(fromCenterCss - ringCss);
-    if (gap <= EDGE_GRAB_PX && (!best || gap < best.gap)) best = { spot, center, gap };
+    if (fromCenterCss <= ringCss + EDGE_GRAB_PX && (!best || ringCss < best.ringCss)) best = { spot, center, ringCss };
   }
   return best;
 }
+
+function selectSpot(n) {
+  const next = n === null || n === undefined ? null : Number(n);
+  if (next === selectedSpot) return;
+  selectedSpot = next;
+  positionMark();
+}
+
+function setTool(name) {
+  tool = name === 'mark' ? 'mark' : 'select';
+  if (tool === 'mark') selectSpot(null);
+  canvas.dataset.tool = tool;
+  canvas.classList.remove('sky-canvas-grab');
+  document.getElementById('tool-select')?.setAttribute?.('aria-pressed', String(tool === 'select'));
+  document.getElementById('tool-mark')?.setAttribute?.('aria-pressed', String(tool === 'mark'));
+}
+document.getElementById('tool-select')?.addEventListener?.('click', () => setTool('select'));
+document.getElementById('tool-mark')?.addEventListener?.('click', () => setTool('mark'));
+window.addEventListener('sky:spot-tool', event => setTool(event.detail?.tool));
+canvas.dataset.tool = tool;
+
+const typingIn = target => Boolean(target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])'));
+window.addEventListener('keydown', event => {
+  if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || typingIn(event.target)) return;
+  const key = event.key;
+  if (key === 'v' || key === 'V') setTool('select');
+  else if (key === 'm' || key === 'M') setTool('mark');
+  else if (key === 'Escape') { if (tool === 'mark') setTool('select'); else if (selectedSpot !== null) selectSpot(null); else return; }
+  else if ((key === 'Delete' || key === 'Backspace') && selectedSpot !== null) { event.preventDefault(); spots.remove(selectedSpot); publishSpots(); }
+});
 
 canvas.addEventListener('pointerdown', event => {
   if (event.button !== 0 || settings.inspectPixels || !activeObservation?.image) return;
   const start = canvasPoint(event);
   if (!start) return;
-  const grab = ringUnder(event);
+  if (tool === 'mark') { drawing = { start, clientX: event.clientX, clientY: event.clientY, pointerId: event.pointerId, draft: null }; return; }
+  const grab = spotUnder(event);
+  if (!grab) return;
+  selectSpot(grab.spot.n);
   drawing = { start, clientX: event.clientX, clientY: event.clientY, pointerId: event.pointerId, draft: null,
-    ...(grab ? { move: grab.spot, offset: { x: start.x - grab.center.x, y: start.y - grab.center.y } } : {}) };
+    move: grab.spot, offset: { x: start.x - grab.center.x, y: start.y - grab.center.y } };
 });
 canvas.addEventListener('pointermove', event => {
-  if (!drawing) { canvas.classList.toggle('sky-canvas-grab', !settings.inspectPixels && Boolean(activeObservation?.image && ringUnder(event))); return; }
+  if (!drawing) { canvas.classList.toggle('sky-canvas-grab', tool === 'select' && !settings.inspectPixels && Boolean(activeObservation?.image && spotUnder(event))); return; }
   if (event.pointerId !== drawing.pointerId) return;
   if (!drawing.draft) {
     if (Math.hypot(event.clientX - drawing.clientX, event.clientY - drawing.clientY) < DRAG_THRESHOLD_PX) return;
@@ -599,6 +642,7 @@ canvas.addEventListener('click', event => {
     x, y, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg
   });
   if (settings.inspectPixels) { inspectionCanvasPoint = { x, y }; inspectPixel(activeObservation.image, sky); return; }
+  if (tool === 'select') { selectSpot(spotUnder(event)?.spot.n ?? null); return; }
   if (sky && spots.add(sky, { origin: 'user' })) publishSpots();
   else if (sky) cards(`Up to ${MAX_SPOTS} spots can be marked. Remove one first.`);
 });

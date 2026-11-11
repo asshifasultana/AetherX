@@ -660,14 +660,15 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     }
     await base.compare_frames({ reference: 'frame', reference_date: isoDay(first.frameTime), target_date: isoDay(last.frameTime), view: 'blink' }, { signal });
     if (id === 'be-barnard') quest.expected = { track: barnardTrack(mjdOf(first.frameTime), mjdOf(last.frameTime)) };
-    emit('sky:agent-notice', { text: `${definition.title}: click the spot you think is the answer, then press Ask.` });
-    return { ok: true, quest: id, title: definition.title, goal: definition.goal, frames: [isoDay(first.frameTime), isoDay(last.frameTime)], howToAnswer: 'The visitor clicks the image to mark a spot, then asks you to check it with check_answer. Keep the story for after they find it.' };
+    emit('sky:spot-tool', { tool: 'mark' });
+    emit('sky:agent-notice', { text: `${definition.title}: with Mark on, click the spot you think is the answer, then press Ask.` });
+    return { ok: true, quest: id, title: definition.title, goal: definition.goal, frames: [isoDay(first.frameTime), isoDay(last.frameTime)], howToAnswer: 'The visitor picks the Mark tool beside the image and clicks to mark a spot, then asks you to check it with check_answer. Keep the story for after they find it.' };
   }
 
   async function checkAnswer({ spot: n }, { signal }) {
     if (!quest) return { ok: false, error: 'No quest is running. Start one with start_quest.' };
     const spot = await spotOrError(n);
-    if (!spot) return { ok: false, error: `There is no spot ${n}. Ask the visitor to click the image to mark one.` };
+    if (!spot) return { ok: false, error: `There is no spot ${n}. Ask the visitor to pick the Mark tool beside the image and click to mark one.` };
     const definition = QUESTS[quest.id];
     if (quest.id === 'be-tombaugh') {
       const matched = await crossmatch({ spot: n }, { signal });

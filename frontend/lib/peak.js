@@ -44,12 +44,36 @@ function centroid(values, width, x, y, radiusPx, background, threshold) {
   return weight > 0 ? { x: sx / weight, y: sy / weight, peak, pixels } : { peak, pixels: 0 };
 }
 
+// True when the brightest pixel inside the search window is not a local
+// maximum: a neighbour just outside the window is brighter (by more than the
+// noise), so the light keeps rising outward and the window only holds the wing
+// of a brighter source beyond it. NaN (masked) neighbours are skipped.
+function climbsOutward(values, width, x, y, radiusPx, noise) {
+  const height = Math.floor(values.length / width);
+  const read = (px, py) => (px < 0 || py < 0 || px >= width || py >= height) ? NaN : values[py * width + px];
+  const cx = Math.round(x), cy = Math.round(y), reach = Math.ceil(radiusPx) + 1;
+  let best = null;
+  for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) {
+    const px = cx + dx, py = cy + dy;
+    if (Math.hypot(px - x, py - y) > radiusPx + 0.5) continue;
+    const value = read(px, py);
+    if (Number.isFinite(value) && (!best || value > best.value)) best = { px, py, value };
+  }
+  if (!best) return false;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    if (Number.isFinite(read(best.px + dx, best.py + dy)) && read(best.px + dx, best.py + dy) > best.value + noise) return true;
+  }
+  return false;
+}
+
 /**
  * @param {ArrayLike<number>} values square-ish grid, row-major
  * @param {number} width grid width
  * @param {number} x,y starting pixel position
  * @param {number} radiusPx search radius in pixels
- * @returns {{x:number, y:number, peakSigma:number, pixels:number} | {noSource:true, peakSigma:number|null}}
+ * @returns {{x:number, y:number, peakSigma:number, pixels:number, edge:boolean} | {noSource:true, peakSigma:number|null}}
+ *   edge: the window only caught the wing of a brighter source outside it,
+ *   so the centroid sits on that wing rather than on a source of its own.
  */
 export function snapToPeak(values, width, x, y, radiusPx = 2, { minSigma = 4 } = {}) {
   if (!values?.length || !(width > 0) || !Number.isFinite(x) || !Number.isFinite(y)) return { noSource: true, peakSigma: null };
@@ -70,5 +94,6 @@ export function snapToPeak(values, width, x, y, radiusPx = 2, { minSigma = 4 } =
     found = again;
     if (moved < 0.02) break;
   }
-  return { x: found.x, y: found.y, peakSigma: Number(peakSigma.toFixed(1)), pixels: found.pixels };
+  const edge = climbsOutward(values, width, x, y, radius, noise);
+  return { x: found.x, y: found.y, peakSigma: Number(peakSigma.toFixed(1)), pixels: found.pixels, edge };
 }

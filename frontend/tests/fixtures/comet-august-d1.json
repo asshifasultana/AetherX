@@ -1,5 +1,5 @@
 {
-  "source": "JPL Horizons via ShivenKhurana1/spherex-timelapse@4a3aca56dbf07e90a17daaab63d992054931e0ae/data/tracks/3i-atlas.json",
+  "source": "JPL Horizons",
   "ephemeris": [
     {
       "mjd": 60898.66667,

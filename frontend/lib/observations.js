@@ -41,7 +41,7 @@ export function validateSearch(params) {
     if (!scienceUrl(afterUri) || !afterUri.startsWith('ibe/data/')) throw new SearchError('Invalid observation cursor. Start a new search.', 400);
   }
   const motion = presetMotion({ raDeg, decDeg, targetId: params.get('targetId') });
-  return { raDeg, decDeg, frame: 'icrs', detector, release, startDate, endDate, startMjd, endMjd, afterUri, ...(motion ? { targetId: 'barnard' } : {}) };
+  return { raDeg, decDeg, frame: 'icrs', detector, release, startDate, endDate, startMjd, endMjd, afterUri, ...(motion ? { targetId: params.get('targetId') } : {}) };
 }
 
 export function buildQuery(search, { collections: available = COLLECTIONS } = {}) {

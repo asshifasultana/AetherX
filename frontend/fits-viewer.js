@@ -3,14 +3,16 @@ import { displayGrid } from './display-grid.js';
 import { initialViewState } from './share.js';
 import { QUALITY_FLAGS, FLAG_CATEGORIES, maskBitsFor } from './lib/pixel-quality.js';
 import { colormap, colormapGradient } from './lib/colormaps.js';
-import { scaleLimits, toneMapper, differenceMapper, gaussianSmooth, formatValue, subtractLargeScale } from './lib/display-scale.js';
+import { scaleLimits, toneMapper, differenceMapper, gaussianSmooth, fillMaskedHoles, formatValue, subtractLargeScale } from './lib/display-scale.js';
 import { estimateBackground } from './lib/background.js';
 import { DEFAULT_SETTINGS } from './viewer-settings.js';
 import { matrixFor, projectSkyToPixel, projectionKey } from './lib/fits-engine.js';
 import { imagePipeline } from './image-pipeline.js';
+import { loadCometEpsf } from './lib/comet-native-fit.js';
+import { gridPsf } from './lib/core-fill.js';
 import { ByteCache, assertStackBudget } from './lib/image-resources.js';
 import { observationKey } from './timelapse-core.js';
-import { exposureCenter, presetMotion } from './presets.js';
+import { exposureCenter, presetMotion, viewerTarget } from './presets.js';
 
 const canvas = document.getElementById('sky-canvas');
 const context = canvas.getContext('2d', { alpha: false });
@@ -26,6 +28,9 @@ const blinkBadge = document.getElementById('blink-badge');
 // Flags are always fetched: they drive masking, the flag overlay and inspection.
 const withDerived = next => ({ ...next, includeFlags: true, maskBits: maskBitsFor(next.maskCategories) });
 let target = { raDeg: 269.4521, decDeg: 4.6934 }, settings = withDerived({ ...DEFAULT_SETTINGS });
+// The position the user chose; `target` is what the viewer centres on, which
+// differs only when a proper-motion preset is shown on a fixed sky grid.
+let selectedTarget = target;
 let activeObservation = null, activeSequence = 0, cutoutController = null;
 let displayedCenter = target;
 let publishedGrid = null;
@@ -64,7 +69,7 @@ const STRETCH_NAMES = { asinh: 'asinh', linear: 'linear', sqrt: 'square root', l
 const isComparisonMode = () => COMPARISON_MODES.has(settings.viewMode);
 
 const cards = text => { status.textContent = text; };
-window.addEventListener('sky:target-selected', event => { dataGeneration++; target = { ...event.detail }; comparisonScale = null; activeObservation = null; activeTimelineFrame = null; activeFrameExposures = []; timelineFrames = []; activeSequence++; cutoutController?.abort(); resetViewer('Loading observations…'); });
+window.addEventListener('sky:target-selected', event => { dataGeneration++; selectedTarget = { ...event.detail }; target = viewerTarget(selectedTarget, settings.followProperMotion); comparisonScale = null; activeObservation = null; activeTimelineFrame = null; activeFrameExposures = []; timelineFrames = []; activeSequence++; cutoutController?.abort(); resetViewer('Loading observations…'); });
 window.addEventListener('sky:frame-exposure-group', event => { activeFrameExposures = Array.isArray(event.detail?.exposures) ? event.detail.exposures : []; activeTimelineFrame = event.detail?.frame || activeTimelineFrame; });
 window.addEventListener('sky:timeline-frames-changed', event => {
   timelineFrames = Array.isArray(event.detail?.frames) ? event.detail.frames : [];
@@ -86,14 +91,18 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   const scaleChanged = scaleSignatureOf(incoming) !== previousScale;
   const previousDisplay = displaySignature();
   settings = incoming;
-  if(previousMode!==settings.viewMode||previousFov!==settings.fovArcmin||previousBand!==settings.band)publishGrid(null,null,{suspended:true});
-  if (scaleChanged) comparisonScale = null;
+  const previousCenter = `${target.raDeg}|${target.decDeg}|${target.targetId || ''}`;
+  target = viewerTarget(selectedTarget, settings.followProperMotion);
+  const centerChanged = previousCenter !== `${target.raDeg}|${target.decDeg}|${target.targetId || ''}`;
+  if(previousMode!==settings.viewMode||previousFov!==settings.fovArcmin||previousBand!==settings.band||centerChanged)publishGrid(null,null,{suspended:true});
+  if (scaleChanged || centerChanged) comparisonScale = null;
   const changed = previousDisplay !== displaySignature() || previousBand !== settings.band;
   if (changed) { dataGeneration++; activeSequence++; cutoutController?.abort(); }
   if (settings.viewMode !== 'blink') stopBlink();
   drawOverlay();
   if (pixelInspector) pixelInspector.hidden = !settings.inspectPixels;
   document.querySelector('.viewer')?.classList.toggle('is-inspecting', Boolean(settings.inspectPixels));
+  document.querySelector('.viewer')?.classList.toggle('is-smooth', settings.pixelView === 'smooth');
   document.querySelector('.viewer')?.classList.toggle('is-quality-inspecting', Boolean(settings.inspectPixels || settings.qualityOverlay));
   if (previousGlitchRejection && settings.rejectVisitGlitches === false) {
     for (const image of decodedFrames.values()) { image.derivedTransientPixels?.clear(); image.projectionKey = ''; }
@@ -105,7 +114,7 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   if (activeObservation?.image && activeObservation.detector !== settings.band) {
     status.hidden = false; status.classList.remove('is-error');
     cards(`The loaded image is D${activeObservation.detector}. Choose a D${settings.band} observation in the archive results to view this wavelength band.`);
-  } else if (settings.fovArcmin !== previousFov && activeObservation) {
+  } else if ((settings.fovArcmin !== previousFov || centerChanged) && activeObservation) {
     // A new FOV needs a new archive cutout; clear the old image and label the requested size immediately.
     showCutout(activeObservation);
   } else if (settings.viewMode === 'deep-stack' && (previousMode !== 'deep-stack' || previousStackLimit !== settings.maxStackFrames)) {
@@ -152,8 +161,35 @@ function displayLimits(values) {
 const NO_DATA_RGB = [15, 12, 22];
 // Paint a projected value grid. Smoothing and tone mapping are display-only:
 // the element keeps the measured values for stacks, inspection and readouts.
-function paintGrid(element, values, width, { mapper = null, lut = null, smooth = true } = {}) {
-  const display = smooth && settings.smoothing ? gaussianSmooth(values, width, settings.smoothing) : values;
+// SPHEREx ePSF per detector, for rebuilding masked star cores. Loaded once on
+// first use; until it arrives (or if it cannot be fetched) cores use the rim fill.
+const epsfByDetector = new Map();
+function epsfFor(detector) {
+  if (!Number.isInteger(detector)) return null;
+  if (!epsfByDetector.has(detector)) {
+    epsfByDetector.set(detector, null);
+    loadCometEpsf(detector).then(epsf => {
+      epsfByDetector.set(detector, epsf);
+      if (settings.fillMaskedCores && settings.band === detector) repaintForPsf();
+    }).catch(() => { /* Keep the rim fill. */ });
+  }
+  return epsfByDetector.get(detector);
+}
+function repaintForPsf() {
+  renderedFrames.clear();
+  if (settings.viewMode === 'deep-stack') return; // stacks carry no single-detector PSF frame
+  if (activeTimelineFrame) void showCutout(activeTimelineFrame, { quiet: true, keepImage: true });
+  else if (activeObservation?.image && !activeObservation.image.stackRecord) void drawImage(activeObservation.image).catch(() => {});
+}
+
+// Masked star cores are rebuilt for display (see fillMaskedHoles and
+// core-fill.js); difference maps are left alone so a masked pixel never fakes
+// a residual.
+function paintGrid(element, values, width, { mapper = null, lut = null, smooth = true, covered = null, psfFrame = null } = {}) {
+  const epsf = !mapper && settings.fillMaskedCores && psfFrame ? epsfFor(settings.band) : null;
+  const psf = epsf ? gridPsf(epsf, psfFrame) : null;
+  const filled = !mapper && settings.fillMaskedCores ? fillMaskedHoles(values, width, { covered, psf }) : values;
+  const display = smooth && settings.smoothing ? gaussianSmooth(filled, width, settings.smoothing) : filled;
   let limits = null, automatic = null;
   if (!mapper) {
     ({ limits, automatic } = displayLimits(display));
@@ -184,7 +220,7 @@ function paintCanvas(element, image) {
     : image.projection;
   if (!projected) throw new Error('This image has not been projected.');
   if (!projected.values.some(Number.isFinite)) throw new Error('No valid pixels remain after applying the quality mask.');
-  paintGrid(element, projected.values, projected.width);
+  paintGrid(element, projected.values, projected.width, { covered: projected.covered || null, psfFrame: projected.psfFrame || null });
   element.spherexGrid = { values: projected.values, flags: image.stackRecord ? null : projected.flags };
   return projected.coverage;
 }
@@ -195,7 +231,8 @@ async function paintStackCanvas(element, entries, observations, signal) {
   const grid = await imagePipeline.combine(entries.map(entry => entry.canvas.spherexGrid.values), { statistic }, signal);
   if (!grid.values.some(Number.isFinite)) throw new Error('No valid pixels remain in the daily exposure stack.');
   const width = Math.max(1, Math.round(settings.fovArcmin * 60 / PIXEL_ARCSEC));
-  paintGrid(element, grid.values, width);
+  // The day's exposures share a detector and nearly the same orientation.
+  paintGrid(element, grid.values, width, { psfFrame: entries.find(entry => entry.image?.projection?.psfFrame)?.image.projection.psfFrame || null });
   element.spherexGrid = { values: grid.values, flags: null, counts: grid.counts };
   const exposureSeconds = entries.reduce((sum, entry) => sum + (Number(entry.observation.exposureSeconds) || 0), 0);
   const times = observations.map(observation => Date.parse(observation.observedStartUtc || '')).filter(Number.isFinite).sort((a, b) => a - b);
@@ -466,6 +503,7 @@ function displaySignature() {
     target.raDeg, target.decDeg, presetMotion(target) ? 'proper-motion' : '', settings.fovArcmin, settings.consistentBrightness ? 1 : 0,
     settings.consistentBrightness && comparisonScale ? comparisonScale.low : '', settings.consistentBrightness && comparisonScale ? comparisonScale.high : '',
     settings.stretch, settings.colours, settings.contrast, settings.brightness, settings.invert,
+    settings.fillMaskedCores ? (epsfByDetector.get(settings.band) ? 'psf' : 'rim') : 0,
     scaleSignature(), settings.rejectVisitGlitches ? 1 : 0, settings.resampling
   ].join('|');
 }
@@ -701,7 +739,7 @@ async function showDeepStack() {
     activeFrameExposures = allExposures;
     const entry = { canvas: element, image, coverage: stacked.coverage, stackRecord: record };
     commitCutout(observation, entry, { announce: false });
-    caption.textContent = `Deep median stack · ${record.usedFrameCount}/${record.availableFrameCount} UTC-day frames · ${record.usedExposureCount} exposures · ${Math.round(record.exposureSeconds)} s total · ${formatWavelength(observation)} · north up${presetMotion(target) ? ' · proper-motion aligned' : ''}`;
+    caption.textContent = `Deep median stack · ${record.usedFrameCount}/${record.availableFrameCount} UTC-day frames · ${record.usedExposureCount} exposures · ${Math.round(record.exposureSeconds)} s total · ${formatWavelength(observation)} · north up${presetMotion(target) ? ' · proper-motion aligned' : target.fixedSkyFor ? ' · fixed sky, star moves' : ''}`;
     window.dispatchEvent(new CustomEvent('sky:deep-stack-built', { detail: { record } }));
   } catch (error) {
     if (sequence === activeSequence && !controller.signal.aborted) {
@@ -736,7 +774,7 @@ function commitCutout(observation, entry, { announce = true, preview = false } =
   const stackLabel = image.stackRecord
     ? ` · median stack ${image.stackRecord.usedExposureCount} exposures${omitted ? ` of ${image.stackRecord.requestedExposureCount} (evenly sampled; change in Processing › Advanced)` : ''} · ${Math.round(image.stackRecord.exposureSeconds)} s total`
     : '';
-  caption.textContent = `${formatWavelength(observation)} · ${release}${processing}${stackLabel} · ${settings.fovArcmin}′ square · north up${presetMotion(target) ? ' · proper-motion aligned' : ''}${masked ? ` · ${masked} flagged pixels masked` : ''}`;
+  caption.textContent = `${formatWavelength(observation)} · ${release}${processing}${stackLabel} · ${settings.fovArcmin}′ square · north up${presetMotion(target) ? ' · proper-motion aligned' : target.fixedSkyFor ? ' · fixed sky, star moves' : ''}${masked ? ` · ${masked} flagged pixels masked` : ''}`;
   status.hidden = true;
   document.getElementById('export-sky-png').disabled = preview;
   document.getElementById('cutout-cache-state').textContent = image.stackRecord ? 'Aligned median stack · browser caching enabled' : 'Retrieved from NASA archive · browser caching enabled';
@@ -888,7 +926,7 @@ async function composeComparison(frame, entry, signal, sequence) {
     const grids = await warmGrids(span, signal, sequence, 'Building motion trail', { frame, values: current });
     const combined = await imagePipeline.combine(grids, { statistic: 'max' }, signal);
     const element = document.createElement('canvas');
-    paintGrid(element, combined.values, width);
+    paintGrid(element, combined.values, width, { psfFrame: entry.image?.projection?.psfFrame || null });
     return { kind: 'trail', canvas: element, values: combined.values, unit, frames: grids.length, first: span[0], last: span.at(-1) };
   }
   let referenceValues, referenceLabel, referenceCanvas, referenceObservation=null, referenceImage=null;
@@ -896,7 +934,7 @@ async function composeComparison(frame, entry, signal, sequence) {
     const template = await deepTemplate(signal, sequence);
     referenceValues = template.values;
     referenceLabel = `deep reference (${template.days} days)`;
-    if (settings.viewMode === 'blink') { referenceCanvas = document.createElement('canvas'); paintGrid(referenceCanvas, referenceValues, width); }
+    if (settings.viewMode === 'blink') { referenceCanvas = document.createElement('canvas'); paintGrid(referenceCanvas, referenceValues, width, { psfFrame: entry.image?.projection?.psfFrame || null }); }
   } else {
     const reference = referenceFrameFor(frame);
     if (!reference) return null;

@@ -52,7 +52,9 @@ Successful name resolution establishes a catalog position, not SPHEREx coverage 
 
 This release uses fixed catalog positions interpreted in ICRS. It does not propagate positions to observation dates or provide Solar System ephemerides. A catalog coordinate system or J2000 label does not by itself establish the position's reference epoch.
 
-The Barnard’s Star preset uses linear proper motion for archive searches and centers each cutout at the exposure midpoint. See [the pointing benchmark](docs/stacking-within-observing-periods.md#fixed-star-contrast-benchmark) for coverage and contrast results. Extending this to other nearby sources, such as WISE 0855, requires verified astrometry and a reference epoch for each source. Parallax and radial velocity can be included for finer astrometry.
+The Barnard’s Star, Epsilon Indi B and WISE 0855 presets use linear proper motion from a J2000 reference position (`MOTIONS` in `frontend/presets.js`) for archive searches, and center each cutout at the exposure midpoint. See [the pointing benchmark](docs/stacking-within-observing-periods.md#fixed-star-contrast-benchmark) for coverage and contrast results. The WISE 0855 preset keeps the challenge's discovery-epoch coordinates as its identity; the dwarf itself is about 2′ west of them in 2025–2026 SPHEREx data, where it appears at the predicted position in D5/D6 stacks. The Epsilon Indi B preset is centered on the brown-dwarf pair, 6.7′ east of the bright primary Epsilon Indi A. Parallax (up to 0.55″ for these stars) and radial velocity are not modelled.
+
+Turn off **Follow the star’s proper motion** (View panel) to hold the sky fixed at the star’s 2026-01-01 position instead. Background stars then stay still and the star’s own motion shows up in blink, difference and motion-trail views; for Barnard’s Star, the August 2025 → August 2026 difference shows a 10″ northward shift as an orange/blue pair.
 
 ## FITS cutouts and aligned display
 

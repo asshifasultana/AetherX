@@ -58,3 +58,14 @@ test('every schema control exists exactly once in the viewer markup', async () =
     assert.ok(control.key in DEFAULT_SETTINGS, control.key);
   }
 });
+
+test('a stored Natural look picks up the current preset; other looks keep their tone', () => {
+  const storage = memoryStorage();
+  storage.setItem(STORAGE_KEY, JSON.stringify({ look: 'natural', stretch: 'asinh', scaleMode: 'p99.5', contrast: 65, brightness: 50, colours: 'magma' }));
+  const restored = normalizeSettings(loadStoredSettings(storage));
+  assert.equal(restored.look, 'natural'); assert.equal(restored.scaleMode, LOOK_PRESETS.natural.scaleMode);
+  assert.equal(restored.contrast, LOOK_PRESETS.natural.contrast); assert.equal(restored.colours, 'magma');
+  storage.setItem(STORAGE_KEY, JSON.stringify({ look: 'custom', stretch: 'linear', scaleMode: 'p98', contrast: 70, brightness: 50 }));
+  assert.equal(normalizeSettings(loadStoredSettings(storage)).contrast, 70);
+  assert.equal(DEFAULT_SETTINGS.pixelView, 'pixelated'); assert.equal(DEFAULT_SETTINGS.fillMaskedCores, true);
+});

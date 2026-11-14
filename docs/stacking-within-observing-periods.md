@@ -91,7 +91,6 @@ The moving-target benchmark also runs from the command line:
 
 ```powershell
 node scripts/benchmark-moving-stack.mjs --manifest manifest.json stack-products.json
-node scripts/benchmark-moving-stack.mjs --compare path/to/spherex-timelapse stack-products.json
 node scripts/export-comet-benchmark.mjs frontend/tests/fixtures/comet-august-d1.json --check
 ```
 

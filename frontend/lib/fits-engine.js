@@ -257,7 +257,27 @@ export function projectImage(image, target, settings, grid = skyGrid(target, set
     if (ix >= 0 && iy >= 0 && ix < image.width && iy < image.height) flags[i] = image.flags?.[iy * image.width + ix] || 0;
   }
   return { values, flags, variance, covered, background, coverage: coveredPixels / values.length, width: grid.width,
-    ...(lanczosUsed ? { lanczosUsed } : {}) };
+    psfFrame: psfFrameFor(image, grid), ...(lanczosUsed ? { lanczosUsed } : {}) };
+}
+
+/**
+ * Local affine map from display-grid pixels to detector pixels around the grid
+ * centre: detector = (x, y) + J · (grid − (gx, gy)). It lets a detector-frame
+ * PSF be drawn on the north-up grid with the right rotation and scale.
+ */
+export function psfFrameFor(image, grid) {
+  const width = grid.width, g = Math.floor(width / 2);
+  if (width < 2) return null;
+  const at = (x, y) => {
+    const i = y * width + x;
+    return projectSkyToPixel(image, grid.coordinates[2 * i], grid.coordinates[2 * i + 1]);
+  };
+  const p0 = at(g, g), px = at(Math.min(width - 1, g + 1), g), py = at(g, Math.min(width - 1, g + 1));
+  if (![p0, px, py].every(p => p && p.every(Number.isFinite))) return null;
+  return {
+    gx: g, gy: g, x: p0[0] + (image.sourceX || 0), y: p0[1] + (image.sourceY || 0),
+    j: [px[0] - p0[0], py[0] - p0[0], px[1] - p0[1], py[1] - p0[1]]
+  };
 }
 
 export function prepareImage(image, target, settings) {

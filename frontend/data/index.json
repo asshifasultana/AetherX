@@ -7,21 +7,21 @@
     "timeZone": "UTC",
     "description": "Daily, around 10:27 AM Asia/Dhaka (04:27 UTC)"
   },
-  "lastAttemptAt": "2026-11-07T11:14:20.700Z",
-  "lastSuccessfulCheckAt": "2026-11-07T11:15:14.227Z",
-  "lastChangedAt": "2026-11-03T18:41:57.313Z",
+  "lastAttemptAt": "2026-11-07T14:06:45.540Z",
+  "lastSuccessfulCheckAt": "2026-11-07T14:11:39.212Z",
+  "lastChangedAt": "2026-11-07T14:11:39.212Z",
   "collections": [
     "spherex_qr2",
     "spherex_qr2_deep",
     "spherex_qr3",
     "spherex_qr3_deep"
   ],
-  "totalObservations": 3876,
+  "totalObservations": 3885,
   "changes": {
-    "added": 0,
+    "added": 22,
     "revised": 0,
-    "removed": 0,
-    "unchanged": 3876
+    "removed": 13,
+    "unchanged": 3863
   },
   "targets": [
     {
@@ -33,7 +33,7 @@
       "hash": "e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a",
       "count": 364,
       "productCount": 364,
-      "checkedAt": "2026-11-07T11:14:28.100Z",
+      "checkedAt": "2026-11-07T14:07:58.599Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -44,18 +44,18 @@
     {
       "id": "epsilon",
       "name": "Epsilon Indi B",
-      "raDeg": 330.8413,
-      "decDeg": -56.7859,
-      "snapshot": "snapshots/epsilon-49606f3f91ac2cf3dbcc2bd63d307552184de0b215651424ddaa0a3a4b07f25e.json",
-      "hash": "49606f3f91ac2cf3dbcc2bd63d307552184de0b215651424ddaa0a3a4b07f25e",
-      "count": 444,
-      "productCount": 444,
-      "checkedAt": "2026-11-07T11:14:32.892Z",
+      "raDeg": 331.0441,
+      "decDeg": -56.7828,
+      "snapshot": "snapshots/epsilon-8ba45b49b4f06ef758fab0ff538b6ea10d850df1878b1f5d7898758485fa49e3.json",
+      "hash": "8ba45b49b4f06ef758fab0ff538b6ea10d850df1878b1f5d7898758485fa49e3",
+      "count": 449,
+      "productCount": 449,
+      "checkedAt": "2026-11-07T14:08:31.555Z",
       "changes": {
-        "added": 0,
+        "added": 13,
         "revised": 0,
-        "removed": 0,
-        "unchanged": 444
+        "removed": 8,
+        "unchanged": 436
       }
     },
     {
@@ -67,7 +67,7 @@
       "hash": "90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5",
       "count": 256,
       "productCount": 256,
-      "checkedAt": "2026-11-07T11:14:47.251Z",
+      "checkedAt": "2026-11-07T14:09:24.756Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -84,7 +84,7 @@
       "hash": "f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c",
       "count": 333,
       "productCount": 333,
-      "checkedAt": "2026-11-07T11:14:55.160Z",
+      "checkedAt": "2026-11-07T14:10:16.034Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -95,18 +95,18 @@
     {
       "id": "draconis",
       "name": "R Draconis",
-      "raDeg": 248.1217,
-      "decDeg": 66.7569,
-      "snapshot": "snapshots/draconis-dfdceef7581d69ff3d8e0e94148121fe07b2721a56a33601a389fa2ca3628bd7.json",
-      "hash": "dfdceef7581d69ff3d8e0e94148121fe07b2721a56a33601a389fa2ca3628bd7",
-      "count": 2479,
-      "productCount": 2479,
-      "checkedAt": "2026-11-07T11:15:14.227Z",
+      "raDeg": 248.1676,
+      "decDeg": 66.755,
+      "snapshot": "snapshots/draconis-8085ceda0e4ea2de25c5859329581953808f60a65a74c40fa67b6dc0115bf4e9.json",
+      "hash": "8085ceda0e4ea2de25c5859329581953808f60a65a74c40fa67b6dc0115bf4e9",
+      "count": 2483,
+      "productCount": 2483,
+      "checkedAt": "2026-11-07T14:11:39.211Z",
       "changes": {
-        "added": 0,
+        "added": 9,
         "revised": 0,
-        "removed": 0,
-        "unchanged": 2479
+        "removed": 5,
+        "unchanged": 2474
       }
     }
   ],

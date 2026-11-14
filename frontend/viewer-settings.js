@@ -21,7 +21,9 @@ export const MASK_CATEGORIES = Object.freeze([
 const DEFAULT_MASK = ['transient', 'detector', 'correction', 'artifact'];
 
 export const LOOK_PRESETS = Object.freeze({
-  natural: Object.freeze({ stretch: 'asinh', scaleMode: 'p99.5', contrast: 65, brightness: 50 }),
+  // Noise-referenced asinh (Lupton et al. 2004) with an STF-style black point:
+  // faint stars stay visible and bright ones keep their relative brightness.
+  natural: Object.freeze({ stretch: 'asinh', scaleMode: 'noise', contrast: 50, brightness: 50 }),
   // ZScale + linear is the DS9/IRAF way to see sources near the noise floor.
   faint: Object.freeze({ stretch: 'linear', scaleMode: 'zscale', contrast: 55, brightness: 50 }),
   contrast: Object.freeze({ stretch: 'linear', scaleMode: 'p98', contrast: 85, brightness: 50 })
@@ -32,6 +34,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   band: 2,
   viewMode: 'time-lapse',
   fovArcmin: 16,
+  followProperMotion: true,
   // Mode-specific
   maxStackFrames: 80,
   referenceFrame: 'previous',
@@ -51,15 +54,17 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // Display
   look: 'natural',
   stretch: 'asinh',
-  scaleMode: 'p99.5',
+  scaleMode: 'noise',
   scaleLow: null,
   scaleHigh: null,
-  contrast: 65,
+  contrast: 50,
   brightness: 50,
   colours: 'grayscale',
   invert: false,
   consistentBrightness: true,
   smoothing: 0,
+  fillMaskedCores: true,
+  pixelView: 'pixelated',
   // Overlays
   showCrosshair: false,
   showCompass: true,
@@ -73,6 +78,7 @@ const RULES = {
   band: intRange(1, 6),
   viewMode: enumOf(...VIEW_MODES),
   fovArcmin: intRange(1, 30),
+  followProperMotion: { kind: 'bool' },
   maxStackFrames: intRange(4, 400, 4),
   referenceFrame: enumOf('previous', 'first', 'pinned', 'deep-stack'),
   blinkIntervalMs: intRange(200, 2000, 50),
@@ -89,7 +95,7 @@ const RULES = {
   stackStatistic: enumOf('median', 'clipped-mean'),
   look: enumOf('natural', 'faint', 'contrast', 'custom'),
   stretch: enumOf('asinh', 'linear', 'sqrt', 'log', 'histeq'),
-  scaleMode: enumOf('p99.5', 'p98', 'zscale', 'minmax', 'manual'),
+  scaleMode: enumOf('noise', 'p99.5', 'p98', 'zscale', 'minmax', 'manual'),
   scaleLow: { kind: 'nullable-number' },
   scaleHigh: { kind: 'nullable-number' },
   contrast: intRange(10, 100),
@@ -98,6 +104,8 @@ const RULES = {
   invert: { kind: 'bool' },
   consistentBrightness: { kind: 'bool' },
   smoothing: enumOf(0, 1, 2),
+  fillMaskedCores: { kind: 'bool' },
+  pixelView: enumOf('pixelated', 'smooth'),
   showCrosshair: { kind: 'bool' },
   showCompass: { kind: 'bool' },
   qualityOverlay: { kind: 'bool' },
@@ -159,8 +167,8 @@ export function reconcileLook(settings) {
 }
 
 // Settings that belong to each panel's reset button.
-export const DISPLAY_KEYS = ['look', 'stretch', 'scaleMode', 'scaleLow', 'scaleHigh', 'contrast', 'brightness', 'colours', 'invert', 'consistentBrightness', 'smoothing', 'showCrosshair', 'showCompass', 'qualityOverlay', 'inspectPixels'];
-export const OBSERVATION_KEYS = ['viewMode', 'fovArcmin', 'maxStackFrames', 'referenceFrame', 'blinkIntervalMs', 'differenceThreshold', 'differenceFlatten', 'trailWindow', 'combineExposures', 'hideBadPixels', 'rejectVisitGlitches', 'exposuresPerDay', 'maskCategories', 'resampling', 'subtractBackground', 'stackStatistic'];
+export const DISPLAY_KEYS = ['look', 'stretch', 'scaleMode', 'scaleLow', 'scaleHigh', 'contrast', 'brightness', 'colours', 'invert', 'consistentBrightness', 'smoothing', 'fillMaskedCores', 'pixelView', 'showCrosshair', 'showCompass', 'qualityOverlay', 'inspectPixels'];
+export const OBSERVATION_KEYS = ['viewMode', 'fovArcmin', 'followProperMotion', 'maxStackFrames', 'referenceFrame', 'blinkIntervalMs', 'differenceThreshold', 'differenceFlatten', 'trailWindow', 'combineExposures', 'hideBadPixels', 'rejectVisitGlitches', 'exposuresPerDay', 'maskCategories', 'resampling', 'subtractBackground', 'stackStatistic'];
 
 export function resetKeys(settings, keys) {
   const next = { ...settings };
@@ -181,6 +189,8 @@ export function loadStoredSettings(storage = globalThis.localStorage) {
     if (!parsed || typeof parsed !== 'object') return {};
     const kept = {};
     for (const key of Object.keys(RULES)) if (!NOT_STORED.has(key) && Object.hasOwn(parsed, key)) kept[key] = parsed[key];
+    // A stored "natural" look follows the current preset, not the one saved.
+    if (kept.look === 'natural') for (const key of LOOK_KEYS) delete kept[key];
     return kept;
   } catch { return {}; }
 }
@@ -199,6 +209,7 @@ export const SETTINGS_SCHEMA = Object.freeze([
   { id: 'detector-array', key: 'band', type: 'select', number: true },
   { id: 'view-mode', key: 'viewMode', type: 'select' },
   { id: 'field-of-view', key: 'fovArcmin', type: 'range', commit: 'change', format: value => `${value}′`, valuetext: value => `${value} arcminutes` },
+  { id: 'follow-proper-motion', key: 'followProperMotion', type: 'checkbox' },
   { id: 'max-stack-frames', key: 'maxStackFrames', type: 'range', commit: 'change', format: value => `${value} frames` },
   { id: 'reference-frame', key: 'referenceFrame', type: 'select' },
   { id: 'blink-interval', key: 'blinkIntervalMs', type: 'range', format: value => `${(value / 1000).toFixed(2)} s` },
@@ -223,6 +234,8 @@ export const SETTINGS_SCHEMA = Object.freeze([
   { id: 'invert', key: 'invert', type: 'checkbox' },
   { id: 'consistent-brightness', key: 'consistentBrightness', type: 'checkbox' },
   { id: 'smoothing', key: 'smoothing', type: 'select', number: true },
+  { id: 'fill-masked-cores', key: 'fillMaskedCores', type: 'checkbox' },
+  { id: 'pixel-view', key: 'pixelView', type: 'select' },
   { id: 'show-crosshair', key: 'showCrosshair', type: 'checkbox' },
   { id: 'show-compass', key: 'showCompass', type: 'checkbox' },
   { id: 'quality-overlay', key: 'qualityOverlay', type: 'checkbox' },

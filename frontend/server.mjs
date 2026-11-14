@@ -28,7 +28,7 @@ export function createAppServer() { return createServer(async (req, res) => {
     const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     const relative = path.relative(root, file).replaceAll('\\', '/');
     if (!['index.html', 'viewer.html', 'workspace-ui.js', 'home.js', 'starfield.js', 'target-search.js', 'search-route.js', 'comet-benchmark.js', 'comet-benchmark.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'viewer-settings.js', 'lib/colormaps.js', 'lib/display-scale.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js',
-      'moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js', 'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', ...CONTEXT_PUBLIC_FILES].includes(relative)) { res.writeHead(404).end(); return; }
+      'moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js', 'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js', ...CONTEXT_PUBLIC_FILES].includes(relative)) { res.writeHead(404).end(); return; }
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] });
     res.end(await readFile(file));
   } catch { res.writeHead(404).end('Not found'); }

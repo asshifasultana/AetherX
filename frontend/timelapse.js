@@ -8,6 +8,13 @@ import { takePendingFrameDate } from './share.js';
 const $ = id => document.getElementById(id);
 const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const timeFormat = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
+const MODE_LABELS = {
+  'time-lapse': 'Time-lapse',
+  blink: 'Blink',
+  difference: 'Difference',
+  'motion-trail': 'Motion trail',
+  'deep-stack': 'Deep stack'
+};
 
 const state = {
   observations: [],
@@ -127,6 +134,22 @@ function updatePlayButton() {
   button.classList.toggle('is-playing', state.playing);
 }
 
+// The panel carries the selected mode's name and hides the frame controls for
+// a deep stack, which is one combined image rather than a sequence.
+function updateModeUI() {
+  const deepStack = state.viewMode === 'deep-stack';
+  $('timeline-heading').textContent = MODE_LABELS[state.viewMode] || 'Time-lapse';
+  const panel = document.querySelector?.('.timeline-panel');
+  if (panel) panel.dataset.viewMode = state.viewMode;
+  const count = state.frames.length;
+  $('frame-count').textContent = deepStack
+    ? (count ? 'SINGLE COMBINED IMAGE' : 'NO IMAGES LOADED')
+    : count
+      ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
+      : 'NO IMAGES LOADED';
+  if (deepStack && state.playing) pausePlayback();
+}
+
 function updateStepButtons() {
   const last = state.frames.length - 1;
   $('step-back').disabled = state.frames.length < 2 || state.index <= 0;
@@ -146,7 +169,7 @@ function nextPrefetchFrame(excluded = new Set()) {
 function schedulePrefetch(delay = 0) {
   clearTimeout(prefetch.timer);
   prefetch.timer = null;
-  if (!state.frames.length || prefetch.paused || document.documentElement?.classList.contains('is-tour-preview')) return;
+  if (!state.frames.length || prefetch.paused || state.viewMode === 'deep-stack' || document.documentElement?.classList.contains('is-tour-preview')) return;
   prefetch.timer = setTimeout(() => { void runPrefetch(); }, delay);
 }
 
@@ -329,7 +352,7 @@ function updateCurrent({ keepSlider = false } = {}) {
     updateStepButtons();
     return;
   }
-  $('timeline-date').textContent = frameDate(frame);
+  $('timeline-date').textContent = state.viewMode === 'deep-stack' ? 'One combined image' : frameDate(frame);
   $('timeline-meta').textContent = '';
   $('timeline-meta').hidden = true;
   const sources = frame.exposures || [frame];
@@ -510,7 +533,7 @@ function scheduleNext(delay) {
 }
 
 async function playPlayback() {
-  if (state.frames.length < 2) return;
+  if (state.frames.length < 2 || state.viewMode === 'deep-stack') return;
   // Keep a bounded lookahead running while the selected frame has priority.
   state.playing = true;
   state.token++;
@@ -522,6 +545,7 @@ async function playPlayback() {
 }
 
 function togglePlayback() {
+  if (state.viewMode === 'deep-stack') return;
   if (state.playing) pausePlayback({ manual: true });
   else { state.userPaused = false; void playPlayback(); }
 }
@@ -532,8 +556,8 @@ $('set-reference').addEventListener('click', () => {
   if (!frame) return;
   window.dispatchEvent(new CustomEvent('sky:reference-frame-pinned', { detail: { key: observationKey(frame) } }));
 });
-$('step-back').addEventListener('click', () => { pausePlayback({ manual: true }); void selectFrame(state.index - 1); });
-$('step-forward').addEventListener('click', () => { pausePlayback({ manual: true }); void selectFrame(state.index + 1); });
+$('step-back').addEventListener('click', () => { if (state.viewMode === 'deep-stack') return; pausePlayback({ manual: true }); void selectFrame(state.index - 1); });
+$('step-forward').addEventListener('click', () => { if (state.viewMode === 'deep-stack') return; pausePlayback({ manual: true }); void selectFrame(state.index + 1); });
 $('speed-button').addEventListener('click', () => {
   state.speed = nextSpeed(state.speed);
   $('speed-value').textContent = `${state.speed}×`;
@@ -541,7 +565,7 @@ $('speed-button').addEventListener('click', () => {
   if (state.playing) { pausePlayback(); void playPlayback(); }
 });
 $('timeline').addEventListener('input', event => {
-  if (!state.frames.length) return;
+  if (!state.frames.length || state.viewMode === 'deep-stack') return;
   pausePlayback({ manual: true });
   state.index = nearestFrameIndex(state.frames, Number(event.target.value) / 1000);
   updateCurrent({ keepSlider: true });
@@ -549,7 +573,7 @@ $('timeline').addEventListener('input', event => {
   state.scrubTimer = setTimeout(() => { void selectFrame(state.index); }, 180);
 });
 $('timeline').addEventListener('change', () => {
-  if (!state.frames.length) return;
+  if (!state.frames.length || state.viewMode === 'deep-stack') return;
   clearTimeout(state.scrubTimer);
   void selectFrame(state.index);
 });
@@ -583,6 +607,10 @@ window.addEventListener('sky:agent-playback', async event => {
   const detail = event.detail || {};
   const reply = result => { detail.respond?.(result); publishPlaybackState(); };
   if (!state.frames.length) { reply({ ok: false, error: 'No observations are loaded yet.' }); return; }
+  if (state.viewMode === 'deep-stack' && detail.action !== 'pause') {
+    reply({ ok: false, error: 'Deep stack shows one combined image. Switch to time-lapse, difference, or motion trail to use the timeline.' });
+    return;
+  }
   const last = state.frames.length - 1;
   try {
     switch (detail.action) {
@@ -637,7 +665,7 @@ function applyPendingReference() {
 }
 
 document.addEventListener('keydown', event => {
-  if (!state.frames.length || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (!state.frames.length || state.viewMode === 'deep-stack' || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
   if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes(event.target?.tagName)) return;
   if (event.key === 'ArrowLeft') { event.preventDefault(); pausePlayback({ manual: true }); void selectFrame(state.index - 1); }
   else if (event.key === 'ArrowRight') { event.preventDefault(); pausePlayback({ manual: true }); void selectFrame(state.index + 1); }

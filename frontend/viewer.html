@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f5f6f2">
+  <meta name="theme-color" content="#080d18">
   <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
   <title>SPHEREx — A sky in motion</title>
   <!-- Sky colour clock shared across pages; see SKY_KEY in starfield.js. -->
@@ -33,7 +33,7 @@
     <aside id="workspace-sidebar" class="workspace-sidebar" aria-label="Observation settings">
       <button id="sidebar-rail-toggle" class="sidebar-rail-toggle" type="button" aria-label="Expand settings sidebar" aria-controls="sidebar-content" aria-expanded="true" hidden>☷</button>
       <div id="sidebar-content" class="sidebar-content">
-        <div class="sidebar-title"><span>OBSERVATION</span><button id="sidebar-collapse" type="button" aria-label="Close settings" aria-controls="sidebar-content" aria-expanded="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+        <div class="sidebar-title"><span>OBSERVATION</span><div class="sidebar-title-actions"><button id="reset-button" class="reset-button" type="button" title="Reset every viewer setting to its default">Reset all ↺</button><button id="sidebar-collapse" type="button" aria-label="Close settings" aria-controls="sidebar-content" aria-expanded="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div></div>
         <section class="sidebar-target" aria-label="Selected target"><h1 id="object-name">Barnard’s Star</h1><span id="object-type" hidden>RED DWARF · OPHIUCHUS</span><p id="object-description" hidden></p>
           <dl id="target-coordinates" class="coordinate-display"><div><dt>RA</dt><dd id="display-ra">269.4521°</dd></div><div><dt>DEC</dt><dd id="display-dec">+4.6934°</dd></div></dl><p id="moving-position-note" hidden>Position varies by exposure</p>
         </section>
@@ -79,7 +79,6 @@
             <div class="setting-check" data-tooltip="Subtracts each exposure’s robust sky level so frames compare on a common zero. Turn off to see the calibrated values including the zodiacal pedestal."><label class="check-row"><input id="subtract-background" type="checkbox" checked><span>Subtract sky background</span></label><button class="setting-help" type="button" aria-label="About Subtract sky background" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
           </div></details>
         </div></details>
-        <button id="reset-button" class="reset-settings" type="button">Reset observation settings ↺</button>
         <section id="pixel-inspector" class="pixel-inspector" aria-live="polite" hidden><strong>Pixel inspection</strong><p id="pixel-inspector-result"></p></section>
       </div>
     </aside>
@@ -146,7 +145,6 @@
         <div class="setting-check" data-tooltip="North and east arrows and a scale bar. The image is always north-up with east to the left, as on the sky."><label class="check-row"><input id="show-compass" type="checkbox" checked><span>Compass &amp; scale bar</span></label><button class="setting-help" type="button" aria-label="About Compass and scale bar" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
         <div class="setting-check" data-tooltip="Colours pixels by their pipeline quality flag, with a legend and counts. Rule out artefacts before trusting an apparent change. Available on single-exposure frames."><label class="check-row"><input id="quality-overlay" type="checkbox"><span>Quality-flag overlay</span></label><button class="setting-help" type="button" aria-label="About Quality-flag overlay" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
         <div class="setting-check" data-tooltip="Click the image (or use the arrow keys) to inspect one pixel: its value, every flag, and a same-observation transient check across exposures."><label class="check-row"><input id="inspect-pixels" type="checkbox"><span>Inspect a pixel on click</span></label><button class="setting-help" type="button" aria-label="About Inspect a pixel on click" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
-        <button id="reset-display" class="reset-settings" type="button">Reset display ↺</button>
       </aside>
       </div>
       <div class="timeline-panel" aria-labelledby="timeline-heading">

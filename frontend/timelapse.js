@@ -54,50 +54,13 @@ let playbackController = null;
 // Search readiness includes every filmstrip frame, not just the selected image.
 let searchPending = false, archivePending = false, selectedPending = false;
 let loadingProgress = 0, loadingProgressTimer = null;
-// Sources: https://science.nasa.gov/universe/stars/
-// https://science.nasa.gov/blogs/spherex/2025/03/11/nasas-spherex-mission-2/
-// https://www.nasa.gov/missions/spherex/why-nasas-spherex-mission-will-make-most-colorful-cosmic-map-ever/
-// https://science.nasa.gov/solar-system/planet-x/
-const LOADING_FACTS = [
-  'The Milky Way alone contains more than 100 billion stars.',
-  'SPHEREx sees the sky in 102 infrared colors invisible to human eyes.',
-  'Some small stars can shine for trillions of years.',
-  'Planet Nine is a predicted world beyond Neptune that has yet to be discovered.',
-  'Stars are born inside enormous clouds of gas and dust.',
-  'SPHEREx is designed to map the entire sky four times in two years.',
-  'The most massive stars may live for only a few million years.',
-  'SPHEREx will survey more than 450 million galaxies and 100 million stars.',
-  'A baby star is called a protostar.',
-  'You can help search for distant worlds using infrared images from NASA’s WISE mission.',
-  'Stars shine by fusing hydrogen into helium in their cores.',
-  'SPHEREx searches for frozen water and other ingredients for life between stars.',
-  'Our Sun is roughly halfway through its main-sequence lifetime.',
-  'A white dwarf packs a star’s leftover core into roughly Earth’s size.',
-  'Massive stars forge elements such as oxygen, neon, and magnesium.',
-  'Material shed by dying stars helps build the next generation of stars.'
-];
-let loadingFactIndex = -1, loadingFactTimer = null;
-function showNextLoadingFact() {
-  loadingFactIndex = (loadingFactIndex + 1) % LOADING_FACTS.length;
-  $('preview-loading-fact').textContent = LOADING_FACTS[loadingFactIndex];
-  $('preview-loading-fact').classList.toggle('is-changing', false);
-}
-function scheduleLoadingFact() {
-  loadingFactTimer = setTimeout(() => {
-    if (!searchPending) return;
-    $('preview-loading-fact').classList.toggle('is-changing', true);
-    loadingFactTimer = setTimeout(() => {
-      if (!searchPending) return;
-      showNextLoadingFact();
-      scheduleLoadingFact();
-    }, 180);
-  }, 6000);
-}
+// The search loader (search-loader.js) draws this progress and plays the exit;
+// this module only decides how far along the search is and when it is done.
+const emitLoader = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
 
 function paintLoadingProgress(value) {
   loadingProgress = value;
-  $('preview-loading-percent').textContent = String(Math.floor(value)).padStart(2, '0');
-  $('preview-loading-progress').style.transform = `scaleX(${value / 100})`;
+  emitLoader('sky:loader-progress', { value });
 }
 function tickLoadingProgress() {
   // An estimated visual cadence: a quick first sweep, then a gentle approach
@@ -109,34 +72,22 @@ function tickLoadingProgress() {
   loadingProgressTimer = setTimeout(tickLoadingProgress, loadingProgress < 90 ? 70 : 250);
 }
 function updatePreviewLoading() {
-  const loader = $('preview-loading');
-  if (!loader) return;
+  if (!searchPending) return;
   const frames = document.documentElement?.classList.contains('is-tour-preview')
     ? state.frames.slice(state.index, state.index + 1) : state.frames;
   const settled = frames.filter(frame => {
     const key = observationKey(frame);
     return prefetch.fetched.has(key) || prefetch.failed.has(key) || isCutoutReady(frame);
   }).length;
-  const busy = searchPending && (archivePending || selectedPending || settled < frames.length);
-  loader.hidden = !busy;
+  const busy = archivePending || selectedPending || settled < frames.length;
   document.querySelector('.viewer')?.setAttribute('aria-busy', String(busy));
-  if (!busy) {
-    searchPending = false;
-    clearTimeout(loadingProgressTimer); loadingProgressTimer = null;
-    clearTimeout(loadingFactTimer); loadingFactTimer = null;
-    paintLoadingProgress(100);
-    loader.close?.();
-    // The viewer chrome is hidden behind the first-paint loader; reveal it once
-    // the opening search has settled.
-    document.documentElement?.classList?.remove?.('is-initial-search');
-    return;
-  }
-  if (!loader.open) loader.showModal?.();
-
+  if (busy) return;
+  searchPending = false;
+  clearTimeout(loadingProgressTimer); loadingProgressTimer = null;
+  paintLoadingProgress(100);
+  emitLoader('sky:loader-ready', { frames: frames.length });
 }
 
-
-$('preview-loading')?.addEventListener('cancel', event => { if (searchPending) event.preventDefault(); });
 
 const dateOf = frame => new Date(frameTime(frame));
 const shortDate = frame => dateFormat.format(dateOf(frame));
@@ -151,6 +102,29 @@ const wavelength = frame => {
   return Number.isFinite(low) && Number.isFinite(high) ? `${low.toFixed(2)}–${high.toFixed(2)} μm` : '';
 };
 const setStatus = text => { $('timeline-status').textContent = text; };
+const modeLabels = {
+  'time-lapse': 'Time-lapse',
+  blink: 'Blink comparison',
+  difference: 'Difference image',
+  'motion-trail': 'Motion trail',
+  'deep-stack': 'Deep stack'
+};
+
+function updateModeUi() {
+  const deepStack = state.viewMode === 'deep-stack';
+  const count = state.frames.length;
+  $('timeline-heading').textContent = modeLabels[state.viewMode] || 'Sky view';
+  $('playback-row').hidden = deepStack;
+  $('timeline-filmstrip').hidden = deepStack;
+  if (deepStack) {
+    const detector = state.frames[state.index]?.detector ?? state.band;
+    $('frame-count').textContent = count ? `DEEP STACK${detector ? ` · D${detector}` : ''}` : 'DEEP STACK · NO IMAGES LOADED';
+  } else {
+    $('frame-count').textContent = count
+      ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
+      : 'NO IMAGES LOADED';
+  }
+}
 
 function updatePlayButton() {
   const button = $('play-button');
@@ -357,6 +331,16 @@ function renderFilmstrip() {
 
 function updateCurrent({ keepSlider = false } = {}) {
   const frame = state.frames[state.index];
+  if (state.viewMode === 'deep-stack') {
+    $('timeline-date').textContent = state.frames.length ? 'Deep stack' : 'Waiting for observations';
+    $('timeline-meta').hidden = false;
+    if (!state.frames.length) $('timeline-meta').textContent = 'Load observations to build one combined image.';
+    $('timeline').value = '0';
+    $('timeline').style.setProperty('--progress', '0%');
+    $('timeline').setAttribute('aria-valuetext', state.frames.length ? 'One combined deep-stack image' : 'No observations loaded');
+    updateStepButtons();
+    return;
+  }
   if (!frame) {
     $('timeline-date').textContent = 'Waiting for observations';
     $('timeline-meta').hidden = false;
@@ -409,7 +393,7 @@ function updateCurrent({ keepSlider = false } = {}) {
 
 function render() {
   const count = state.frames.length;
-  updateModeUI();
+  updateModeUi();
   $('release-calibration-note').hidden = true;
   $('timeline-start').textContent = count ? shortDate(state.frames[0]).toUpperCase() : 'FIRST FRAME';
   $('timeline-end').textContent = count ? shortDate(state.frames[count - 1]).toUpperCase() : 'LATEST FRAME';
@@ -473,7 +457,7 @@ function rebuild({ keepTime = false, announce = true } = {}) {
 }
 
 async function selectFrame(index, { playback = false } = {}) {
-  if (!state.frames.length) return;
+  if (!state.frames.length || state.viewMode === 'deep-stack') return;
   state.index = Math.max(0, Math.min(state.frames.length - 1, index));
   updateCurrent();
   const frame = state.frames[state.index];
@@ -696,7 +680,8 @@ window.addEventListener('sky:viewer-settings-changed', event => {
     // Difference and motion trail can still be played frame by frame; blink
     // animates on its own and a deep stack has no timeline position.
     if (state.viewMode === 'deep-stack' || state.viewMode === 'blink') pausePlayback();
-    updateModeUI();
+    updateModeUi();
+    updateCurrent();
   }
   if (detail.pinnedReferenceKey !== undefined && detail.pinnedReferenceKey !== state.pinnedKey) {
     state.pinnedKey = detail.pinnedReferenceKey || '';
@@ -743,11 +728,8 @@ window.addEventListener('sky:target-selected', () => {
 
 window.addEventListener('sky:observations-loading', () => {
   clearTimeout(loadingProgressTimer);
-  paintLoadingProgress(0);
   searchPending = true; archivePending = true; selectedPending = false;
-  clearTimeout(loadingFactTimer);
-  showNextLoadingFact();
-  scheduleLoadingFact();
+  paintLoadingProgress(0);
   loadingProgressTimer = setTimeout(tickLoadingProgress, 70);
   updatePreviewLoading();
   state.observations = [];

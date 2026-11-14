@@ -39,6 +39,9 @@ export function mountWorkspace() {
   const agent = $('ai-guide'), agentToggle = $('agent-toggle'), agentClose = $('agent-close');
   const backdrop = $('sidebar-backdrop');
   let settingsOpen = false, agentOpen = false, returnFocus = $('sidebar-toggle');
+  // On wide screens the guide is a side panel beside the image, not a modal:
+  // visitors keep clicking the image to mark spots while they chat.
+  const agentModal = () => !globalThis.matchMedia || globalThis.matchMedia('(max-width: 899px)').matches;
   function renderDrawers({ focus = false } = {}) {
     workspace.dataset.sidebarOpen = String(settingsOpen);
     workspace.dataset.agentOpen = String(agentOpen);
@@ -46,7 +49,8 @@ export function mountWorkspace() {
     agent.inert = !agentOpen;
     $('sidebar-rail-toggle').hidden = true;
     sidebar.toggleAttribute('aria-modal', settingsOpen);
-    agent.toggleAttribute('aria-modal', agentOpen);
+    agent.toggleAttribute('aria-modal', agentOpen && agentModal());
+    workspace.dataset.agentPanel = String(agentOpen && !agentModal());
     if (settingsOpen) sidebar.setAttribute('role', 'dialog'); else sidebar.removeAttribute('role');
     if (agentOpen) agent.setAttribute('role', 'dialog'); else agent.removeAttribute('role');
     for (const toggle of settingsToggles) toggle.setAttribute('aria-expanded', String(settingsOpen));
@@ -76,6 +80,8 @@ export function mountWorkspace() {
   $('sidebar-collapse').addEventListener('click', () => setSettingsOpen(false, { focus: true }));
   agentToggle.addEventListener('click', () => setAgentOpen(!agentOpen, { focus: true, trigger: agentToggle }));
   agentClose.addEventListener('click', () => setAgentOpen(false, { focus: true }));
+  window.addEventListener('sky:open-agent', () => { if (!agentOpen) setAgentOpen(true, { trigger: agentToggle }); });
+  globalThis.matchMedia?.('(max-width: 899px)').addEventListener?.('change', () => renderDrawers());
   backdrop.addEventListener('click', () => {
     settingsOpen = false; agentOpen = false; renderDrawers({ focus: true });
   });
@@ -126,7 +132,7 @@ export function mountWorkspace() {
         settingsOpen = false; agentOpen = false; renderDrawers({ focus: true }); event.preventDefault();
       }
     }
-    if (event.key !== 'Tab' || (!settingsOpen && !agentOpen)) return;
+    if (event.key !== 'Tab' || (!settingsOpen && !(agentOpen && agentModal()))) return;
     const activeDrawer = settingsOpen ? content : agent;
     const controls = [...activeDrawer.querySelectorAll('button, input, textarea, select, summary, a[href]')].filter(element => element.getClientRects().length && !element.disabled);
     const first = controls[0], last = controls.at(-1);

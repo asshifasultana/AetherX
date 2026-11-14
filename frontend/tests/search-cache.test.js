@@ -201,7 +201,7 @@ test('the daily job re-runs only what can have changed and removes unused rows',
   assert.ok(logs.some(message => message.includes('IRSA timed out')));
 });
 
-test('search responses are gzipped when the client accepts it', async () => {
+test('search responses are always gzipped with no Vary, so the CDN shares one copy', async () => {
   const payload = { observations: Array.from({ length: 200 }, (_, i) => ({ observationId: 'obs-' + i, detector: 1 })), source: { kind: 'live' } };
   const server = createServer(createObservationsHandler(async () => payload)).listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -209,11 +209,11 @@ test('search responses are gzipped when the client accepts it', async () => {
     const request = encoding => new Promise((resolve, reject) => get({ port: server.address().port, host: '127.0.0.1', path: '/api/observations', headers: encoding ? { 'Accept-Encoding': encoding } : {} }, response => {
       const chunks = []; response.on('data', chunk => chunks.push(chunk)); response.on('end', () => resolve({ headers: response.headers, body: Buffer.concat(chunks) }));
     }).on('error', reject));
-    const zipped = await request('gzip, br');
-    assert.equal(zipped.headers['content-encoding'], 'gzip');
-    assert.deepEqual(JSON.parse(gunzipSync(zipped.body)), payload);
-    const plain = await request();
-    assert.equal(plain.headers['content-encoding'], undefined);
-    assert.deepEqual(JSON.parse(plain.body), payload);
+    for (const encoding of ['gzip, deflate, br, zstd', 'gzip, deflate, br', undefined]) {
+      const response = await request(encoding);
+      assert.equal(response.headers['content-encoding'], 'gzip');
+      assert.equal(response.headers.vary, undefined);
+      assert.deepEqual(JSON.parse(gunzipSync(response.body)), payload);
+    }
   } finally { server.close(); }
 });

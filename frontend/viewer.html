@@ -5,12 +5,16 @@
   <meta name="theme-color" content="#080d18">
   <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
   <title>SPHEREx — A sky in motion</title>
+  <!-- Sky colour clock shared across pages; see SKY_KEY in starfield.js. -->
+  <script>try { var skyNow = Date.now() / 1000, skyEpoch = parseFloat(sessionStorage.getItem('sky-epoch')); if (!isFinite(skyEpoch)) { skyEpoch = skyNow - Math.random() * 45; sessionStorage.setItem('sky-epoch', skyEpoch); } document.documentElement.style.setProperty('--sky-start', (skyNow - skyEpoch).toFixed(2)); } catch (error) {}</script>
   <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:5173/');
     if (/[?&]tourPreview=1(&|#|$)/.test(location.search)) document.documentElement.classList.add('is-tour-preview');
     if (!document.documentElement.classList.contains('is-tour-preview') && (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top)) document.documentElement.classList.add('is-embed');
-    // Every viewer load begins with a search; reveal the shared-sky loader on
-    // the first paint so the homepage hand-off never exposes the viewer chrome.
-    if (!document.documentElement.classList.contains('is-tour-preview')) document.documentElement.classList.add('is-initial-search');</script>
+    // A search from the home page arrives mid-transition: keep the viewer hidden until
+    // search-loader.js has the loading screen up, so nothing flashes in between.
+    try { if (sessionStorage.getItem('spherex-arrival') === '1') { sessionStorage.removeItem('spherex-arrival'); if (!document.documentElement.classList.contains('is-embed') && !document.documentElement.classList.contains('is-tour-preview')) document.documentElement.classList.add('is-arriving'); } } catch (error) {}
+    // If the loading screen never takes over (its script failed to load), show the viewer rather than a black page.
+    setTimeout(function () { var loader = document.getElementById('preview-loading'); if (document.documentElement.classList.contains('is-arriving') && !(loader && loader.open)) document.documentElement.classList.remove('is-arriving'); }, 4000);</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="viewer-page">
@@ -19,7 +23,8 @@
     <a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a>
     <a class="viewer-new-search" href="/">New search</a>
     <button id="tour-restart" class="viewer-tour-button" type="button">How it works</button>
-    <button id="agent-toggle" class="agent-toggle header-icon-button" type="button" aria-label="Open AI guide" aria-controls="ai-guide" aria-expanded="false" title="AI guide"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a7 7 0 0 0-7 7v2a7 7 0 0 0 7 7h1.5l3.8 2v-3.1A7 7 0 0 0 19 13v-3a7 7 0 0 0-7-7Z"/><path d="M9 10h.01M15 10h.01M9.5 14c1.6 1.1 3.4 1.1 5 0"/></svg></button>
+    <span class="share-link-wrap"><button id="share-link" class="header-icon-button" type="button" aria-label="Copy a link to this view" title="Share link"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5.5 20.5 12 14 18.5v-3.7c-4.6 0-7.8 1.4-10.3 4.7.9-4.9 3.8-9.6 10.3-10.4V5.5Z"/></svg></button><span id="share-link-notice" class="share-link-notice" role="status" aria-live="polite" hidden></span></span>
+    <span class="agent-toggle-wrap"><button id="agent-toggle" class="agent-toggle header-icon-button" type="button" aria-label="Open AI guide" aria-controls="ai-guide" aria-expanded="false" title="AI guide"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a7 7 0 0 0-7 7v2a7 7 0 0 0 7 7h1.5l3.8 2v-3.1A7 7 0 0 0 19 13v-3a7 7 0 0 0-7-7Z"/><path d="M9 10h.01M15 10h.01M9.5 14c1.6 1.1 3.4 1.1 5 0"/></svg></button><span id="agent-jobs-badge" class="agent-jobs-badge" aria-label="Background jobs running" hidden></span><span id="agent-notice" class="agent-notice" role="status" aria-live="polite" hidden></span></span>
     <div id="target-picker" class="viewer-search" data-minimal="true" role="search" aria-label="Search the sky"></div>
   </header>
 
@@ -82,7 +87,7 @@
       <section id="explorer" class="explorer" aria-label="Sky image viewer">
       <div class="viewer-stage">
       <div class="viewer-shell">
-        <div class="viewer" role="region" aria-label="Aligned SPHEREx FITS cutout viewer"><canvas id="sky-canvas" tabindex="0" role="img" aria-label="North-up sky image, east to the left. Hover for coordinates and values; enable Inspect a pixel on click for full quality details."></canvas><canvas id="overlay-canvas" class="overlay-canvas" aria-hidden="true"></canvas><canvas id="gaia-canvas" aria-hidden="true"></canvas></div>
+        <div class="viewer" role="region" aria-label="Aligned SPHEREx FITS cutout viewer"><canvas id="sky-canvas" tabindex="0" role="img" aria-label="North-up sky image, east to the left. Hover for coordinates and values; enable Inspect a pixel on click for full quality details."></canvas><canvas id="overlay-canvas" class="overlay-canvas" aria-hidden="true"></canvas><canvas id="gaia-canvas" aria-hidden="true"></canvas><div id="spot-layer" class="spot-layer" hidden></div></div>
         <div class="viewer-toolbar"><span id="cutout-cache-state" hidden></span><span id="blink-badge" class="blink-badge" aria-live="off" hidden></span><div class="canvas-actions"><button id="survey-layers-button" class="canvas-button" type="button" aria-expanded="false" aria-controls="survey-layers">Layers</button><button id="export-sky-png" class="canvas-button icon-button" type="button" aria-label="Download PNG" title="Download PNG" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span>Download</span></button><button id="expand-button" class="canvas-button icon-button" type="button" aria-label="Fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg><span>Fullscreen</span></button></div></div>
         <div class="survey-legend" aria-label="Active survey layers">
           <span id="gaia-legend" hidden><span class="survey-symbol gaia-symbol" aria-hidden="true">○</span> Gaia</span>
@@ -112,7 +117,6 @@
           </section>
         </section>
         <div class="viewer-readouts"><div id="colour-bar" class="colour-bar" hidden><div id="colour-bar-strip" class="colour-bar-strip"></div><div class="colour-bar-labels"><span id="colour-bar-low"></span><span id="colour-bar-mid"></span><span id="colour-bar-high"></span></div><small id="colour-bar-unit"></small></div><p id="quality-hover-readout" class="hover-readout" hidden></p><div id="quality-legend" class="quality-legend" hidden></div><p id="cutout-caption"></p><p id="coverage-note" hidden></p><p id="cutout-status" role="status" aria-live="polite">Waiting for observations.</p></div>
-        <div hidden aria-hidden="true"><div id="source-mark" hidden><span id="source-mark-label"></span></div></div>
       </div>
       <aside id="display-panel" class="display-panel" aria-labelledby="display-panel-title">
         <h2 id="display-panel-title" class="display-panel-title">Display</h2>
@@ -147,7 +151,7 @@
         <div class="timeline-heading"><div><h3 id="timeline-heading">Time-lapse</h3><button id="set-reference" class="share-button reference-button" type="button" data-show-mode="blink difference" aria-pressed="false" hidden>Set as reference</button></div><span id="frame-count">NO IMAGES LOADED</span></div>
         <div class="timeline-now"><strong id="timeline-date">Waiting for observations</strong><span id="timeline-meta">Search for a target to build a dated timeline.</span></div>
         <details id="frame-provenance" class="frame-provenance"><summary>Frame contribution record</summary><p id="frame-provenance-text">Search for observations to see which exposures contribute to a frame.</p><button id="export-frame-csv" class="reset-settings" type="button" disabled>Export frame contributions CSV ↓</button></details>
-        <div class="playback-row">
+        <div id="playback-row" class="playback-row">
           <div class="step-controls" role="group" aria-label="Frame stepping">
             <button id="step-back" class="step-button" type="button" aria-label="Previous observation" disabled><span aria-hidden="true">◀</span></button>
             <button id="play-button" class="play-button" type="button" aria-label="Play observation time-lapse" aria-pressed="false" disabled>▶</button>
@@ -168,7 +172,7 @@
           <div class="share-actions">
             <button id="copy-link" class="share-button" type="button">Copy link</button>
             <button id="copy-embed" class="share-button" type="button">Embed this view</button>
-            <button id="clear-mark" class="share-button mark-button" type="button" hidden>Clear mark</button>
+            <button id="clear-mark" class="share-button mark-button" type="button" hidden>Clear spots</button>
           </div>
           <p id="share-summary" class="share-summary">Coordinates, field of view, detector band and dates are kept in the link.</p>
           <p id="share-status" class="share-status" role="status" aria-live="polite"></p>
@@ -200,30 +204,33 @@
     <section id="ai-guide" class="observations-section ai-guide" aria-labelledby="ai-guide-heading">
       <div class="ai-guide-head">
         <div><p class="eyebrow">ASK THE SKY GUIDE</p><h2 id="ai-guide-heading">AI guide</h2></div>
-        <div class="ai-guide-head-actions"><button id="ai-guide-reset" class="share-button" type="button" hidden>New chat</button><button id="agent-close" class="drawer-close" type="button" aria-label="Close AI guide"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+        <div class="ai-guide-head-actions"><span id="ai-guide-jobs" class="ai-guide-jobs" role="status" aria-live="polite" hidden><span class="activity-orbit" aria-hidden="true"><i></i></span><span id="ai-guide-jobs-text"></span></span><button id="ai-guide-reset" class="drawer-close ai-guide-new" type="button" aria-label="New chat" title="New chat" hidden><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><button id="agent-close" class="drawer-close" type="button" aria-label="Close AI guide"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
       </div>
-      <p class="ai-guide-intro">Ask in plain words. The guide works the viewer for you — brightness, blinking, comparing dates, playback and deep stacks — and explains what it finds using the measurements the viewer reports.</p>
-      <div id="ai-guide-suggestions" class="ai-guide-suggestions" role="group" aria-label="Suggested questions">
-        <button type="button" class="share-button" data-prompt="Blink this field so I can see if anything moves.">Blink to find what moves</button>
-        <button type="button" class="share-button" data-prompt="Compare the first and the latest observation and tell me what changed.">Compare first and latest</button>
-        <button type="button" class="share-button" data-prompt="Make the faint stars easier to see.">Bring out faint stars</button>
-        <button type="button" class="share-button" data-prompt="Build a deep stack to reveal faint sources.">Build a deep stack</button>
-        <button type="button" class="share-button" data-prompt="Play the time-lapse at 2x speed.">Play the time-lapse</button>
-        <button type="button" class="share-button" data-prompt="Make me a link to share this view with a friend.">Make a share link</button>
+      <p class="ai-guide-intro">Your sky detective. It works the viewer for you, <strong>investigates</strong> what changed — marking numbered spots, checking them against star and asteroid catalogs, and keeping a list of suspects — and only says what it measured. Click the image to mark a spot, or drag outward to circle an area, and ask about it.</p>
+      <div id="ai-guide-suggestions" class="ai-guide-cards" role="group" aria-label="What the guide can do">
+        <button type="button" class="ai-guide-card" data-prompt="Investigate this field: compare dates six months apart, list what changed, and check each spot."><strong>Investigate this field</strong><small>Find changes and check every spot</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="Is anything moving here? Blink the frames and tell me what you see."><strong>Is anything moving?</strong><small>Blink and explain</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="What is spot 1 made of? Measure its spectrum."><strong>What is it made of?</strong><small>SPHEREx’s 102 colours</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="Let me play Be Barnard."><strong>Be Barnard (1916)</strong><small>Find the star that jumped</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="Hide a fake planet in these photos and let me find it."><strong>Find the hidden planet</strong><small>How faint can we see?</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="Where could Planet Nine still be hiding? Patrol the top 3 cells of the predicted region."><strong>Search for Planet Nine</strong><small>Patrol the predicted region</small></button>
+        <button type="button" class="ai-guide-card" data-action="tour"><strong>Take the tour</strong><small>One minute, hands-free</small></button>
       </div>
+      <button id="ai-guide-more" class="ai-guide-more" type="button" aria-controls="ai-guide-suggestions" aria-expanded="false" hidden>What can I do?</button>
       <ol id="ai-guide-log" class="ai-guide-log" role="log" aria-live="polite" aria-label="Conversation with the AI guide"></ol>
       <div id="ai-guide-share" class="ai-guide-share" hidden>
         <label for="ai-guide-share-url">Shareable link to this view</label>
         <div class="ai-guide-share-row"><input id="ai-guide-share-url" type="url" readonly><button id="ai-guide-share-copy" class="share-button" type="button">Copy</button><a id="ai-guide-share-open" class="share-button" href="#" target="_blank" rel="noopener">Open ↗</a></div>
         <p id="ai-guide-share-note" class="ai-guide-share-note"></p>
       </div>
+      <div id="ai-guide-activity" class="ai-guide-activity" aria-hidden="true" hidden><span class="activity-orbit"><i></i></span><span id="ai-guide-activity-text"></span></div>
+      <div id="ai-guide-spots" class="ai-guide-spots" aria-label="Spots attached to your next message" hidden></div>
       <form id="ai-guide-form" class="ai-guide-form">
         <label for="ai-guide-input" class="sr-only">Message the AI guide</label>
-        <textarea id="ai-guide-input" rows="2" maxlength="2000" placeholder="e.g. “Is anything moving here?” or “Show me WISE 0855”" autocomplete="off"></textarea>
+        <textarea id="ai-guide-input" rows="1" maxlength="2000" placeholder="Ask anything, e.g. “Is anything moving here?”" autocomplete="off"></textarea>
         <div class="ai-guide-actions"><button id="ai-guide-stop" class="reset-settings" type="button" hidden>Stop</button><button id="ai-guide-send" class="primary-button" type="submit">Ask</button></div>
       </form>
-      <p id="ai-guide-status" class="ai-guide-status" role="status" aria-live="polite"></p>
-      <p class="ai-guide-disclaimer">Answers come from an AI model via OpenRouter and can be wrong. The images and numbers come from the SPHEREx archive.</p>
+      <p id="ai-guide-status" class="sr-only" role="status" aria-live="polite"></p>
     </section>
     <section id="observations" class="observations-section" aria-labelledby="observations-heading">
       <details id="observation-disclosure"><summary><span id="observations-heading">Observations</span><span id="observation-overview" role="status" aria-live="polite">Waiting for observations.</span></summary>
@@ -296,21 +303,26 @@
     <div id="settings-tooltip" class="settings-tooltip" role="tooltip" hidden></div>
   </main>
 
-  <dialog id="preview-loading" class="preview-loading" aria-labelledby="preview-loading-title" aria-describedby="preview-loading-fact" hidden>
+  <dialog id="preview-loading" class="preview-loading" data-stage="intro" aria-labelledby="preview-loading-title" aria-describedby="preview-loading-status" hidden>
     <canvas id="loading-starfield" class="starfield" aria-hidden="true"></canvas>
-    <div class="hud-loading-content">
-      <p class="preview-loading-eyebrow">SPHEREx <span aria-hidden="true">/</span> SKY ATLAS</p>
+    <div class="loader-stage">
       <h2 id="preview-loading-title" class="sr-only">Loading sky images</h2>
-      <div class="hud-loading-meter" aria-hidden="true">
-        <div class="hud-loading-count"><span id="preview-loading-percent">00</span><small>%</small></div>
-        <div class="hud-loading-outline"><i></i><i></i></div>
-        <div class="preview-loading-track"><span id="preview-loading-progress"></span></div>
-        <div class="hud-loading-endpoints"><i></i><i></i></div>
+      <svg class="loader-ring" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+        <circle class="loader-ring-orbit" cx="100" cy="100" r="99"/>
+        <circle class="loader-ring-track" cx="100" cy="100" r="92"/>
+        <circle id="preview-loading-ring" class="loader-ring-fill" cx="100" cy="100" r="92" pathLength="100"/>
+      </svg>
+      <p class="loader-wordmark" aria-hidden="true">SPHERE<span>x</span></p>
+      <div class="loader-target" aria-hidden="true">
+        <p id="loader-target-name" class="loader-target-name"></p>
+        <p id="loader-target-region" class="loader-target-line"></p>
+        <p id="loader-target-distance" class="loader-target-line"></p>
       </div>
-      <div class="hud-loading-fact">
-        <p class="hud-loading-fact-label">Did you know?</p>
-        <p id="preview-loading-fact" role="status" aria-live="polite" aria-atomic="true">The Milky Way alone contains more than 100 billion stars.</p>
+      <div class="loader-fact" aria-hidden="true">
+        <p class="loader-fact-label">Did you know?</p>
+        <p id="loader-fact-text" class="loader-fact-text"></p>
       </div>
+      <p id="preview-loading-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">Loading SPHEREx observations</p>
     </div>
     <span class="hud-loading-corner hud-loading-corner-top" aria-hidden="true"></span>
     <span class="hud-loading-corner hud-loading-corner-bottom" aria-hidden="true"></span>
@@ -323,6 +335,7 @@
   <script type="module" src="observations-ui.js?v=20261110"></script>
   <script type="module" src="fits-viewer.js"></script>
   <script type="module" src="timelapse.js"></script>
+  <script type="module" src="search-loader.js"></script>
   <script type="module" src="share-ui.js"></script>
   <script type="module" src="workspace-ui.js"></script>
   <script type="module" src="onboarding.js"></script>

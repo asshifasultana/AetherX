@@ -68,8 +68,10 @@ function resetRequest(layer) {
   layer.error = '';
 }
 
+// Catalogs are fetched for the current field even while a layer is switched off,
+// so ticking the box draws markers immediately instead of starting a lookup.
 async function load(layer, retry = false) {
-  if (!layer.toggle.checked || entryMode === 'moving' || (layer.key === 'wise' && !grid)) return;
+  if (entryMode === 'moving' || (layer.key === 'wise' && !grid)) return;
   const center = layer.key === 'wise' ? grid : field;
   const radius = layer.key === 'wise'
     ? fieldRadiusDeg(grid.width * grid.arcsecPerPixel / 60)
@@ -250,8 +252,7 @@ for (const layer of layers) {
   layer.toggle.checked = Boolean(initialViewState[layer.key]);
   layer.toggle.addEventListener('change', () => {
     window.dispatchEvent(new CustomEvent('sky:context-settings-changed', { detail: { [layer.key]: layer.toggle.checked } }));
-    if (layer.toggle.checked) void load(layer);
-    else resetRequest(layer);
+    void load(layer);
     render();
   });
   layer.retry.addEventListener('click', () => void load(layer, true));

@@ -770,8 +770,8 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 
 /* Keep the atlas's original dark sky palette and typography. */
 .home-page { --white:#141d2e; }
-.home-page .site-header { border-bottom:1px solid var(--line); }
-.home-page .home-viewer-link { border:0; background:transparent; color:var(--muted); min-height:44px; }
+.home-page .site-header { border-bottom:0; background:transparent; }
+.home-page .home-viewer-link { border:0; background:transparent; color:#fff; min-height:44px; }
 .home-page .home-main { min-height:calc(100svh - 92px); padding:64px 6%; display:flex; align-items:center; justify-content:center; }
 .home-page .home-search { width:min(100%,760px); min-height:0; padding:0 0 8svh; }
 .home-page .home-search > .eyebrow { justify-content:center; color:var(--muted); font-size:11px; letter-spacing:1.8px; margin-bottom:22px; }
@@ -1000,6 +1000,10 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .viewer-page > :not(dialog) { transition:opacity 700ms cubic-bezier(.4,0,.2,1); }
 :root.is-searching .viewer-page > :not(dialog), :root.is-arriving .viewer-page > :not(dialog) { opacity:0; pointer-events:none; }
 :root.is-arriving, :root.is-arriving .viewer-page { background:#050409; }
+/* The loading screen covers the whole window, so the page behind it must not show a scrollbar. */
+:root:is(.is-searching,.is-arriving), :root:is(.is-searching,.is-arriving) body, :root:has(.preview-loading[open]), :root:has(.preview-loading[open]) body { overflow:hidden !important; }
+.preview-loading { scrollbar-width:none; }
+.preview-loading::-webkit-scrollbar { display:none; }
 :root.is-arriving .viewer-page > :not(dialog) { transition:none; }
 :root.is-revealing .viewer-page > :not(dialog) { transition-duration:1100ms; }
 .hud-loading-corner { position:absolute; width:28px; height:28px; border-color:#ffffff2e; border-style:solid; opacity:0; animation:loader-wordmark-in 1600ms 600ms cubic-bezier(.4,0,.2,1) forwards; }

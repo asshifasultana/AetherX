@@ -161,6 +161,7 @@ async function converse(text) {
 function submit(text) {
   const value = text.trim();
   if (!value || running) return;
+  $('ai-guide').classList.add('has-conversation');
   $('ai-guide-input').value = '';
   try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* storage unavailable */ }
   void converse(value);
@@ -185,6 +186,7 @@ function mount() {
     $('ai-guide-log').replaceChildren();
     $('ai-guide-share').hidden = true;
     $('ai-guide-reset').hidden = true;
+    section.classList.remove('has-conversation');
     setStatus('');
   });
   $('ai-guide-share-copy').addEventListener('click', async () => {

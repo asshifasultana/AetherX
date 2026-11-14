@@ -141,6 +141,29 @@ const wavelength = frame => {
   return Number.isFinite(low) && Number.isFinite(high) ? `${low.toFixed(2)}–${high.toFixed(2)} μm` : '';
 };
 const setStatus = text => { $('timeline-status').textContent = text; };
+const modeLabels = {
+  'time-lapse': 'Time-lapse',
+  blink: 'Blink comparison',
+  difference: 'Difference image',
+  'motion-trail': 'Motion trail',
+  'deep-stack': 'Deep stack'
+};
+
+function updateModeUi() {
+  const deepStack = state.viewMode === 'deep-stack';
+  const count = state.frames.length;
+  $('timeline-heading').textContent = modeLabels[state.viewMode] || 'Sky view';
+  $('playback-row').hidden = deepStack;
+  $('timeline-filmstrip').hidden = deepStack;
+  if (deepStack) {
+    const detector = state.frames[state.index]?.detector ?? state.band;
+    $('frame-count').textContent = count ? `DEEP STACK${detector ? ` · D${detector}` : ''}` : 'DEEP STACK · NO IMAGES LOADED';
+  } else {
+    $('frame-count').textContent = count
+      ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
+      : 'NO IMAGES LOADED';
+  }
+}
 
 function updatePlayButton() {
   const button = $('play-button');
@@ -331,6 +354,16 @@ function renderFilmstrip() {
 
 function updateCurrent({ keepSlider = false } = {}) {
   const frame = state.frames[state.index];
+  if (state.viewMode === 'deep-stack') {
+    $('timeline-date').textContent = state.frames.length ? 'Deep stack' : 'Waiting for observations';
+    $('timeline-meta').hidden = false;
+    if (!state.frames.length) $('timeline-meta').textContent = 'Load observations to build one combined image.';
+    $('timeline').value = '0';
+    $('timeline').style.setProperty('--progress', '0%');
+    $('timeline').setAttribute('aria-valuetext', state.frames.length ? 'One combined deep-stack image' : 'No observations loaded');
+    updateStepButtons();
+    return;
+  }
   if (!frame) {
     $('timeline-date').textContent = 'Waiting for observations';
     $('timeline-meta').hidden = false;
@@ -383,10 +416,8 @@ function updateCurrent({ keepSlider = false } = {}) {
 
 function render() {
   const count = state.frames.length;
+  updateModeUi();
   $('release-calibration-note').hidden = true;
-  $('frame-count').textContent = count
-    ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
-    : 'NO IMAGES LOADED';
   $('timeline-start').textContent = count ? shortDate(state.frames[0]).toUpperCase() : 'FIRST FRAME';
   $('timeline-end').textContent = count ? shortDate(state.frames[count - 1]).toUpperCase() : 'LATEST FRAME';
   const gaps = frameGaps(state.frames);
@@ -449,7 +480,7 @@ function rebuild({ keepTime = false, announce = true } = {}) {
 }
 
 async function selectFrame(index, { playback = false } = {}) {
-  if (!state.frames.length) return;
+  if (!state.frames.length || state.viewMode === 'deep-stack') return;
   state.index = Math.max(0, Math.min(state.frames.length - 1, index));
   updateCurrent();
   const frame = state.frames[state.index];
@@ -667,6 +698,8 @@ window.addEventListener('sky:viewer-settings-changed', event => {
     // Difference and motion trail can still be played frame by frame; blink
     // animates on its own and a deep stack has no timeline position.
     if (state.viewMode === 'deep-stack' || state.viewMode === 'blink') pausePlayback();
+    updateModeUi();
+    updateCurrent();
   }
   if (detail.pinnedReferenceKey !== undefined && detail.pinnedReferenceKey !== state.pinnedKey) {
     state.pinnedKey = detail.pinnedReferenceKey || '';

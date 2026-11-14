@@ -55,11 +55,49 @@ jobs:
           done
           exit "$missing"
 
+      # The CLI's postinstall downloads its binary from GitHub Releases,
+      # which can return transient 5xx errors, so retry a few times.
       - name: Install Railway CLI
-        run: npm install --global @railway/cli@5.63.1
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if npm install --global @railway/cli@5.63.1; then
+              exit 0
+            fi
+            if [[ "$attempt" -lt 3 ]]; then
+              echo "::warning::Railway CLI install failed (attempt $attempt/3), retrying in $((attempt * 30))s..."
+              sleep $((attempt * 30))
+            fi
+          done
+          echo "::error::Railway CLI install failed after 3 attempts."
+          exit 1
 
+      # Railpack downloads build tooling (mise) from GitHub Releases during
+      # the build. Retry only when the failure looks transient so real build
+      # errors still fail fast.
       - name: Deploy to Railway production
+        shell: bash
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
-        run: railway up --service "$RAILWAY_SERVICE_ID" --ci
+        run: |
+          log="$(mktemp)"
+          for attempt in 1 2 3; do
+            set +e
+            railway up --service "$RAILWAY_SERVICE_ID" --ci 2>&1 | tee "$log"
+            status=${PIPESTATUS[0]}
+            set -e
+            if [[ "$status" -eq 0 ]]; then
+              exit 0
+            fi
+            if ! grep -qiE 'temporary failure|gateway time-?out|50[234] |bad gateway|service unavailable' "$log"; then
+              echo "::error::Railway deploy failed with a non-transient error."
+              exit "$status"
+            fi
+            if [[ "$attempt" -lt 3 ]]; then
+              echo "::warning::Railway deploy hit a transient network error (attempt $attempt/3), retrying in $((attempt * 60))s..."
+              sleep $((attempt * 60))
+            fi
+          done
+          echo "::error::Railway deploy failed after 3 attempts due to transient errors."
+          exit "$status"

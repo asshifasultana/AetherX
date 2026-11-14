@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
-import { createAgentHandler, sanitizeMessages, retryAfterSeconds, SYSTEM_PROMPT } from '../api/agent.js';
+import { createAgentHandler, sanitizeMessages, retryAfterSeconds, parseApiKeys, SYSTEM_PROMPT } from '../api/agent.js';
 import { AGENT_TOOLS } from '../lib/agent-tools.js';
 
 function request(method, body, headers = {}) {
@@ -138,4 +138,84 @@ test('OpenRouter rate limits wait briefly and retry, or tell the browser how lon
   await createAgentHandler({ fetchImpl: async () => ({ ok: false, status: 402, json: async () => ({ error: { code: 402, message: 'Insufficient credits' } }) }), env: { OPENROUTER_API_KEY: 'k' } })(request('POST', { messages: [{ role: 'user', content: 'hi' }] }, { ip: '10.1.0.3' }), res);
   assert.equal(res.statusCode, 502);
   assert.equal(json(res).code, 'AGENT_CREDITS');
+});
+
+test('API keys are parsed from OPENROUTER_API_KEYS and OPENROUTER_API_KEY without duplicates', () => {
+  assert.deepEqual(parseApiKeys({ OPENROUTER_API_KEYS: 'a, b;\nc  a', OPENROUTER_API_KEY: 'd' }), ['a', 'b', 'c', 'd']);
+  assert.deepEqual(parseApiKeys({ OPENROUTER_API_KEY: 'solo' }), ['solo']);
+  assert.deepEqual(parseApiKeys({}), []);
+});
+
+test('requests take keys in round-robin order', async () => {
+  const used = [];
+  const fetchImpl = async (url, options) => { used.push(options.headers.Authorization); return openRouterReply({ role: 'assistant', content: 'ok' })(); };
+  const handler = createAgentHandler({ fetchImpl, env: { OPENROUTER_API_KEYS: 'k1,k2,k3' } });
+  for (let i = 0; i < 4; i++) await handler(request('POST', { messages: [{ role: 'user', content: 'hi' }] }, { ip: '10.2.0.1' }), response());
+  assert.deepEqual(used, ['Bearer k1', 'Bearer k2', 'Bearer k3', 'Bearer k1']);
+});
+
+test('a key that hits its per-minute or per-day limit is benched and the next key answers', async () => {
+  let clock = Date.UTC(2026, 10, 10, 12, 0, 0);
+  const used = [];
+  const limits = {
+    'Bearer k1': () => ({ ok: false, status: 429, headers: { get: () => null }, json: async () => ({ error: { code: 429, message: 'Rate limit exceeded: free-models-per-day' } }) }),
+    'Bearer k2': () => ({ ok: true, status: 200, headers: { get: name => (name === 'x-ratelimit-reset' ? String(clock + 30_000) : null) }, json: async () => ({ error: { code: 429, message: 'Rate limit exceeded: free-models-per-min' } }) })
+  };
+  const fetchImpl = async (url, options) => {
+    const key = options.headers.Authorization;
+    used.push(key);
+    return limits[key]?.() ?? openRouterReply({ role: 'assistant', content: `from ${key}` })();
+  };
+  const handler = createAgentHandler({ fetchImpl, env: { OPENROUTER_API_KEYS: 'k1,k2,k3' }, now: () => clock, pause: async () => { throw new Error('should not wait'); } });
+  const ask = async () => { const res = response(); await handler(request('POST', { messages: [{ role: 'user', content: 'hi' }] }, { ip: `10.3.0.${used.length}` }), res); return res; };
+
+  let res = await ask();
+  assert.equal(json(res).message.content, 'from Bearer k3');
+  assert.deepEqual(used, ['Bearer k1', 'Bearer k2', 'Bearer k3']);
+
+  // k1 (daily) and k2 (per-minute) stay benched; only k3 is used.
+  used.length = 0;
+  res = await ask();
+  assert.deepEqual(used, ['Bearer k3']);
+
+  // After k2's reset time it is back in rotation; k1 waits for UTC midnight.
+  clock += 31_000;
+  delete limits['Bearer k2'];
+  used.length = 0;
+  await ask(); await ask();
+  assert.ok(!used.includes('Bearer k1'));
+  assert.ok(used.includes('Bearer k2'));
+
+  clock = Date.UTC(2026, 10, 11, 0, 0, 1);
+  delete limits['Bearer k1'];
+  used.length = 0;
+  await ask(); await ask(); await ask();
+  assert.ok(used.includes('Bearer k1'));
+});
+
+test('when every key is rate limited the browser is told how long to wait', async () => {
+  const clock = 5_000_000;
+  let calls = 0;
+  const fetchImpl = async () => { calls++; return { ok: false, status: 429, headers: { get: name => (name === 'retry-after' ? String(calls * 20) : null) }, json: async () => ({}) }; };
+  const res = response();
+  await createAgentHandler({ fetchImpl, env: { OPENROUTER_API_KEYS: 'k1,k2' }, now: () => clock, pause: async () => { throw new Error('should not wait'); } })(request('POST', { messages: [{ role: 'user', content: 'hi' }] }, { ip: '10.4.0.1' }), res);
+  assert.equal(calls, 2);
+  assert.equal(res.statusCode, 429);
+  assert.deepEqual([json(res).code, json(res).retryAfter], ['AGENT_BUSY', 20]);
+});
+
+test('a rejected key is skipped for the next one', async () => {
+  const used = [];
+  const fetchImpl = async (url, options) => {
+    used.push(options.headers.Authorization);
+    if (options.headers.Authorization === 'Bearer bad') return { ok: false, status: 401, json: async () => ({}) };
+    return openRouterReply({ role: 'assistant', content: 'ok' })();
+  };
+  const handler = createAgentHandler({ fetchImpl, env: { OPENROUTER_API_KEYS: 'bad,good' } });
+  for (let i = 0; i < 3; i++) {
+    const res = response();
+    await handler(request('POST', { messages: [{ role: 'user', content: 'hi' }] }, { ip: '10.5.0.1' }), res);
+    assert.equal(res.statusCode, 200);
+  }
+  assert.deepEqual(used, ['Bearer bad', 'Bearer good', 'Bearer good', 'Bearer good']);
 });

@@ -37,8 +37,8 @@ jobs:
 
       - name: Rewrite commit author
         run: |
-          git config user.email "bsse1632@iit.du.ac.bd"
-          git config user.name "asshifasultana"
+          git config user.email "bsse1619@iit.du.ac.bd"
+          git config user.name "Rashiiik"
           git commit --amend --reset-author --no-edit
 
       - name: Set up Node.js

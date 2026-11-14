@@ -1024,3 +1024,32 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 @media(prefers-reduced-motion:reduce) {
   .viewer-page :is(.workspace-sidebar,#ai-guide,.sidebar-backdrop) { transition-duration:0ms; }
 }
+
+/* Once a prompt is sent, let the AI guide use the whole viewport as a chat. */
+.viewer-page #ai-guide.has-conversation {
+  inset:var(--workspace-header-height,64px) 0 0 auto;
+  width:min(410px,calc(100vw - 32px));
+  padding:20px;
+  overflow:hidden;
+}
+.viewer-page #ai-guide.has-conversation .ai-guide-intro,
+.viewer-page #ai-guide.has-conversation .ai-guide-suggestions { display:none; }
+.viewer-page #ai-guide.has-conversation .ai-guide-log {
+  flex:1 1 auto;
+  width:100%;
+  min-height:0;
+  max-height:none;
+  align-self:stretch;
+  overflow-y:auto;
+}
+.viewer-page #ai-guide.has-conversation :is(.ai-guide-head,.ai-guide-share,.ai-guide-form,.ai-guide-status,.ai-guide-disclaimer) {
+  width:100%;
+  align-self:stretch;
+}
+.viewer-page #ai-guide.has-conversation .ai-guide-form { flex:0 0 auto; }
+@media(max-width:600px) {
+  .viewer-page #ai-guide.has-conversation { width:min(410px,calc(100vw - 20px)); padding:16px; }
+}
+
+/* The combined deep-stack image has no timeline to play or scrub. */
+#playback-row[hidden],#timeline-filmstrip[hidden] { display:none!important; }

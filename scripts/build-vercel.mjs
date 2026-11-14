@@ -1,4 +1,4 @@
-import { mkdir, copyFile, writeFile, cp } from 'node:fs/promises';
+import { mkdir, copyFile, writeFile, cp, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { CONTEXT_PUBLIC_FILES } from '../frontend/context-assets.js';
@@ -11,12 +11,26 @@ const publicFiles = ['index.html', 'viewer.html', 'workspace-ui.js', 'onboarding
 publicFiles.push('moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js',
   'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js');
 publicFiles.push('agent-ui.js', 'agent-controller.js', 'lib/agent-tools.js');
+publicFiles.push('spectrum-explorer.js');
 publicFiles.push(...CONTEXT_PUBLIC_FILES);
 await mkdir(path.join(output, 'static'), { recursive: true });
 for (const file of publicFiles) {
   const destination = path.join(output, 'static', file);
   await mkdir(path.dirname(destination), { recursive: true });
   await copyFile(path.join(frontend, file), destination);
+}
+// A browser module that imports an uncopied file 404s on Vercel and takes its whole import graph down with it.
+{
+  const published = new Set(publicFiles.map(file => path.posix.normalize(file)));
+  const missing = [];
+  for (const file of publicFiles.filter(name => name.endsWith('.js'))) {
+    const source = await readFile(path.join(frontend, file), 'utf8');
+    for (const [, specifier] of source.matchAll(/(?:^|[\s;])(?:import|export)\s*(?:[^'"]*?\sfrom\s*)?['"](\.{1,2}\/[^'"]+)['"]/g)) {
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier.split(/[?#]/)[0]));
+      if (!published.has(target)) missing.push(`${file} imports ${target}`);
+    }
+  }
+  if (missing.length) throw new Error(`Static files imported but not published:\n${missing.join('\n')}`);
 }
 for (const [name, maxDuration] of [['observations', 120], ['moving-observations', 120], ['observation-quality', 30], ['pixel-quality', 10], ['index-status', 10], ['cutout', 120], ['crop', 30], ['resolve-object', 15], ['gaia-sources',15]]) {
   const directory = path.join(output, 'functions', 'api', `${name}.func`);

@@ -3,7 +3,11 @@ import { legacyViewerDestination, viewerUrl } from './search-route.js';
 import { mountStarfield } from './starfield.js';
 
 const starfield = document.getElementById('starfield');
-if (starfield) mountStarfield(starfield);
+if (starfield) mountStarfield(starfield, {
+  labels: true,
+  // Keep names clear of the header and of each visible block of the search panel.
+  avoid: ['.site-header', '.home-search .eyebrow', '#home-title', '.home-description', '#target-picker']
+});
 
 const destination = legacyViewerDestination(location, window.self !== window.top);
 if (destination) location.replace(destination);

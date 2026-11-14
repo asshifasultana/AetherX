@@ -1,6 +1,24 @@
 # Image loading and performance verification
 
-The viewer normally loads IMAGE and FLAGS rows directly from the public SPHEREx S3 mirror. It keeps live metadata searches and existing contribution records. No account, database, persistent server image cache, or new external package is required.
+The viewer first asks the `/api/crop` proxy for each exposure, and otherwise loads IMAGE and FLAGS rows directly from the public SPHEREx S3 mirror.
+
+## Cropping proxy
+
+Measured on 2026-11-07 for Barnard D1 (16 days, 60 exposures, 16′), direct S3 loading took 205 s. Replaying the same 155 MB from memory took 22 s, so about 89% of the time was spent downloading. Range reads must fetch whole 2040-pixel detector rows, yet only about 230 columns are used. S3 offers neither HTTP/2 nor multi-range responses, so the browser cannot request less.
+
+`api/crop.js` runs the same range loader server-side. It is pinned to Vercel `iad1`, next to the `us-east-1` bucket, and returns only the cropped IMAGE/FLAGS (and optional VARIANCE) pixels as a gzipped binary payload decoded by `lib/crop-codec.js`. It stores nothing (`Cache-Control: no-store`).
+
+- **Payload size:** about 98 KB per exposure on the wire, against about 2.6 MB of ranged S3 bytes (27× less).
+- **Fallback:** 503 (busy) is retried twice. Any other proxy failure falls back to direct S3, then to IRSA. A 422 (no detector coverage) is reported as is.
+- **Local overrides:** `localStorage.setItem('spherex-image-loader', 's3')` skips the proxy, and `'legacy'` uses IRSA only.
+- **No local speedup:** under `npm run dev` the proxy runs on the developer's machine, so it reads S3 over the same link and is not faster. The gain only appears when deployed.
+- **Parity:** `node scripts/benchmark-image-loading.mjs --days=2 --runs=1 --modes=s3,proxy --base=http://127.0.0.1:5173` reported a maximum pixel difference of 0 and 0 coverage mismatches, with 487,797 proxy bytes against 13,238,400 S3 bytes for 5 exposures. Run it with `--base=<deployment>` to measure the deployed speedup.
+
+The range loader now converts only the cropped columns of each fetched row (FLAGS rows are still Rice-decoded in full). In an isolated microbenchmark on 2040-pixel rows this cut decoding from 27 ms to 16 ms per exposure. The browser runs `min(4, cores - 1)` image workers, and each load goes to the least-busy worker.
+
+## Direct S3 path
+
+The direct S3 path is unchanged apart from the column-only decode. It keeps live metadata searches and existing contribution records. No account, database, persistent server image cache, or new external package is required.
 
 ## Pipeline
 

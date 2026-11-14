@@ -18,6 +18,10 @@
     "api/cutout.js": {
       "maxDuration": 120
     },
+    "api/crop.js": {
+      "maxDuration": 30,
+      "regions": ["iad1"]
+    },
     "api/index-status.js": {
       "maxDuration": 10,
       "includeFiles": "data/**"

@@ -37,6 +37,22 @@ for (const bitpix of [-32, -64]) for (const sip of [false, true]) {
   });
 }
 
+test('column-only range decode matches a full-row crop for a target clipped by the detector edge', async () => {
+  {
+    const settings = { fovArcmin: 2, hideBadPixels: true };
+    const bytes = makeFits({ width: 64, height: 48 });
+    const edge = { raDeg: 359.999 + 28 * 6.15 / 3600 / Math.cos(4.69 * Math.PI / 180), decDeg: 4.69 - 10 * 6.15 / 3600 };
+    const ranged = await createFitsRangeLoader({ read: async (_, a, b) => new Uint8Array(bytes.subarray(a, b + 1)) })(url, edge, settings);
+    const full = prepareImage(readFits(bufferOf(bytes)), edge, settings);
+    assert.equal(ranged.sourceX, 0, 'crop is clipped at the left detector edge');
+    assert.ok(ranged.width < 64 && ranged.height < 48);
+    for (const key of ['width', 'height', 'sourceX', 'sourceY']) assert.equal(ranged[key], full[key]);
+    near(ranged.values, full.values, 0);
+    assert.deepEqual(ranged.flags, full.flags);
+    for (const key of ['NAXIS1', 'NAXIS2', 'CRPIX1', 'CRPIX2']) assert.equal(ranged.header[key], full.header[key]);
+  }
+});
+
 test('Lanczos falls back at masked pixels and preserves constant sky elsewhere', () => {
   const image = readFits(bufferOf(makeFits()));
   image.values.fill(12);

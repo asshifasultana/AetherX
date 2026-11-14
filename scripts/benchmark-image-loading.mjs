@@ -1,11 +1,13 @@
 // Opt-in live benchmark. It downloads only cutouts/ranges, never full originals.
 // Fresh readers per run give cold application caches; archive/CDN caches remain
 // outside our control. Example: node scripts/benchmark-image-loading.mjs --days=4 --runs=5
+// Proxy: --modes=s3,proxy --base=https://<deployment> compares cropped-proxy pixels with direct S3.
 import { readFile } from 'node:fs/promises';
 import { createFitsRangeLoader, createRangeReader } from '../frontend/lib/range-fits.js';
 import { projectImage, prepareImage, readFits } from '../frontend/lib/fits-engine.js';
 import { medianStack } from '../frontend/lib/stack.js';
 import { ImageScheduler } from '../frontend/lib/image-scheduler.js';
+import { loadViaProxy } from '../frontend/lib/crop-codec.js';
 
 const options = Object.fromEntries(process.argv.slice(2).map(arg => arg.replace(/^--/, '').split('=')));
 const days = Number(options.days || 16), runs = Number(options.runs || 5), fovArcmin = Number(options.fov || 16);
@@ -47,12 +49,18 @@ async function run(mode) {
   const read = createRangeReader({ fetchImpl: async (...args) => {
     const response = await fetch(...args); bytes += Number(response.headers.get('content-length') || 0); requests++; return response;
   } });
-  const load = createFitsRangeLoader({ read }), scheduler = new ImageScheduler(mode === 's3' ? Number(options.concurrency || 4) : 1);
+  const load = createFitsRangeLoader({ read }), scheduler = new ImageScheduler(mode === 'irsa' ? 1 : Number(options.concurrency || 4));
+  const proxyUrl = new URL('/api/crop', options.base || 'http://127.0.0.1:5173').href;
+  const proxyFetch = async (...args) => { const response = await fetch(...args); bytes += Number(response.headers.get('content-length') || 0); requests++; return response; };
   for (let offset = 0; offset < groups.length; offset += 4) {
     await Promise.all(groups.slice(offset, offset + 4).map(async group => {
       const images = await Promise.all(group.map(product => scheduler.run(product.accessUrl, async () => {
         let image;
-        if (mode === 's3') {
+        if (mode === 'proxy') {
+          image = await loadViaProxy({ proxyUrl, accessUrl: product.accessUrl, target, settings, revision: product.productModifiedAt }, AbortSignal.timeout(90000), proxyFetch);
+          if (!image) throw new Error('Proxy could not serve ' + product.observationId + '; the viewer would fall back to S3.');
+          image.projection = projectImage(image, target, settings);
+        } else if (mode === 's3') {
           image = await load(product.accessUrl, target, settings, AbortSignal.timeout(90000), product.productModifiedAt);
           image.projection = projectImage(image, target, settings);
         } else {
@@ -74,22 +82,24 @@ async function run(mode) {
 const measurements = [];
 for (let i = 0; i < runs; i++) {
   const results = {};
-  const modes = options.mode ? [options.mode] : i % 2 ? ['irsa', 's3'] : ['s3', 'irsa'];
+  const pair = options.modes ? options.modes.split(',') : ['s3', 'irsa'];
+  const modes = options.mode ? [options.mode] : i % 2 ? [...pair].reverse() : pair;
   for (const mode of modes) {
-    if (!['irsa', 's3'].includes(mode)) throw new Error('Invalid benchmark mode.');
+    if (!['irsa', 's3', 'proxy'].includes(mode)) throw new Error('Invalid benchmark mode.');
     try {
       results[mode] = await run(mode);
       const { stack, ...metrics } = results[mode];
       console.log(JSON.stringify({ run: i + 1, mode, ...metrics }));
     } catch (error) { console.log(JSON.stringify({ run: i + 1, mode, error: error.message })); }
   }
-  if (!results.s3 || !results.irsa) { measurements.push({ incomplete: true }); continue; }
-  const a = results.s3.stack, b = results.irsa.stack;
+  const [base, other] = pair;
+  if (!results[base] || !results[other]) { measurements.push({ incomplete: true }); continue; }
+  const a = results[base].stack, b = results[other].stack;
   let maxDifference = 0, mismatchedCoverage = 0;
   for (let p = 0; p < a.length; p++) {
     if (Number.isFinite(a[p]) !== Number.isFinite(b[p])) mismatchedCoverage++;
     if (Number.isFinite(a[p]) && Number.isFinite(b[p])) maxDifference = Math.max(maxDifference, Math.abs(a[p] - b[p]));
   }
-  measurements.push({ speedup: results.irsa.totalMs / results.s3.totalMs, maxDifference, mismatchedCoverage });
+  measurements.push({ [`${other}OverBase`]: results[other].totalMs / results[base].totalMs, maxDifference, mismatchedCoverage });
 }
 console.log(JSON.stringify({ target: target.id, days: groups.length, exposures: groups.flat().length, fovArcmin, runs, measurements }, null, 2));

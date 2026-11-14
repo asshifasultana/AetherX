@@ -1,4 +1,4 @@
-import { parseHeader, matrixFor, sourceBounds, skyGrid, cropImage } from './fits-engine.js';
+import { parseHeader, matrixFor, sourceBounds, skyGrid } from './fits-engine.js';
 import { decodeRice32 } from './rice.js';
 
 const BLOCK = 2880;
@@ -152,9 +152,11 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
     if (h.NAXIS !== 2 || ![-32, -64].includes(bitpix) || !Number.isSafeInteger(width * height) || width < 1 || height < 1 || width * height > 16 * 1024 * 1024) throw new Error('Unsupported science image layout.');
     const image = { header: h, width, height, matrix: matrixFor(h) };
     const bounds = sourceBounds(image, skyGrid(target, settings.fovArcmin));
-    const { y0, y1 } = bounds, rows = y1 - y0 + 1;
+    const { x0, x1, y0, y1 } = bounds, rows = y1 - y0 + 1, columns = x1 - x0 + 1, size = rows * columns;
     const scienceStart = info.image.dataOffset + y0 * width * stride;
     const f = info.flags.header;
+    // Rows are fetched whole (FITS is row-major and S3 serves one range per
+    // request), but only columns x0..x1 are converted: the crop is ~10% of a row.
     const [science, flags, variance] = await Promise.all([
       read(url, scienceStart, scienceStart + rows * width * stride - 1, signal),
       (async () => {
@@ -166,7 +168,9 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
         if (f.XTENSION === 'IMAGE' && f.BITPIX === 32 && f.NAXIS1 === width && f.NAXIS2 === height) {
           const start = info.flags.dataOffset + y0 * width * 4;
           const bytes = await read(url, start, start + rows * width * 4 - 1, signal), view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-          return Uint32Array.from({ length: rows * width }, (_, i) => view.getUint32(i * 4, false));
+          const result = new Uint32Array(size);
+          for (let r = 0, i = 0; r < rows; r++) for (let x = x0, at = (r * width + x0) * 4; x <= x1; x++, at += 4) result[i++] = view.getUint32(at, false);
+          return result;
         }
         if (f.ZCMPTYPE !== 'RICE_1' || f.ZBITPIX !== 32 || f.ZTILE1 !== width || f.ZTILE2 !== 1 || f.ZNAXIS1 !== width || f.ZNAXIS2 !== height || !/1P[Bb](?:\(\d+\))?/.test(String(f.TFORM1)) || Number(f.NAXIS1) < 8) throw new Error('Unsupported compressed FLAGS layout.');
         const tableStart = info.flags.dataOffset + y0 * f.NAXIS1;
@@ -181,11 +185,14 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
           lo = Math.min(lo, offset); hi = Math.max(hi, offset + length);
         }
         const heap = await read(url, heapStart + lo, heapStart + hi - 1, signal);
-        const result = new Uint32Array(rows * width);
+        // Rice tiles are whole rows, so each row is decoded in full into one
+        // scratch buffer and only the cropped columns are kept.
+        const result = new Uint32Array(size), scratch = new Int32Array(width);
         const block = f.ZNAME1 === 'BLOCKSIZE' ? Number(f.ZVAL1) : 32;
         for (let r = 0; r < rows; r++) {
           const length = table.getInt32(r * f.NAXIS1, false), start = table.getInt32(r * f.NAXIS1 + 4, false) - lo;
-          result.set(decodeRice32(heap.subarray(start, start + length), new Int32Array(width), block), r * width);
+          const row = decodeRice32(heap.subarray(start, start + length), scratch, block);
+          for (let x = x0, i = r * columns; x <= x1; x++) result[i++] = row[x] >>> 0;
         }
         return result;
       })(),
@@ -195,13 +202,20 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
         if (v?.BITPIX !== -32 || v.NAXIS1 !== width || v.NAXIS2 !== height) throw new Error('Unsupported VARIANCE layout.');
         const start = info.variance.dataOffset + y0 * width * 4;
         const bytes = await read(url, start, start + rows * width * 4 - 1, signal);
-        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-        return Float32Array.from({ length: rows * width }, (_, i) => view.getFloat32(i * 4) * Number(v.BSCALE ?? 1) + Number(v.BZERO ?? 0));
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), scale = Number(v.BSCALE ?? 1), zero = Number(v.BZERO ?? 0);
+        const result = new Float32Array(size);
+        for (let r = 0, i = 0; r < rows; r++) for (let x = x0, at = (r * width + x0) * 4; x <= x1; x++, at += 4) result[i++] = view.getFloat32(at, false) * scale + zero;
+        return result;
       })()
     ]);
-    const view = new DataView(science.buffer, science.byteOffset, science.byteLength), values = new Float32Array(rows * width);
-    for (let i = 0; i < values.length; i++) values[i] = (bitpix === -32 ? view.getFloat32(i * stride, false) : view.getFloat64(i * stride, false)) * Number(h.BSCALE ?? 1) + Number(h.BZERO ?? 0);
-    const shifted = { ...h, CRPIX2: Number(h.CRPIX2) - y0, NAXIS2: rows };
-    return cropImage({ values, flags, variance, width, height: rows, header: shifted, sourceY: y0 }, { ...bounds, y0: 0, y1: rows - 1 });
+    const view = new DataView(science.buffer, science.byteOffset, science.byteLength), values = new Float32Array(size);
+    const scale = Number(h.BSCALE ?? 1), zero = Number(h.BZERO ?? 0);
+    for (let r = 0, i = 0; r < rows; r++) {
+      let at = (r * width + x0) * stride;
+      if (bitpix === -32) for (let x = x0; x <= x1; x++, at += 4) values[i++] = view.getFloat32(at, false) * scale + zero;
+      else for (let x = x0; x <= x1; x++, at += 8) values[i++] = view.getFloat64(at, false) * scale + zero;
+    }
+    const header = { ...h, NAXIS1: columns, NAXIS2: rows, CRPIX1: Number(h.CRPIX1) - x0, CRPIX2: Number(h.CRPIX2) - y0 };
+    return { values, flags: flags ?? null, variance, width: columns, height: rows, header, matrix: matrixFor(header), sourceX: x0, sourceY: y0 };
   };
 }

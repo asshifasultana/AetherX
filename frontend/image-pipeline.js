@@ -3,53 +3,81 @@ import { readFits, prepareImage, projectImage, projectionKey } from './lib/fits-
 import { combineStack } from './lib/stack.js';
 import { ImageScheduler, abortError } from './lib/image-scheduler.js';
 
+// Decoding and projection are independent per exposure, so they spread across a
+// small pool of workers; one core is left for the page itself.
+export function defaultWorkerCount() {
+  const cores = Number(globalThis.navigator?.hardwareConcurrency) || 2;
+  return Math.min(4, Math.max(1, cores - 1));
+}
+function loaderMode() {
+  try { return typeof localStorage !== 'undefined' ? localStorage.getItem('spherex-image-loader') || '' : ''; } catch { return ''; /* Storage can be disabled independently of workers. */ }
+}
+function proxyEndpoint() {
+  try { return typeof location !== 'undefined' && /^https?:$/.test(location.protocol) ? String(new URL('api/crop', location.href)) : ''; } catch { return ''; }
+}
+
 export class ImagePipeline {
-  constructor() { this.scheduler = new ImageScheduler(8); this.pending = new Map(); this.sequence = 0; this.disabled = false; }
+  constructor({ workers = defaultWorkerCount() } = {}) { this.scheduler = new ImageScheduler(8); this.workerCount = workers; this.workers = []; this.sequence = 0; this.disabled = false; }
   async start() {
     if (this.disabled || typeof Worker === 'undefined') return false;
-    if (!this.starting) this.starting = new Promise(resolve => {
+    if (!this.starting) this.starting = Promise.all(Array.from({ length: this.workerCount }, () => this.spawn())).then(results => {
+      this.workers = results.filter(Boolean);
+      if (!this.workers.length) this.disabled = true;
+      return this.workers.length > 0;
+    });
+    return this.starting;
+  }
+  spawn() {
+    return new Promise(resolve => {
+      const slot = { pending: new Map(), ready: false };
       let settled = false;
       const finish = value => { if (!settled) { settled = true; clearTimeout(timer); resolve(value); } };
       const fail = () => {
-        this.disabled = true; this.worker?.terminate();
-        for (const job of this.pending.values()) { job.cleanup(); job.reject(new Error('Image worker is unavailable.')); }
-        this.pending.clear(); finish(false);
+        slot.worker?.terminate();
+        for (const job of slot.pending.values()) { job.cleanup(); job.reject(new Error('Image worker is unavailable.')); }
+        slot.pending.clear();
+        const index = this.workers.indexOf(slot);
+        if (index >= 0) this.workers.splice(index, 1);
+        if (slot.ready && !this.workers.length) this.disabled = true;
+        finish(null);
       };
       const timer = setTimeout(fail, 5000);
       try {
-        this.worker = new Worker(new URL('./image-worker.js', import.meta.url), { type: 'module' });
-        this.worker.onmessage = ({ data }) => {
-          if (data.ready) { finish(true); return; }
-          const job = this.pending.get(data.id);
+        slot.worker = new Worker(new URL('./image-worker.js', import.meta.url), { type: 'module' });
+        slot.worker.onmessage = ({ data }) => {
+          if (data.ready) { slot.ready = true; finish(slot); return; }
+          const job = slot.pending.get(data.id);
           if (!job) return;
-          this.pending.delete(data.id); job.cleanup();
+          slot.pending.delete(data.id); job.cleanup();
           if (data.error) job.reject(Object.assign(new Error(data.error.message), { name: data.error.name }));
           else job.resolve(data.result);
         };
-        this.worker.onerror = fail;
+        slot.worker.onerror = fail;
       } catch { fail(); }
     });
-    return this.starting;
   }
   async request(type, payload, signal, transfers = []) {
     signal?.throwIfAborted();
     if (!await this.start()) throw new Error('Image worker is unavailable.');
     signal?.throwIfAborted();
+    if (!this.workers.length) throw new Error('Image worker is unavailable.');
+    const slot = this.workers.reduce((best, item) => item.pending.size < best.pending.size ? item : best);
     return new Promise((resolve, reject) => {
       const id = ++this.sequence;
-      const abort = () => { this.worker.postMessage({ id, type: 'cancel' }); this.pending.delete(id); cleanup(); reject(signal.reason || abortError()); };
+      const abort = () => { slot.worker.postMessage({ id, type: 'cancel' }); slot.pending.delete(id); cleanup(); reject(signal.reason || abortError()); };
       const cleanup = () => signal?.removeEventListener('abort', abort);
-      this.pending.set(id, { resolve, reject, cleanup });
+      slot.pending.set(id, { resolve, reject, cleanup });
       signal?.addEventListener('abort', abort, { once: true });
-      try { this.worker.postMessage({ id, type, payload }, transfers); }
-      catch (error) { this.pending.delete(id); cleanup(); reject(error); }
+      try { slot.worker.postMessage({ id, type, payload }, transfers); }
+      catch (error) { slot.pending.delete(id); cleanup(); reject(error); }
     });
   }
   load(url, accessUrl, target, settings, { signal, priority = 1 } = {}) {
     return this.scheduler.run(`load|${url}|${projectionKey(target, settings)}`, async jobSignal => {
+      // 'legacy' skips the worker transports entirely; 's3' skips only the cropping proxy.
+      const mode = loaderMode(), forceLegacy = mode === 'legacy';
       const payload = { accessUrl, target, settings, revision: new URL(url, 'http://localhost').searchParams.get('revision') || '' };
-      let forceLegacy = false;
-      try { forceLegacy = typeof localStorage !== 'undefined' && localStorage.getItem('spherex-image-loader') === 'legacy'; } catch { /* Storage can be disabled independently of workers. */ }
+      if (mode !== 's3' && mode !== 'legacy') { const proxyUrl = proxyEndpoint(); if (proxyUrl) payload.proxyUrl = proxyUrl; }
       if (!forceLegacy && await this.start()) {
         try { return await this.request('load', payload, jobSignal); }
         catch (error) { if (jobSignal.aborted || error.name === 'ImageBudgetError') throw error; }

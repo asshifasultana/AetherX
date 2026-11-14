@@ -56,3 +56,19 @@ test('worker startup failure retains the legacy path and cancelled jobs cannot p
     await assert.rejects(pending, { name: 'AbortError' });
   } finally { delete globalThis.Worker; await Worker.close(); }
 });
+
+test('a worker pool spreads concurrent loads and each result matches a single-worker load', async () => {
+  const bytes = makeFits(), Worker = browserWorkerClass(bytes); globalThis.Worker = Worker;
+  try {
+    const pooled = new ImagePipeline({ workers: 3 }), single = new ImagePipeline({ workers: 1 });
+    assert.equal(await pooled.start(), true); assert.equal(pooled.workers.length, 3);
+    const targets = [target, { ...target, raDeg: 0.0005 }, { ...target, decDeg: 4.6905 }];
+    const images = await Promise.all(targets.map((t, i) => pooled.load(`${url}&n=${i}`, accessUrl, t, settings)));
+    for (const [i, image] of images.entries()) {
+      assert.equal(image.transport, 's3');
+      const expected = await single.load(`${url}&n=${i}`, accessUrl, targets[i], settings);
+      assert.deepEqual(image.projection.values, expected.projection.values);
+    }
+    assert.ok(pooled.workers.every(slot => slot.pending.size === 0));
+  } finally { delete globalThis.Worker; await Worker.close(); }
+});

@@ -1,6 +1,7 @@
 import { createFitsRangeLoader } from './lib/range-fits.js';
 import { prepareImage, projectImage, projectionKey, readFits } from './lib/fits-engine.js';
 import { combineStack, medianStack } from './lib/stack.js';
+import { loadViaProxy } from './lib/crop-codec.js';
 
 const load = createFitsRangeLoader();
 const controllers = new Map();
@@ -16,10 +17,12 @@ self.onmessage = async ({ data }) => {
   try {
     let result;
     if (type === 'load') {
-      result = await load(payload.accessUrl, payload.target, payload.settings, controller.signal, payload.revision);
+      result = await loadViaProxy(payload, controller.signal);
+      const transport = result ? 'proxy' : 's3';
+      result ||= await load(payload.accessUrl, payload.target, payload.settings, controller.signal, payload.revision);
       result.projection = projectImage(result, payload.target, payload.settings);
       result.projectionKey = projectionKey(payload.target, payload.settings);
-      result.transport = 's3';
+      result.transport = transport;
     } else if (type === 'decode') {
       result = prepareImage(readFits(payload.bytes), payload.target, payload.settings);
       result.transport = 'irsa';

@@ -1,6 +1,7 @@
 import { preferredProducts } from './observation-products.js';
 import { observeCutout } from './fits-viewer.js';
 import { initialViewState } from './share.js';
+import { summarizeDetectorCoverage } from './timelapse-core.js';
 const $ = id => document.getElementById(id);
 const make = (tag, text, className) => { const element = document.createElement(tag); if (text !== undefined) element.textContent = text; if (className) element.className = className; return element; };
 const formatNumber = (value, digits = 3) => Number.isFinite(value) ? value.toFixed(digits).replace(/0+$/, '').replace(/\.$/, '') : 'Not reported';
@@ -50,7 +51,7 @@ async function search() {
       ? 'The preset fallback index has no matches for these filters. Live IRSA search was unavailable; current coverage could not be checked.'
       : 'No observations cover this position with the selected filters. Try another date range, release, or detector.';
     renderResults();
-    emit('sky:observations-loaded', { observations: data.observations, targetName, position: { ...position }, source: data.source, count: data.count });
+    emit('sky:observations-loaded', { observations: data.observations, targetName, position: { ...position }, source: data.source, count: data.count, detectorFilter: submittedParams.get('detector'), moreAvailable: Boolean(data.nextCursor) });
   } catch (error) {
     if (current !== requestNumber) return;
     if (activeController.signal.aborted && activeController.signal.reason !== 'timeout') { $('search-status').textContent = 'Search cancelled. You can search again.'; emit('sky:observations-loaded', { observations: [], targetName, position: { ...position }, failed: true }); return; }
@@ -83,10 +84,43 @@ function renderResults() {
   $('archive-mode-label').textContent = sourceLabel(result);
   $('results-provenance').textContent = `Source: ${result.source.name} · ${indexed ? 'Preset index checked' : 'Retrieved'} ${formatTime(result.source.retrievedAt)}${!indexed && result.cached ? ' · Cached (up to 5 minutes)' : ''} · ${result.duplicatesRemoved} duplicate / older products removed.`;
   $('detector-summary').replaceChildren();
-  for (let detector = 1; detector <= 6; detector++) {
-    const count = result.observations.filter(o => o.detector === detector).length;
-    $('detector-summary').append(make('span', `D${detector} · ${count}`, count ? 'detector-count' : 'detector-count empty-count'));
+  const searchedDetector = submittedParams?.get('detector') || 'all';
+  for (const band of summarizeDetectorCoverage(result.observations, { searchedDetector })) {
+    const card = make('article', undefined, `detector-coverage-card${band.count ? '' : ' empty-count'}`);
+    const heading = make('div', undefined, 'detector-coverage-heading');
+    heading.append(make('strong', `D${band.detector}`), make('span', band.searched ? `${band.count} loaded` : 'Not searched'));
+    card.append(heading);
+    if (band.count) {
+      const dateRange = band.firstDate === band.lastDate
+        ? new Date(band.firstDate).toLocaleDateString('en', { dateStyle: 'medium', timeZone: 'UTC' })
+        : `${new Date(band.firstDate).toLocaleDateString('en', { dateStyle: 'medium', timeZone: 'UTC' })} – ${new Date(band.lastDate).toLocaleDateString('en', { dateStyle: 'medium', timeZone: 'UTC' })}`;
+      card.append(make('p', `${formatNumber(band.wavelengthMinUm, 3)}–${formatNumber(band.wavelengthMaxUm, 3)} μm`), make('small', dateRange));
+      const stackLabel = result.nextCursor ? `Build D${band.detector} median · loaded results only ↗` : `Build D${band.detector} median view ↗`;
+      const stack = make('button', stackLabel, 'text-button detector-stack-button');
+      stack.type = 'button'; stack.addEventListener('click', () => {
+        emit('sky:coverage-stack-requested', { detector: band.detector });
+        document.getElementById('explorer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      card.append(stack);
+    } else if (!band.searched) {
+      card.append(make('p', `Search filter is D${searchedDetector}.`));
+      const searchBand = make('button', `Search D${band.detector}`, 'text-button detector-stack-button');
+      searchBand.type = 'button'; searchBand.addEventListener('click', () => {
+        $('search-detector').value = String(band.detector);
+        $('observation-search-form').requestSubmit();
+      });
+      card.append(searchBand);
+    } else {
+      card.append(make('p', result.source.fallback
+        ? 'Coverage not confirmed: the preset fallback index had no match; live archive search was unavailable.'
+        : 'No coverage in this search.'));
+    }
+    $('detector-summary').append(card);
   }
+  const coverageNote = make('p', result.nextCursor
+    ? 'Counts and ranges summarize products loaded so far; more archive results remain. Load more to update coverage.'
+    : 'Coverage reflects the loaded archive products. Wavelength bounds are product ranges, not the exact wavelength at each pixel.', 'coverage-note');
+  $('detector-summary').append(coverageNote);
   $('results-warnings').replaceChildren();
   for (const warning of result.warnings || []) $('results-warnings').append(make('p', warning));
   renderRows();
@@ -108,7 +142,7 @@ $('load-more-observations').addEventListener('click', async () => {
     const observations = preferredProducts([...previous.observations, ...data.observations]);
     result = { ...data, observations, count: observations.length, matchedProducts: previous.matchedProducts + data.matchedProducts, duplicatesRemoved: previous.matchedProducts + data.matchedProducts - observations.length };
     renderResults(); $('search-status').textContent = `${result.count.toLocaleString()} detector images loaded${result.nextCursor ? '. More observations are available.' : '. All matching archive products have been loaded.'}`;
-    emit('sky:observations-loaded', { observations: result.observations, targetName, position: { ...position }, source: result.source, count: result.count });
+    emit('sky:observations-loaded', { observations: result.observations, targetName, position: { ...position }, source: result.source, count: result.count, detectorFilter: submittedParams.get('detector'), moreAvailable: Boolean(result.nextCursor) });
   } catch (error) {
     if (current !== requestNumber) return;
     $('search-status').textContent = 'Existing observations are retained.';

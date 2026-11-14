@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
+import { summarizeDetectorCoverage } from '../timelapse-core.js';
 
 // Exercise the browser entrypoint with only its DOM and network boundaries stubbed.
 const source = (await readFile(new URL('../observations-ui.js', import.meta.url), 'utf8')).replace(/^import .*\r?\n/gm, '');
@@ -32,7 +33,7 @@ function mount(initialViewState = { startDate: '', endDate: '' }) {
     AbortController, URLSearchParams, setTimeout, clearTimeout, setInterval() {}, CustomEvent,
     // The module reads the validated share state at import time; the VM harness
     // strips imports, so the decoded state is supplied the same way the page does.
-    initialViewState,
+    initialViewState, summarizeDetectorCoverage,
     fetch: async (url, options) => {
       if (url === '/api/index-status') return json({ available: false });
       return new Promise(resolve => requests.push({ url, options, resolve }));

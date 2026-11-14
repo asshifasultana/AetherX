@@ -556,7 +556,11 @@ function stackedImage(values, counts, reference, record, sourceUrls) {
   return image;
 }
 
-export async function warmCutout(observation, signal, priority = 2) {
+export function isCutoutReady(observation) {
+  return renderedFrames.has(renderKey(observation));
+}
+
+export async function warmCutout(observation, signal, priority = 2, onExposure = null) {
   const generation = dataGeneration;
   const key = renderKey(observation);
   const rendered = renderedFrames.get(key);
@@ -570,7 +574,15 @@ export async function warmCutout(observation, signal, priority = 2) {
     return entry;
   }
   const entries = [], sourceImages = [], sourceUrls = [];
-  const results = await Promise.allSettled(exposures.map(exposure => warmSingleCutout(exposure, signal, priority)));
+  let completed = 0;
+  const results = await Promise.allSettled(exposures.map(async exposure => {
+    const entry = await warmSingleCutout(exposure, signal, priority);
+    signal?.throwIfAborted();
+    if (generation !== dataGeneration) throw new DOMException('Viewer changed.', 'AbortError');
+    completed++;
+    onExposure?.(exposure, entry, completed, exposures.length);
+    return entry;
+  }));
   signal?.throwIfAborted();
   if (generation !== dataGeneration) throw new DOMException('Viewer changed.', 'AbortError');
   for (let index = 0; index < results.length; index++) {
@@ -702,7 +714,7 @@ function deepStackSignature() {
   return `${displaySignature()}|${settings.band}|${frames.map(observationKey).join(',')}`;
 }
 
-function commitCutout(observation, entry, { announce = true } = {}) {
+function commitCutout(observation, entry, { announce = true, preview = false } = {}) {
   const source = entry.canvas;
   if (canvas.width !== source.width || canvas.height !== source.height) { canvas.width = source.width; canvas.height = source.height; }
   context.drawImage(source, 0, 0);
@@ -718,12 +730,12 @@ function commitCutout(observation, entry, { announce = true } = {}) {
   const stackLabel = image.stackRecord ? ` · median stack ${image.stackRecord.usedExposureCount}/${image.stackRecord.requestedExposureCount} exposures · ${Math.round(image.stackRecord.exposureSeconds)} s total` : '';
   caption.textContent = `${date} · D${observation.detector} · ${formatWavelength(observation)} · ${release}${processing}${stackLabel} · ${settings.fovArcmin}′ square · north up${presetMotion(target) ? ' · proper-motion aligned' : ''}${masked ? ` · ${masked} flagged pixels masked` : ''}`;
   status.hidden = true;
-  document.getElementById('export-sky-png').disabled = false;
+  document.getElementById('export-sky-png').disabled = preview;
   document.getElementById('cutout-cache-state').textContent = image.stackRecord ? 'Aligned median stack · browser caching enabled' : 'Retrieved from NASA archive · browser caching enabled';
-  window.dispatchEvent(new CustomEvent('sky:cutout-rendered', { detail: { observation, stackRecord: image.stackRecord || null } }));
+  if (!preview) window.dispatchEvent(new CustomEvent('sky:cutout-rendered', { detail: { observation, stackRecord: image.stackRecord || null } }));
   // Playback frames are not shared state: only a frame the user opened updates
   // the address bar. Click the sky image to mark a candidate source.
-  if (announce) window.dispatchEvent(new CustomEvent('sky:frame-shown', { detail: { observation } }));
+  if (announce && !preview) window.dispatchEvent(new CustomEvent('sky:frame-shown', { detail: { observation } }));
   return { stackRecord: image.stackRecord || null };
 }
 
@@ -744,11 +756,22 @@ export async function showCutout(observation, { quiet = false, keepImage = false
   if (!entry && !quiet && !keepImage) { resetViewer(`Loading ${settings.fovArcmin}′ × ${settings.fovArcmin}′ cutout · ${observation.observedStartUtc?.slice(0, 10) || 'observation'} · D${observation.detector}…`); }
   try {
     if (!entry) {
-      entry = await warmCutout(observation, requestController.signal, 0);
+      let previewShown = false;
+      const onExposure = quiet || keepImage ? null : (exposure, candidate, completed, total) => {
+        if (sequence !== activeSequence || requestController.signal.aborted) return;
+        if (!previewShown) {
+          activeObservation = { ...exposure, image: candidate.image };
+          commitCutout(exposure, candidate, { announce: false, preview: true });
+          caption.textContent = `Single-exposure preview · ${caption.textContent}`;
+          previewShown = true;
+        }
+        document.getElementById('cutout-cache-state').textContent = `Preview · preparing daily stack (${completed}/${total} exposures ready)`;
+      };
+      entry = await warmCutout(observation, requestController.signal, 0, onExposure);
       if (sequence !== activeSequence) return;
     }
     if (sequence !== activeSequence) return;
-    activeObservation.image = entry.image;
+    activeObservation = { ...observation, image: entry.image };
     const displayed = commitCutout(observation, entry, { announce: !quiet });
     window.dispatchEvent(new CustomEvent('sky:cutout-detector-selected', { detail: { detector: observation.detector } }));
     return displayed;

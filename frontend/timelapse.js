@@ -2,7 +2,7 @@ import {
   buildFrames, frameDelayMs, frameFractions, frameGaps, frameTime, formatGap,
   formatGapShort, nearestFrameIndex, nearestFrameIndexByTime, nextSpeed, observationKey
 } from './timelapse-core.js';
-import { showCutout, warmCutout } from './fits-viewer.js';
+import { showCutout, warmCutout, isCutoutReady } from './fits-viewer.js';
 import { takePendingFrameDate } from './share.js';
 
 const $ = id => document.getElementById(id);
@@ -39,6 +39,7 @@ const prefetch = {
   fov: null
 };
 let prefetchNote = false;
+let playbackController = null;
 
 const dateOf = frame => new Date(frameTime(frame));
 const shortDate = frame => dateFormat.format(dateOf(frame));
@@ -70,10 +71,10 @@ function updateStepButtons() {
 
 function nextPrefetchFrame(excluded = new Set()) {
   const count = state.frames.length;
-  for (let step = 0; step < count; step++) {
+  for (let step = state.playing ? 1 : 0; step < (state.playing ? Math.min(count, 5) : count); step++) {
     const frame = state.frames[(state.index + step) % count];
     const key = observationKey(frame);
-    if (!excluded.has(key) && !prefetch.fetched.has(key) && !prefetch.failed.has(key)) return frame;
+    if (!excluded.has(key) && !isCutoutReady(frame) && !prefetch.failed.has(key)) return frame;
   }
   return null;
 }
@@ -81,7 +82,7 @@ function nextPrefetchFrame(excluded = new Set()) {
 function schedulePrefetch(delay = 0) {
   clearTimeout(prefetch.timer);
   prefetch.timer = null;
-  if (!state.frames.length || prefetch.paused || state.playing) return;
+  if (!state.frames.length || prefetch.paused) return;
   prefetch.timer = setTimeout(() => { void runPrefetch(); }, delay);
 }
 
@@ -116,7 +117,7 @@ function prefetchFinished() {
 
 async function runPrefetch() {
   prefetch.timer = null;
-  if (prefetch.running || prefetch.paused || state.playing || !state.frames.length) return;
+  if (prefetch.running || prefetch.paused || !state.frames.length) return;
   const batch = [], excluded = new Set();
   for (let i = 0; i < 4; i++) {
     const frame = nextPrefetchFrame(excluded);
@@ -379,7 +380,7 @@ async function selectFrame(index, { playback = false } = {}) {
     setStatus(`Deep median remains displayed · timeline selection ${state.index + 1} of ${state.frames.length} changed.`);
     return;
   }
-  prefetch.paused++;
+  if (!playback) prefetch.paused++;
   prefetchNote = false;
   if (!playback) setStatus(`Loading ${frameDate(frame)} · D${frame.detector}…`);
   try {
@@ -389,7 +390,7 @@ async function selectFrame(index, { playback = false } = {}) {
     if (!result?.stackRecord?.deepStack) frame.stackRecord = result?.stackRecord || null;
     updateCurrent({ keepSlider: true });
   } finally {
-    prefetch.paused = Math.max(0, prefetch.paused - 1);
+    if (!playback) prefetch.paused = Math.max(0, prefetch.paused - 1);
     if (state.frames[state.index] === frame) {
       setStatus(playback
         ? `Playing · frame ${state.index + 1} of ${state.frames.length} · ${frameDate(frame)}`
@@ -400,6 +401,8 @@ async function selectFrame(index, { playback = false } = {}) {
 }
 
 function pausePlayback() {
+  playbackController?.abort();
+  playbackController = null;
   state.playing = false;
   state.token++;
   clearTimeout(state.timer);
@@ -413,21 +416,39 @@ function scheduleNext(delay) {
   const token = state.token;
   state.timer = setTimeout(async () => {
     if (!state.playing || token !== state.token) return;
-    await selectFrame((state.index + 1) % state.frames.length, { playback: true });
+    const nextIndex = (state.index + 1) % state.frames.length;
+    const next = state.frames[nextIndex];
+    const controller = new AbortController();
+    playbackController = controller;
+    try {
+      if (!isCutoutReady(next)) {
+        setStatus(`Buffering next observation · ${frameDate(next)}. Keeping the current image visible…`);
+        await warmCutout(next, controller.signal, 0);
+      }
+      if (!state.playing || token !== state.token || controller.signal.aborted) return;
+      await selectFrame(nextIndex, { playback: true });
+    } catch (error) {
+      if (!controller.signal.aborted && token === state.token) {
+        pausePlayback();
+        setStatus(`Playback paused: ${error.message || 'the next observation could not be loaded.'}`);
+      }
+      return;
+    } finally {
+      if (playbackController === controller) playbackController = null;
+    }
     if (state.playing && token === state.token) scheduleNext(frameDelayMs(state.speed));
   }, delay);
 }
 
 async function playPlayback() {
   if (state.frames.length < 2) return;
-  // Any warm-up already in flight may finish; a requested frame always preempts
-  // it, and playback itself never starts another speculative download.
+  // Keep a bounded lookahead running while the selected frame has priority.
   state.playing = true;
   state.token++;
   updatePlayButton();
   const frame = state.frames[state.index];
   if (state.shownKey !== observationKey(frame)) await selectFrame(state.index);
-  if (state.playing) scheduleNext(frameDelayMs(state.speed));
+  if (state.playing) { schedulePrefetch(0); scheduleNext(frameDelayMs(state.speed)); }
 }
 
 function togglePlayback() {

@@ -722,6 +722,9 @@ footer p,footer>span{font-size:15px;color:#59695e}
 .ai-guide-suggestions .share-button { font-size:13px; }
 .ai-guide-log { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; max-height:420px; overflow-y:auto; overscroll-behavior:contain; }
 .ai-guide-log:empty { display:none; }
+/* A faint, thin scrollbar that brightens only while the pointer is over the chat. */
+:is(#ai-guide,.ai-guide-log) { scrollbar-width:thin; scrollbar-color:#ffffff1a transparent; }
+:is(#ai-guide,.ai-guide-log):hover { scrollbar-color:#ffffff3d transparent; }
 .ai-guide-entry { font-size:14px; line-height:1.6; overflow-wrap:anywhere; }
 .ai-guide-entry p { margin:0; }
 .ai-guide-entry p + p { margin-top:8px; }
@@ -1176,3 +1179,21 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .share-link-notice { position:absolute; top:calc(100% + 8px); right:0; z-index:90; width:max-content; max-width:240px; padding:7px 10px; border-radius:8px; border:1px solid #80bfa866; background:#16231ff2; color:#cdeee0; font-size:12px; line-height:1.4; box-shadow:0 6px 20px #0007; pointer-events:none; }
 .share-link-notice[hidden] { display:none; }
 .is-embed .share-link-wrap { display:none!important; }
+
+/* ---- AI guide: snapshots, side-by-side panels, links and background jobs ---- */
+.ai-guide-entry.is-snapshot { align-self:stretch; padding:10px; border-radius:10px; background:#161b1f; border:1px solid var(--line); }
+.ai-guide-snapshot-title { margin:0 0 8px; font-size:13px; font-weight:600; color:var(--ink); }
+.ai-guide-snapshot-grid { display:grid; gap:8px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.ai-guide-snapshot-grid.is-1, .ai-guide-snapshot-grid.is-expanded { grid-template-columns:minmax(0,1fr); }
+.ai-guide-snapshot { margin:0; min-width:0; display:flex; flex-direction:column; gap:5px; }
+.ai-guide-snapshot img { display:block; width:100%; aspect-ratio:1; object-fit:contain; border-radius:6px; background:#000; image-rendering:pixelated; cursor:zoom-in; }
+.ai-guide-snapshot-grid.is-expanded img { cursor:zoom-out; }
+.ai-guide-snapshot-missing { display:grid; place-items:center; aspect-ratio:1; padding:8px; border-radius:6px; border:1px dashed var(--line); font-size:12px; color:var(--muted); text-align:center; }
+.ai-guide-snapshot figcaption { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:2px 8px; font-size:12px; line-height:1.4; color:var(--muted); overflow-wrap:anywhere; }
+.ai-guide-snapshot-actions { display:inline-flex; gap:10px; white-space:nowrap; }
+.ai-guide-link { color:#8fe0c2; text-decoration:underline; text-underline-offset:2px; }
+.ai-guide-link:hover { color:#c2f5e2; }
+.ai-guide-jobs { display:inline-flex; align-items:center; gap:7px; padding:5px 10px; border-radius:999px; border:1px solid #95d1ba44; background:#14201c; color:#b9d8cb; font-size:12px; white-space:nowrap; cursor:default; }
+.ai-guide-jobs[hidden], .agent-jobs-badge[hidden] { display:none; }
+.agent-jobs-badge { position:absolute; top:-5px; right:-5px; z-index:2; min-width:18px; height:18px; padding:0 5px; display:inline-grid; place-items:center; border-radius:999px; background:#ffd479; color:#1a1406; font-size:11px; font-weight:700; line-height:1; box-shadow:0 0 0 2px #0b0c0a; pointer-events:none; font-variant-numeric:tabular-nums; }
+.is-embed .agent-jobs-badge { display:none!important; }

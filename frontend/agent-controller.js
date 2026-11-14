@@ -21,7 +21,7 @@ export function createViewerController() {
   window.addEventListener('sky:playback-state', event => { latest.playback = event.detail; });
   window.addEventListener('sky:view-summary', event => { latest.summary = event.detail; latest.summarySeq++; });
   // Slow lookups keep running after a tool returns; finished ones go to the chat.
-  const jobs = createJobs({ onDone: done => emit('sky:agent-job-done', done) });
+  const jobs = createJobs({ onDone: done => emit('sky:agent-job-done', done), onChange: running => emit('sky:agent-jobs-changed', { jobs: running }) });
   window.addEventListener('sky:target-selected', event => { latest.target = { ...event.detail }; latest.summary = null; latest.deepStack = null; jobs.cancelAll(); });
   window.addEventListener('sky:observations-loading', () => { latest.observations = { loading: true, count: 0, failed: false }; });
   window.addEventListener('sky:observations-loaded', event => {
@@ -143,7 +143,90 @@ export function createViewerController() {
     return playbackCommand('last_frame');
   }
 
+  /** A link that reopens exactly what is on screen now. */
+  async function viewLink(note = '') {
+    refreshPlayback();
+    // Give share.js its scheduled address-bar write a moment, then build the link.
+    await new Promise(resolve => setTimeout(resolve, 250));
+    return shareUrl({ embed: false, note });
+  }
+
+  /** Picture of the viewer as it is now, with a plain label and a link back to it. */
+  async function shoot(label = '') {
+    const picture = await new Promise(resolve => {
+      const timer = setTimeout(() => resolve(null), 3000);
+      emit('sky:snapshot-requested', { respond: value => { clearTimeout(timer); resolve(value); } });
+    });
+    if (!picture?.src) return null;
+    const settings = latest.settings, playback = refreshPlayback();
+    const date = settings.viewMode === 'deep-stack' ? '' : playback?.frameDate?.slice(0, 16).replace('T', ' ') || '';
+    const band = settings.band ? `D${settings.band}` : '';
+    const caption = latest.summary?.caption || [date && `${date} UTC`, band, settings.viewMode].filter(Boolean).join(' · ');
+    const link = await viewLink(label || caption);
+    return { src: picture.src, label: label || caption, caption, date, band, mode: settings.viewMode, frame: playback?.frame ?? null, link };
+  }
+  const describeShot = ({ label, caption, date, band, mode, frame, link, error }) => error ? { label, error } : { label, caption, date, band, mode, frame, link };
+
+  async function showPanel(panel, { signal }) {
+    const changes = {};
+    if (panel.detector && panel.detector !== latest.settings.band) changes.band = panel.detector;
+    const mode = panel.mode || (latest.settings.viewMode === 'blink' ? 'time-lapse' : latest.settings.viewMode);
+    if (mode !== latest.settings.viewMode) changes.viewMode = mode;
+    if (changes.viewMode === 'deep-stack') {
+      latest.deepStack = null;
+      const built = waitFor('sky:deep-stack-built', { timeout: 90000, signal });
+      emit('sky:agent-settings-requested', { changes });
+      if (!(await built)) return { error: 'The deep stack did not finish in time.' };
+      await settle({ timeout: 3000, signal });
+    } else if (Object.keys(changes).length) await applySettings(changes, { signal, timeout: changes.band ? 30000 : 10000 });
+    if (mode !== 'deep-stack' && (panel.frame || panel.date)) {
+      const playback = refreshPlayback();
+      if (!playback?.count) return { error: 'No frames are loaded in this band.' };
+      const since = latest.summarySeq;
+      const moved = await goToFrame(playback, panel);
+      if (!moved.ok) return { error: moved.error || 'That frame could not be shown.' };
+      await settle({ timeout: 20000, signal, since });
+    }
+    return null;
+  }
+
   const handlers = {
+    async take_snapshot({ caption }) {
+      const shot = await shoot(caption);
+      if (!shot) return { ok: false, error: 'No image is on screen yet.' };
+      emit('sky:agent-snapshot', { caption, panels: [shot] });
+      return { ok: true, shownInChat: true, ...describeShot(shot) };
+    },
+
+    async compare_side_by_side({ panels, caption }, { signal }) {
+      const playback = await needFrames(signal);
+      if (!playback) return { ok: false, error: 'No observations are loaded for this target yet.' };
+      // The viewer shows one image at a time: visit each panel, photograph it,
+      // then put the viewer back where it was.
+      const original = { band: latest.settings.band, viewMode: latest.settings.viewMode, frame: playback.frame };
+      await playbackCommand('pause');
+      const shots = [];
+      try {
+        for (const [index, panel] of panels.entries()) {
+          if (signal?.aborted) break;
+          const failed = await showPanel(panel, { signal });
+          const shot = failed ? null : await shoot(panel.label);
+          shots.push(shot || { label: panel.label || `Panel ${index + 1}`, error: failed?.error || 'No image was rendered.' });
+        }
+      } finally {
+        const restore = {};
+        if (original.band && latest.settings.band !== original.band) restore.band = original.band;
+        if (original.viewMode && latest.settings.viewMode !== original.viewMode) restore.viewMode = original.viewMode;
+        if (Object.keys(restore).length) await applySettings(restore, { timeout: restore.band ? 30000 : 10000 });
+        const now = refreshPlayback();
+        if (now?.count && original.frame && now.frame !== original.frame) await goToFrame(now, { frame: original.frame });
+      }
+      const pictures = shots.filter(shot => shot.src);
+      if (!pictures.length) return { ok: false, error: shots[0]?.error || 'No panel could be photographed.', panels: shots.map(describeShot) };
+      emit('sky:agent-snapshot', { caption, panels: shots });
+      return { ok: true, shownInChat: true, note: 'The panels are side by side in the chat, each with a link that opens that view. The viewer is back where it was.', panels: shots.map(describeShot) };
+    },
+
     async get_view_state() { return { ...snapshot(), spots: await investigator.spotsSummary(), ...(investigator.quest() ? { quest: investigator.quest().id } : {}), ...(jobs.running().length ? { backgroundJobs: jobs.running() } : {}) }; },
 
     async set_display({ changes }, { signal }) {
@@ -241,11 +324,7 @@ export function createViewerController() {
     },
 
     async make_share_link({ note }) {
-      refreshPlayback();
-      // Give share.js its scheduled address-bar write a moment, then build the link.
-      await new Promise(resolve => setTimeout(resolve, 250));
-      const url = shareUrl({ embed: false, note });
-      return { ok: true, url, note };
+      return { ok: true, url: await viewLink(note), note };
     }
   };
 

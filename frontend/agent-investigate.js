@@ -236,6 +236,16 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     return added ? { ok: true, spot: added.n } : { ok: false, error: 'All 9 spots are in use; remove one first.' };
   }
 
+  async function removeSpots({ spots: listed, keep, all }) {
+    const before = await spots();
+    const missing = [...(listed || []), ...(keep || [])].filter(n => !before.some(spot => spot.n === n));
+    if (missing.length && !all) return { ok: false, error: `There is no spot ${missing.join(', ')}.`, spots: before.map(spot => spot.n) };
+    const remove = all ? before.map(spot => spot.n) : keep ? before.map(spot => spot.n).filter(n => !keep.includes(n)) : listed;
+    await request('sky:agent-spots', { remove });
+    for (const n of remove) { spotMeta.delete(n); cases.remove(n); }
+    return { ok: true, removed: remove, remaining: (await spots()).map(spot => spot.n) };
+  }
+
   // ---- epochs and parallax --------------------------------------------------
   async function pickEpochs({ gap_days: gapDays = 180 }, { signal }) {
     if (!(await needFrames(signal))) return { ok: false, error: 'No observations are loaded for this target yet.' };
@@ -479,6 +489,7 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
   const handlers = {
     find_changes: findChanges,
     mark_spot: markSpot,
+    remove_spots: removeSpots,
     measure_source: measureSource,
     get_spectrum: getSpectrum,
     crossmatch,

@@ -12,6 +12,9 @@ export const NOTE_MAX = 200;
 export const QUEST_IDS = ['be-barnard', 'be-tombaugh', 'be-leverrier', 'hidden-planet'];
 export const TOUR_IDS = ['highlights'];
 export const MAX_SPOT = 9;
+export const MAX_PANELS = 4;
+// Blink animates, so it cannot be photographed as one panel.
+export const PANEL_MODES = ['time-lapse', 'difference', 'motion-trail', 'deep-stack'];
 
 const values = key => settingRule(key).values;
 // Keep schemas compact because they are resent on every round.
@@ -77,6 +80,27 @@ export const AGENT_TOOLS = Object.freeze([
   tool('make_share_link', 'Link that reopens this exact view, with a one-sentence note for viewers.', {
     note: str()
   }, ['note']),
+  // Pictures in the chat. The viewer shows one image at a time, so these are how
+  // the visitor sees two or more views together; each picture links to its view.
+  tool('take_snapshot', 'Put a picture of exactly what the viewer shows now (image, overlays, numbered spots) into the chat, with a link that reopens this view. Use it to keep a result the visitor should see after the view changes.', {
+    caption: str(null, 'short title for the picture')
+  }),
+  tool('compare_side_by_side', 'Show 2-4 views next to each other in the chat (e.g. two dates, two bands, a frame and its difference). The viewer visits each panel, photographs it, then returns to where it was. Each panel gets a link that opens that view. Omitted fields keep the current setting.', {
+    panels: {
+      type: 'array', minItems: 2, maxItems: MAX_PANELS,
+      items: {
+        type: 'object',
+        properties: {
+          frame: int('1-based frame'),
+          date: str(null, 'YYYY-MM-DD, nearest frame'),
+          detector: int('band 1-6'),
+          mode: str(PANEL_MODES),
+          label: str(null, 'short panel title, e.g. "21 Aug 2025"')
+        }
+      }
+    },
+    caption: str(null, 'one line saying what to compare')
+  }, ['panels']),
   // Investigation tools. A "spot" is a numbered marker (1-9) on the image.
   tool('find_changes', 'List compact brighter/fainter patches in the difference view on screen (use compare_frames view=difference or pick_epochs first). Marks the strongest as agent spots and reports moved pairs.', {
     limit: int('1-6, default 3'), mark: bool('default true')
@@ -84,6 +108,9 @@ export const AGENT_TOOLS = Object.freeze([
   tool('mark_spot', 'Mark a numbered agent spot at raDeg/decDeg.', {
     raDeg: { type: 'number' }, decDeg: { type: 'number' }, label: str()
   }, ['raDeg', 'decDeg']),
+  tool('remove_spots', 'Remove spots from the image: the listed spots, all except keep, or all of them. Use when the visitor asks to clear, delete or keep only some spots.', {
+    spots: { type: 'array', items: int(), description: 'spots to remove' }, keep: { type: 'array', items: int(), description: 'remove every other spot' }, all: bool()
+  }),
   tool('measure_source', 'Aperture photometry of a spot in up to 12 loaded frames: flux and S/N per date, and whether brightness varies. Rules glitches and variable stars in or out.', {
     spot: int(), max_frames: int('3-12')
   }, ['spot']),
@@ -250,6 +277,34 @@ export function validateToolCall(name, rawArgs) {
       const ra = Number(args.raDeg), dec = Number(args.decDeg);
       if (!Number.isFinite(ra) || !Number.isFinite(dec) || dec < -90 || dec > 90) errors.push('raDeg/decDeg are out of range.');
       return done({ raDeg: ((ra % 360) + 360) % 360, decDeg: dec, label: sanitizeNote(args.label, 40) });
+    }
+    case 'take_snapshot': {
+      return done({ caption: sanitizeNote(args.caption, 80) });
+    }
+    case 'compare_side_by_side': {
+      let panels = args.panels;
+      if (typeof panels === 'string') { try { panels = JSON.parse(panels); } catch { panels = null; } }
+      if (!Array.isArray(panels)) panels = [];
+      if (panels.length < 2 || panels.length > MAX_PANELS) errors.push(`panels must list 2-${MAX_PANELS} views.`);
+      const checked = panels.slice(0, MAX_PANELS).map((panel, index) => {
+        const entry = {};
+        if (!panel || typeof panel !== 'object') { errors.push(`panel ${index + 1} must be an object.`); return entry; }
+        if (panel.frame !== undefined && panel.frame !== null) { entry.frame = positiveInt(panel.frame); if (!entry.frame) errors.push(`panel ${index + 1}: frame must be 1 or more.`); }
+        if (panel.date !== undefined && panel.date !== null && panel.date !== '') { entry.date = validDate(panel.date); if (!entry.date) errors.push(`panel ${index + 1}: date must be YYYY-MM-DD.`); }
+        if (panel.detector !== undefined && panel.detector !== null) { const band = Number(panel.detector); if (Number.isInteger(band) && band >= 1 && band <= 6) entry.detector = band; else errors.push(`panel ${index + 1}: detector must be 1-6.`); }
+        if (panel.mode !== undefined && panel.mode !== null) { if (PANEL_MODES.includes(panel.mode)) entry.mode = panel.mode; else errors.push(`panel ${index + 1}: mode must be one of ${PANEL_MODES.join(', ')}.`); }
+        const label = sanitizeNote(panel.label, 40);
+        if (label) entry.label = label;
+        return entry;
+      });
+      return done({ panels: checked, caption: sanitizeNote(args.caption, 120) });
+    }
+    case 'remove_spots': {
+      const list = value => value === undefined || value === null ? null : (Array.isArray(value) ? value : [value]).map(spotNumber);
+      const spots = list(args.spots), keep = list(args.keep), all = coerce(args.all) === true;
+      if ([spots, keep, all || null].filter(Boolean).length !== 1) errors.push('Give exactly one of spots, keep or all.');
+      if ([...(spots || []), ...(keep || [])].some(n => !n)) errors.push(`spots must be 1-${MAX_SPOT}.`);
+      return done(all ? { all: true } : spots ? { spots: [...new Set(spots)] } : { keep: [...new Set(keep || [])] });
     }
     case 'measure_source': case 'get_spectrum': case 'crossmatch': case 'get_case': case 'second_opinion': case 'check_answer': case 'prepare_report': {
       const spot = spotNumber(args.spot);

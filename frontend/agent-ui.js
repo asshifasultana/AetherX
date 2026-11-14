@@ -44,8 +44,11 @@ const describe = {
   ].filter(Boolean).join(', ').replace(/^/, 'Changed '),
   go_to_target: args => `Moving to ${args.preset || args.name || `${args.raDeg.toFixed(3)}°, ${args.decDeg.toFixed(3)}°`}`,
   make_share_link: () => 'Made a share link',
+  take_snapshot: () => 'Took a snapshot of the viewer',
+  compare_side_by_side: args => 'Put ' + args.panels.length + ' views side by side',
   find_changes: () => 'Listed the changes in the difference image',
   mark_spot: () => 'Marked a spot',
+  remove_spots: args => args.all ? 'Removed all spots' : args.keep ? `Kept only spot${args.keep.length > 1 ? 's' : ''} ${args.keep.join(', ')}` : `Removed spot${args.spots.length > 1 ? 's' : ''} ${args.spots.join(', ')}`,
   measure_source: args => `Measured spot ${args.spot} on each date`,
   get_spectrum: args => `Measured spot ${args.spot} across wavelengths`,
   crossmatch: args => `Checked spot ${args.spot} against Gaia and JPL`,
@@ -72,8 +75,11 @@ const ACTIVITY = {
   set_view: 'Changing the view…',
   go_to_target: 'Slewing to the target…',
   make_share_link: 'Writing a share link…',
+  take_snapshot: 'Taking a snapshot…',
+  compare_side_by_side: 'Photographing each view…',
   find_changes: 'Squinting at pixels…',
   mark_spot: 'Placing a marker…',
+  remove_spots: 'Tidying up the markers…',
   measure_source: 'Measuring brightness on each date…',
   get_spectrum: 'Splitting the light into colours…',
   crossmatch: 'Asking Gaia and JPL who lives here…',
@@ -91,6 +97,32 @@ const ACTIVITY = {
 };
 const THINKING = ['Consulting the star charts…', 'Thinking…', 'Weighing the suspects…', 'Squinting at the infrared…', 'Planning the next step…'];
 let thinkingTimer = null;
+
+// Keep the newest message in view while the visitor follows the chat. Scrolling
+// up to reread stops the follow; sending a message (or scrolling back down)
+// resumes it. A message taller than the log is shown from its first line.
+let followLog = true;
+let logWatched = false;
+function watchLog(log) {
+  if (logWatched) return;
+  logWatched = true;
+  log.addEventListener('scroll', () => { followLog = log.scrollHeight - log.scrollTop - log.clientHeight < 48; }, { passive: true });
+  // The activity row and composer change the log's height without a new entry.
+  if (typeof ResizeObserver === 'function') new ResizeObserver(() => { if (followLog) log.scrollTop = log.scrollHeight; }).observe(log);
+}
+function revealEntry(item, { force = false } = {}) {
+  const log = $('ai-guide-log');
+  if (!log) return;
+  watchLog(log);
+  if (force) followLog = true;
+  if (!followLog) return;
+  // Wait a frame so the layout (e.g. the chat filling the panel) has settled.
+  requestAnimationFrame(() => {
+    if (item.offsetHeight > log.clientHeight - 24) {
+      log.scrollTop += item.getBoundingClientRect().top - log.getBoundingClientRect().top - 8;
+    } else log.scrollTop = log.scrollHeight;
+  });
+}
 
 function setActivity(text, { thinking = false } = {}) {
   const row = $('ai-guide-activity');
@@ -116,10 +148,103 @@ function renderRichText(container, text) {
       line.split(/\*\*(.+?)\*\*/g).forEach((part, partIndex) => {
         if (!part) return;
         if (partIndex % 2) { const strong = document.createElement('strong'); strong.textContent = part; paragraph.append(strong); }
-        else paragraph.append(part.replace(/^\s*[-*]\s+/, '• '));
+        else appendLinked(paragraph, part.replace(/^\s*[-*]\s+/, '• '));
       });
     });
     container.append(paragraph);
+  }
+}
+
+// Only links back into this viewer become clickable; any other address stays
+// plain text, so a model reply can never send a visitor somewhere unexpected.
+function viewerLink(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.origin === location.origin && /^\/(?:viewer\.html)?$/.test(parsed.pathname) ? parsed.href : null;
+  } catch { return null; }
+}
+function linkElement(href, text) {
+  const link = document.createElement('a');
+  link.href = href; link.target = '_blank'; link.rel = 'noopener'; link.className = 'ai-guide-link';
+  link.textContent = text;
+  return link;
+}
+const LINK_PATTERN = /\[([^\]\n]{1,80})\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>()]*[^\s<>().,;:!?'"])/g;
+function appendLinked(parent, text) {
+  let last = 0;
+  for (const match of text.matchAll(LINK_PATTERN)) {
+    if (match.index > last) parent.append(text.slice(last, match.index));
+    const href = viewerLink(match[2] || match[3]);
+    if (href) parent.append(linkElement(href, match[1] || 'Open this view ↗'));
+    else parent.append(match[0]);
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parent.append(text.slice(last));
+}
+
+// Pictures the guide took of the viewer: one, or several side by side. Each
+// opens its exact view in a new tab, since the viewer holds one image at a time.
+function renderSnapshot({ caption, panels }) {
+  const item = document.createElement('li');
+  item.className = 'ai-guide-entry is-snapshot';
+  if (caption) { const title = document.createElement('p'); title.className = 'ai-guide-snapshot-title'; title.textContent = caption; item.append(title); }
+  const grid = document.createElement('div');
+  grid.className = `ai-guide-snapshot-grid is-${Math.min(panels.length, 4)}`;
+  for (const panel of panels) {
+    const figure = document.createElement('figure');
+    figure.className = 'ai-guide-snapshot';
+    if (panel.src) {
+      const image = document.createElement('img');
+      image.src = panel.src; image.alt = panel.label || panel.caption || 'Snapshot of the viewer';
+      image.loading = 'lazy'; image.title = 'Click to enlarge';
+      image.addEventListener('click', () => grid.classList.toggle('is-expanded'));
+      figure.append(image);
+    } else {
+      const missing = document.createElement('div');
+      missing.className = 'ai-guide-snapshot-missing'; missing.textContent = panel.error || 'Not available';
+      figure.append(missing);
+    }
+    const label = document.createElement('figcaption');
+    label.textContent = panel.label || panel.caption || '';
+    if (panel.label && panel.caption && panel.caption !== panel.label) label.title = panel.caption;
+    const href = panel.link && viewerLink(panel.link);
+    if (href || panel.src) {
+      const actions = document.createElement('span');
+      actions.className = 'ai-guide-snapshot-actions';
+      if (href) actions.append(linkElement(href, 'Open view ↗'));
+      if (panel.src) {
+        const save = document.createElement('a');
+        save.href = panel.src; save.className = 'ai-guide-link';
+        save.download = `spherex-${(panel.date || 'view').slice(0, 10)}${panel.band ? `-${panel.band}` : ''}.jpg`;
+        save.textContent = 'Save';
+        actions.append(save);
+      }
+      label.append(actions);
+    }
+    figure.append(label);
+    grid.append(figure);
+  }
+  item.append(grid);
+  $('ai-guide-log').append(item);
+  revealEntry(item);
+  $('ai-guide-reset').hidden = false;
+}
+
+// Background jobs the guide left running (deep stacks, slow lookups): a count
+// in the guide's header and on the guide button, so the visitor knows to wait.
+function showJobs(list) {
+  const count = list.length;
+  const names = list.map(job => job.label).join(', ');
+  const header = $('ai-guide-jobs'), badge = $('agent-jobs-badge');
+  if (header) {
+    header.hidden = !count;
+    $('ai-guide-jobs-text').textContent = count === 1 ? '1 job running' : `${count} jobs running`;
+    header.title = count ? `Still working in the background: ${names}` : '';
+  }
+  if (badge) {
+    badge.hidden = !count;
+    badge.textContent = String(count);
+    badge.title = header?.title || '';
   }
 }
 
@@ -143,7 +268,7 @@ function addEntry(kind, text, { chips = [] } = {}) {
     renderRichText(item, text);
   } else if (text) item.append(document.createTextNode(text));
   $('ai-guide-log').append(item);
-  item.scrollIntoView?.({ block: 'nearest' });
+  revealEntry(item, { force: kind === 'user' });
   $('ai-guide-reset').hidden = false;
   return item;
 }
@@ -192,7 +317,7 @@ function renderCase(summary) {
   detail.textContent = summary.verdict.detail;
   item.replaceChildren(heading, list, detail);
   $('ai-guide-log').append(item);
-  item.scrollIntoView?.({ block: 'nearest' });
+  revealEntry(item);
 }
 
 function renderReport(report) {
@@ -227,7 +352,7 @@ function renderReport(report) {
   }
   item.append(title, facts, note, actions);
   $('ai-guide-log').append(item);
-  item.scrollIntoView?.({ block: 'nearest' });
+  revealEntry(item);
 }
 
 // ---- red-dot nudge on the AI icon ----------------------------------------------
@@ -607,6 +732,8 @@ function mount() {
     if (summary && (!event.detail.quiet || caseCards.get(summary.spot)?.isConnected)) renderCase(summary);
   });
   window.addEventListener('sky:report-ready', event => { if (event.detail?.report) renderReport(event.detail.report); });
+  window.addEventListener('sky:agent-snapshot', event => { if (event.detail?.panels?.length) renderSnapshot(event.detail); });
+  window.addEventListener('sky:agent-jobs-changed', event => showJobs(Array.isArray(event.detail?.jobs) ? event.detail.jobs : []));
   window.addEventListener('sky:agent-job-done', event => {
     const done = event.detail;
     if (!done || !started) return;

@@ -587,6 +587,41 @@ window.addEventListener('sky:stamps-requested', event => {
   respond({ current: crop(shown.currentCanvas), reference: crop(shown.referenceCanvas), difference: crop(canvas) });
 });
 
+// A picture of exactly what is on screen (image, overlays and numbered spots)
+// for the AI guide to show in the chat. JPEG data URL, nearest-neighbour enlarged.
+const SPOT_COLOURS = { user: '#ffd479', agent: '#8fd3ff', predicted: '#c9a7ff' };
+window.addEventListener('sky:snapshot-requested', event => {
+  const { size: wanted = 560, respond } = event.detail || {};
+  if (!respond) return;
+  if (!canvas.width || !document.querySelector('.viewer')?.classList.contains('has-image')) { respond(null); return; }
+  const size = Math.max(canvas.width, Math.min(800, wanted));
+  const output = document.createElement('canvas');
+  output.width = output.height = size;
+  const context = output.getContext('2d');
+  context.imageSmoothingEnabled = false;
+  context.drawImage(canvas, 0, 0, size, size);
+  if (overlay?.width && overlayHasContent()) { context.imageSmoothingEnabled = true; context.drawImage(overlay, 0, 0, size, size); }
+  const scale = size / canvas.width;
+  context.font = `600 ${Math.round(size / 34)}px Manrope, system-ui, sans-serif`;
+  context.textAlign = 'center';
+  context.textBaseline = 'bottom';
+  for (const spot of spots.list()) {
+    const point = skyToCanvas({ raDeg: spot.raDeg, decDeg: spot.decDeg, size: canvas.width, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
+    if (!point || point.x < 0 || point.y < 0 || point.x >= canvas.width || point.y >= canvas.height) continue;
+    const x = (point.x + 0.5) * scale, y = (point.y + 0.5) * scale, radius = Math.max(8, size / 50);
+    context.lineWidth = Math.max(2, size / 280);
+    context.strokeStyle = SPOT_COLOURS[spot.origin] || SPOT_COLOURS.user;
+    context.setLineDash(spot.origin === 'predicted' ? [4, 3] : []);
+    context.beginPath(); context.arc(x, y, radius, 0, Math.PI * 2); context.stroke();
+    context.setLineDash([]);
+    context.lineWidth = 3; context.strokeStyle = '#000c';
+    context.strokeText(String(spot.n), x, y - radius - 2);
+    context.fillStyle = '#fff';
+    context.fillText(String(spot.n), x, y - radius - 2);
+  }
+  respond({ src: output.toDataURL('image/jpeg', 0.9), width: size, height: size });
+});
+
 // Noise of the image on screen (MAD), so a fake source can be set to a chosen
 // number of sigma once and keep that brightness in every exposure.
 window.addEventListener('sky:noise-requested', event => {

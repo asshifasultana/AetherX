@@ -23,7 +23,7 @@ export async function pollUntil(attempt, { intervalMs = 5000, timeoutMs = 180_00
   }
 }
 
-export function createJobs({ onDone = () => {} } = {}) {
+export function createJobs({ onDone = () => {}, onChange = () => {} } = {}) {
   const jobs = new Map(); // key → { id, label, controller, promise }
   let next = 1;
 
@@ -39,11 +39,12 @@ export function createJobs({ onDone = () => {} } = {}) {
     const startedAt = Date.now();
     const entry = { id, label, controller, extra };
     jobs.set(key, entry);
+    onChange(running());
     entry.promise = Promise.resolve()
       .then(() => run(controller.signal))
       .then(result => ({ ok: true, result }), error => ({ ok: false, error: error?.message || 'failed' }))
       .then(outcome => {
-        if (jobs.get(key) === entry) jobs.delete(key);
+        if (jobs.get(key) === entry) { jobs.delete(key); onChange(running()); }
         if (controller.signal.aborted) return;
         onDone({ id, key, label, ...extra, seconds: Math.round((Date.now() - startedAt) / 1000), ...outcome });
       });
@@ -56,6 +57,7 @@ export function createJobs({ onDone = () => {} } = {}) {
   function cancelAll() {
     for (const entry of jobs.values()) entry.controller.abort();
     jobs.clear();
+    onChange([]);
   }
 
   return { start, running, cancelAll };

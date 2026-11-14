@@ -48,3 +48,17 @@ test('failed jobs report the error; cancelled jobs report nothing', async () => 
   assert.equal(done[0].ok, false);
   assert.match(describeDone(done[0]), /Gaia lookup failed/);
 });
+
+test('jobs report how many are running as they start, finish and are cancelled', async () => {
+  const counts = [];
+  let release;
+  const jobs = createJobs({ onChange: running => counts.push(running.length) });
+  jobs.start('a', 'A', () => new Promise(resolve => { release = resolve; }));
+  jobs.start('b', 'B', () => new Promise(() => {}));
+  jobs.start('a', 'A again', async () => {});
+  await settled();
+  release('done');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  jobs.cancelAll();
+  assert.deepEqual(counts, [1, 2, 1, 0]);
+});

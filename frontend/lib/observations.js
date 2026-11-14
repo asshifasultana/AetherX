@@ -1,0 +1,198 @@
+import { preferredProducts } from '../observation-products.js';
+// IRSA TAP/CAOM metadata adapter. The reference project's tools/build_index.py
+// informed the archive tables and processing-version selection; no code is copied.
+export const TAP_URL = 'https://irsa.ipac.caltech.edu/TAP/sync';
+export const COLLECTIONS = ['spherex_qr3', 'spherex_qr3_deep', 'spherex_qr2', 'spherex_qr2_deep'];
+export const MAX_RESULTS = 2000;
+export class SearchError extends Error {
+  constructor(message, status = 502) { super(message); this.status = status; }
+}
+
+function numeric(value, name, min, max, exclusiveMax = false) {
+  if (value === null || value === undefined || String(value).trim() === '' || !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(String(value))) throw new SearchError(`Enter a valid ${name}.`, 400);
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < min || (exclusiveMax ? number >= max : number > max)) throw new SearchError(`${name} must be between ${min} and ${exclusiveMax ? 'less than ' : ''}${max}.`, 400);
+  return number;
+}
+function dateBound(value, name, end) {
+  if (!value) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new SearchError(`${name} must use YYYY-MM-DD.`, 400);
+  const milliseconds = Date.parse(value + 'T00:00:00Z');
+  if (!Number.isFinite(milliseconds) || new Date(milliseconds).toISOString().slice(0, 10) !== value) throw new SearchError(`${name} is not a valid date.`, 400);
+  return milliseconds / 86400000 + 40587 + (end ? 1 : 0);
+}
+export function validateSearch(params) {
+  const raDeg = numeric(params.get('raDeg'), 'RA (degrees)', 0, 360, true);
+  const decDeg = numeric(params.get('decDeg'), 'Dec (degrees)', -90, 90);
+  const detector = params.get('detector') && params.get('detector') !== 'all' ? numeric(params.get('detector'), 'detector', 1, 6) : null;
+  if (detector !== null && !Number.isInteger(detector)) throw new SearchError('Detector must be D1 through D6.', 400);
+  const release = params.get('release') || 'all';
+  if (release !== 'all' && !/^qr[1-9]\d*$/.test(release)) throw new SearchError('Release must be all or a public QR release, such as qr3.', 400);
+  const startDate = params.get('startDate') || '', endDate = params.get('endDate') || '';
+  const startMjd = dateBound(startDate, 'Start date', false), endMjd = dateBound(endDate, 'End date', true);
+  if (startMjd !== null && endMjd !== null && startMjd >= endMjd) throw new SearchError('End date must be on or after the start date.', 400);
+  let afterUri = null;
+  const cursor = params.get('cursor');
+  if (cursor) {
+    if (cursor.length > 1024 || !/^[\w-]+$/.test(cursor)) throw new SearchError('Invalid observation cursor. Start a new search.', 400);
+    afterUri = Buffer.from(cursor, 'base64url').toString('utf8');
+    if (!scienceUrl(afterUri) || !afterUri.startsWith('ibe/data/')) throw new SearchError('Invalid observation cursor. Start a new search.', 400);
+  }
+  return { raDeg, decDeg, frame: 'icrs', detector, release, startDate, endDate, startMjd, endMjd, afterUri };
+}
+
+export function buildQuery(search, { collections: available = COLLECTIONS } = {}) {
+  const collections = available.filter(c => search.release === 'all' || c === 'spherex_' + search.release || c === 'spherex_' + search.release + '_deep');
+  if (!collections.length || collections.some(c => !/^spherex_qr\d+(_deep)?$/.test(c))) throw new SearchError('The selected archive release is not available.', 400);
+  const conditions = [
+    `ob.collection IN (${collections.map(c => `'${c}'`).join(',')})`,
+    "a.producttype='science'",
+    `1=CONTAINS(POINT('ICRS',${search.raDeg},${search.decDeg}),p.poly)`
+  ];
+  if (search.detector) conditions.push(`p.energy_bandpassname IN ('D${search.detector}','SPHEREx-D${search.detector}')`);
+  if (search.startMjd !== null) conditions.push(`p.time_bounds_upper>=${search.startMjd}`);
+  if (search.endMjd !== null) conditions.push(`p.time_bounds_lower<${search.endMjd}`);
+  if (search.afterUri) conditions.push(`a.uri>'${search.afterUri}'`);
+  return `SELECT TOP ${MAX_RESULTS + 1}
+    ob.observationid AS obs_id,ob.collection AS obs_collection,
+    p.energy_bandpassname,p.time_bounds_lower AS t_min,p.time_bounds_upper AS t_max,
+    p.time_exposure AS t_exptime,p.energy_bounds_lower AS em_min,p.energy_bounds_upper AS em_max,
+    p.obs_publisher_did,p.calibrationlevel AS calib_level,p.datarelease AS obs_release_date,
+    p.quality_flag,p.provenance_version,p.provenance_lastexecuted,p.lastmodified,
+    a.uri,a.artifactid,a.contentlength,a.lastmodified AS artifact_modified
+    FROM spherex.plane AS p
+    JOIN spherex.observation AS ob ON p.obsid=ob.obsid
+    JOIN spherex.artifact AS a ON p.planeid=a.planeid
+    WHERE ${conditions.join(' AND ')} ORDER BY a.uri ASC`;
+}
+
+// RFC 4180 quoted fields, embedded line breaks, empty cells, BOM and CRLF.
+export function parseCsv(text) {
+  const rows = []; let row = [], cell = '', quoted = false;
+  text = text.replace(/^\uFEFF/, '');
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    if (char === '"') {
+      if (quoted && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (quoted) quoted = false;
+      else if (cell === '') quoted = true;
+      else throw new SearchError('IRSA returned malformed CSV. Please retry.');
+    } else if (char === ',' && !quoted) { row.push(cell); cell = ''; }
+    else if ((char === '\n' || char === '\r') && !quoted) {
+      if (char === '\r' && text[i + 1] === '\n') i++;
+      row.push(cell); if (row.some(value => value !== '')) rows.push(row); row = []; cell = '';
+    } else cell += char;
+  }
+  if (quoted) throw new SearchError('IRSA returned an incomplete table. Please retry.');
+  if (row.length || cell !== '') { row.push(cell); if (row.some(value => value !== '')) rows.push(row); }
+  const headers = rows.shift();
+  if (!headers?.includes('obs_id')) throw new SearchError('IRSA did not return the expected observation table. Please retry.');
+  return rows.map(values => {
+    if (values.length !== headers.length) throw new SearchError('IRSA returned an incomplete observation row. Please retry.');
+    return Object.fromEntries(headers.map((header, i) => [header, values[i]]));
+  });
+}
+const asNumber = value => value === null || value === undefined || String(value).trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value);
+export const mjdToIso = value => {
+  const number = asNumber(value); if (number === null) return null;
+  const milliseconds = (number - 40587) * 86400000;
+  return Number.isFinite(milliseconds) && Math.abs(milliseconds) < 8.64e15 ? new Date(milliseconds).toISOString() : null;
+};
+export function scienceUrl(uri) {
+  if (!uri) return null;
+  const path = uri.replace(/^https:\/\/irsa\.ipac\.caltech\.edu\//, '').replace(/^\//, '');
+  if (!/^ibe\/data\/spherex\/qr\d+\/level2\/[\w/.-]+\.fits$/.test(path) || path.includes('..')) return null;
+  return 'https://irsa.ipac.caltech.edu/' + path;
+}
+export function normalizeRow(row) {
+  const detectorMatch = /(?:^|-)D([1-6])$/.exec(row.energy_bandpassname || '');
+  const url = scienceUrl(row.uri);
+  const version = /\/(l2b(?:_retry)?-v\d+-\d{4}-\d{3})\//.exec(url || '')?.[1] || null;
+  const flag = row.quality_flag?.trim() || null;
+  return {
+    observationId: row.obs_id, productId: row.artifactid || row.obs_publisher_did,
+    publisherId: row.obs_publisher_did, detector: detectorMatch ? Number(detectorMatch[1]) : null,
+    observedStartUtc: mjdToIso(row.t_min), observedEndUtc: mjdToIso(row.t_max),
+    startMjd: asNumber(row.t_min), endMjd: asNumber(row.t_max), exposureSeconds: asNumber(row.t_exptime),
+    wavelengthMinUm: asNumber(row.em_min) === null ? null : Number(row.em_min) * 1e6,
+    wavelengthMaxUm: asNumber(row.em_max) === null ? null : Number(row.em_max) * 1e6,
+    wavelengthScope: 'image', collection: row.obs_collection,
+    release: /spherex_(qr\d+)/.exec(row.obs_collection || '')?.[1].toUpperCase() || null,
+    processingVersion: version, pipelineVersion: row.provenance_version || null,
+    processedAt: row.provenance_lastexecuted || null, releasedAt: row.obs_release_date || null,
+    metadataModifiedAt: row.lastmodified || null, productModifiedAt: row.artifact_modified || null,
+    sizeBytes: asNumber(row.contentlength), accessUrl: url,
+    quality: {
+      archiveFlag: flag, status: flag ? 'reported' : 'not-reported',
+      calibrationLevel: asNumber(row.calib_level), source: 'spherex.plane.quality_flag',
+      pixelAssessment: 'not-assessed',
+      description: flag ? `Archive quality flag: ${flag}. Pixel quality at the target is not assessed.` : 'No archive-level quality flag reported. This does not establish that target pixels are unflagged.'
+    }
+  };
+}
+export function deduplicate(rows) {
+  try { return preferredProducts(rows.map(normalizeRow)); }
+  catch { throw new SearchError('IRSA returned an observation without a valid identifier or detector.'); }
+}
+
+export async function queryArchive(query, { fetchImpl = fetch, timeoutMs = 90000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      let response;
+      try {
+        response = await fetchImpl(TAP_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'text/csv' }, body: new URLSearchParams({ REQUEST: 'doQuery', LANG: 'ADQL', QUERY: query, FORMAT: 'csv', MAXREC: String(MAX_RESULTS + 1) }), signal: controller.signal });
+      } catch (error) { if (attempt === 0 && !controller.signal.aborted) continue; throw error; }
+      if (!response.ok) {
+        await response.body?.cancel();
+        if (attempt === 0 && [429, 502, 503, 504].includes(response.status)) continue;
+        throw new SearchError('IRSA is temporarily unavailable. Please retry.');
+      }
+      let text = ''; const reader = response.body.getReader(); const decoder = new TextDecoder(); let bytes = 0;
+      while (true) { const { value, done } = await reader.read(); if (done) break; bytes += value.byteLength; if (bytes > 12_000_000) { await reader.cancel(); throw new SearchError('The archive response is too large. Narrow your date or detector filters.'); } text += decoder.decode(value, { stream: true }); }
+      text += decoder.decode();
+      if (/^\s*</.test(text)) {
+        // TAP may return HTTP 200 with QUERY_STATUS=ERROR. Never treat it as zero results.
+        throw new SearchError('IRSA could not complete the metadata query. Please retry or narrow the search.');
+      }
+      return parseCsv(text);
+    }
+  } catch (error) {
+    if (error instanceof SearchError) throw error;
+    if (controller.signal.aborted) throw new SearchError('IRSA search timed out. Please retry or narrow the date range.', 504);
+    throw new SearchError('Could not reach IRSA. Please check your connection and retry.');
+  } finally { clearTimeout(timer); }
+}
+
+export function createSearchService({ fetchImpl = fetch, now = () => Date.now(), timeoutMs = 90000, collections = COLLECTIONS } = {}) {
+  const cache = new Map(), pending = new Map();
+  return async function searchObservations(params) {
+    const search = validateSearch(params), key = JSON.stringify(search);
+    const cached = cache.get(key);
+    if (cached && cached.expires > now()) return { ...cached.result, cached: true };
+    if (pending.has(key)) return pending.get(key);
+    const request = (async () => {
+      const rows = await queryArchive(buildQuery(search, { collections }), { fetchImpl, timeoutMs });
+      const truncated = rows.length > MAX_RESULTS;
+      const observations = deduplicate(rows.slice(0, MAX_RESULTS));
+      const result = {
+        query: search, source: { name: 'NASA/IPAC IRSA', service: TAP_URL, kind: 'live', collections: collections.filter(c => search.release === 'all' || c === 'spherex_' + search.release || c === 'spherex_' + search.release + '_deep'), retrievedAt: new Date(now()).toISOString() },
+        observations, count: observations.length, matchedProducts: Math.min(rows.length, MAX_RESULTS),
+        duplicatesRemoved: Math.min(rows.length, MAX_RESULTS) - observations.length, truncated, cached: false,
+        nextCursor: truncated ? Buffer.from(rows[MAX_RESULTS - 1].uri).toString('base64url') : null,
+        warnings: [
+          'Wavelength bounds describe each image, not the exact wavelength at the target pixel.',
+          'Archive quality flags are reported as provided. FITS pixel flags at the target are not assessed.',
+          'Fixed ICRS position search: proper motion is not propagated to observation dates.',
+          ...(truncated ? [`More archive products are available. Use Load more observations or narrow your filters; the loaded list is incomplete.`] : [])
+        ]
+      };
+      cache.set(key, { result, expires: now() + 300000 });
+      while (cache.size > 40) cache.delete(cache.keys().next().value);
+      return result;
+    })();
+    pending.set(key, request);
+    try { return await request; } finally { pending.delete(key); }
+  };
+}

@@ -3,5 +3,10 @@
   "framework": null,
   "buildCommand": "",
   "installCommand": "",
-  "outputDirectory": "frontend"
+  "outputDirectory": ".",
+  "functions": {
+    "api/observations.js": { "maxDuration": 120, "includeFiles": "data/**" },
+    "api/observation-quality.js": { "maxDuration": 30 },
+    "api/index-status.js": { "maxDuration": 10, "includeFiles": "data/**" }
+  }
 }

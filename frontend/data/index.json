@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "scope": "preset-targets",
+  "status": "ready",
+  "schedule": {
+    "cron": "27 4 * * *",
+    "timeZone": "UTC",
+    "description": "Daily, around 10:27 AM Asia/Dhaka (04:27 UTC)"
+  },
+  "lastAttemptAt": "2026-11-03T18:42:39.680Z",
+  "lastSuccessfulCheckAt": "2026-11-03T18:43:56.232Z",
+  "lastChangedAt": "2026-11-03T18:41:57.313Z",
+  "collections": [
+    "spherex_qr2",
+    "spherex_qr2_deep",
+    "spherex_qr3",
+    "spherex_qr3_deep"
+  ],
+  "totalObservations": 3876,
+  "changes": {
+    "added": 0,
+    "revised": 0,
+    "removed": 0,
+    "unchanged": 3876
+  },
+  "targets": [
+    {
+      "id": "barnard",
+      "name": "Barnard’s Star",
+      "raDeg": 269.4521,
+      "decDeg": 4.6934,
+      "snapshot": "snapshots/barnard-e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a.json",
+      "hash": "e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a",
+      "count": 364,
+      "productCount": 364,
+      "checkedAt": "2026-11-03T18:42:53.045Z",
+      "changes": {
+        "added": 0,
+        "revised": 0,
+        "removed": 0,
+        "unchanged": 364
+      }
+    },
+    {
+      "id": "epsilon",
+      "name": "Epsilon Indi B",
+      "raDeg": 330.8413,
+      "decDeg": -56.7859,
+      "snapshot": "snapshots/epsilon-49606f3f91ac2cf3dbcc2bd63d307552184de0b215651424ddaa0a3a4b07f25e.json",
+      "hash": "49606f3f91ac2cf3dbcc2bd63d307552184de0b215651424ddaa0a3a4b07f25e",
+      "count": 444,
+      "productCount": 444,
+      "checkedAt": "2026-11-03T18:43:00.697Z",
+      "changes": {
+        "added": 0,
+        "revised": 0,
+        "removed": 0,
+        "unchanged": 444
+      }
+    },
+    {
+      "id": "wise",
+      "name": "WISE 0855",
+      "raDeg": 133.79512916666667,
+      "decDeg": -7.245147222222222,
+      "snapshot": "snapshots/wise-90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5.json",
+      "hash": "90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5",
+      "count": 256,
+      "productCount": 256,
+      "checkedAt": "2026-11-03T18:43:16.844Z",
+      "changes": {
+        "added": 0,
+        "revised": 0,
+        "removed": 0,
+        "unchanged": 256
+      }
+    },
+    {
+      "id": "aurigae",
+      "name": "RW Aurigae",
+      "raDeg": 76.9567,
+      "decDeg": 30.4043,
+      "snapshot": "snapshots/aurigae-f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c.json",
+      "hash": "f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c",
+      "count": 333,
+      "productCount": 333,
+      "checkedAt": "2026-11-03T18:43:35.398Z",
+      "changes": {
+        "added": 0,
+        "revised": 0,
+        "removed": 0,
+        "unchanged": 333
+      }
+    },
+    {
+      "id": "draconis",
+      "name": "R Draconis",
+      "raDeg": 248.1217,
+      "decDeg": 66.7569,
+      "snapshot": "snapshots/draconis-dfdceef7581d69ff3d8e0e94148121fe07b2721a56a33601a389fa2ca3628bd7.json",
+      "hash": "dfdceef7581d69ff3d8e0e94148121fe07b2721a56a33601a389fa2ca3628bd7",
+      "count": 2479,
+      "productCount": 2479,
+      "checkedAt": "2026-11-03T18:43:56.232Z",
+      "changes": {
+        "added": 0,
+        "revised": 0,
+        "removed": 0,
+        "unchanged": 2479
+      }
+    }
+  ],
+  "previousSnapshots": [
+    "snapshots/barnard-e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a.json",
+    "snapshots/epsilon-49606f3f91ac2cf3dbcc2bd63d307552184de0b215651424ddaa0a3a4b07f25e.json",
+    "snapshots/wise-90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5.json",
+    "snapshots/aurigae-f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c.json",
+    "snapshots/draconis-dfdceef7581d69ff3d8e0e94148121fe07b2721a56a33601a389fa2ca3628bd7.json"
+  ],
+  "error": null
+}

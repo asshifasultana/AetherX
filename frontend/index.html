@@ -88,10 +88,36 @@
       </section>
     </section>
 
+    <section id="observations" class="observations-section" aria-labelledby="observations-heading">
+      <div class="observation-search-title"><div><p class="eyebrow">NASA / IPAC INFRARED SCIENCE ARCHIVE</p><h2 id="observations-heading">Find your observations</h2><p id="search-target" class="search-target">Barnard’s Star · 269.4521°, +4.6934° · ICRS</p></div><span id="archive-mode-label" class="archive-badge">IRSA archive</span></div>
+      <div class="index-update-status" aria-labelledby="index-update-heading"><div><h3 id="index-update-heading">Automatic archive updates</h3><p id="index-update-summary" role="status" aria-live="polite">Checking index status…</p><p id="index-update-changes"></p></div><p class="index-update-scope">Daily checks cover the five preset positions. Other positions use live IRSA searches.</p></div>
+      <form id="observation-search-form" class="observation-filters">
+        <label for="search-detector">Detector<select id="search-detector"><option value="all">All detectors</option><option value="1">D1 · 0.75–1.09 μm</option><option value="2">D2 · 1.10–1.62 μm</option><option value="3">D3 · 1.63–2.41 μm</option><option value="4">D4 · 2.42–3.82 μm</option><option value="5">D5 · 3.83–4.41 μm</option><option value="6">D6 · 4.42–5.00 μm</option></select></label>
+        <label for="search-release">Archive release<select id="search-release"><option value="all">All public releases · prefer latest</option><option value="qr3">QR3 only</option><option value="qr2">QR2 only</option></select></label>
+        <label for="search-start">From date (UTC)<input id="search-start" type="date" min="2025-03-01"></label>
+        <label for="search-end">Through date (UTC)<input id="search-end" type="date" min="2025-03-01"></label>
+        <button id="find-observations" class="primary-button" type="submit">Find observations ↗</button>
+      </form>
+      <div class="search-status-row"><p id="search-status" role="status" aria-live="polite">Choose a target, then search for images covering that exact sky position.</p><button id="cancel-search" class="text-button" type="button" hidden>Cancel search</button></div>
+      <p id="search-error" class="search-error" role="alert" hidden></p>
+      <div id="observation-results" hidden>
+        <div class="results-toolbar"><p id="results-summary"></p><div><label for="result-sort">Sort<select id="result-sort"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label><button id="export-observations" class="reset-settings" type="button">Export CSV ↓</button></div></div>
+        <div id="detector-summary" class="detector-summary" aria-label="Observations per detector"></div>
+        <p id="results-provenance" class="results-provenance"></p>
+        <div id="results-warnings" class="results-warnings"></div>
+        <div class="observation-table-wrapper" role="region" aria-label="Observation metadata, scroll horizontally on small screens" tabindex="0">
+          <table class="observation-table"><caption class="sr-only">SPHEREx spectral images covering the selected position. Expand details for identifiers, provenance and quality inspection.</caption><thead><tr><th scope="col">Observed (UTC)</th><th scope="col">Detector</th><th scope="col">Coverage (μm)</th><th scope="col">Archive quality</th><th scope="col">Release / processing</th><th scope="col">Details</th></tr></thead><tbody id="observation-rows"></tbody></table>
+        </div>
+        <div class="results-pagination"><button id="results-previous" class="reset-settings" type="button">← Previous</button><p id="results-page" role="status"></p><button id="results-next" class="reset-settings" type="button">Next →</button></div>
+        <button id="load-more-observations" class="reset-settings" type="button" hidden>Load more observations ↓</button>
+      </div>
+    </section>
+
     <section id="mission" class="mission"><span class="mission-symbol" aria-hidden="true">✳</span><div><p class="eyebrow">ONE SKY. COUNTLESS STORIES.</p><h2>There’s more than meets the eye.</h2><p>SPHEREx studies the universe in infrared light. This atlas is a place to explore familiar objects through a different lens, one sky position at a time.</p></div><a href="https://science.nasa.gov/mission/spherex/" target="_blank" rel="noopener noreferrer">Meet the mission <span>↗</span></a></section>
   </main>
   <footer><a class="brand" href="#" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a></footer>
   <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
+  <script type="module" src="observations-ui.js"></script>
 </body>
 </html>

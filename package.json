@@ -6,7 +6,9 @@
     "node": "24.x"
   },
   "scripts": {
+    "update:index": "node scripts/update-observation-index.mjs",
+    "build": "node scripts/build-vercel.mjs",
     "dev": "node frontend/server.mjs",
-    "test": "node --test frontend/coordinates.test.js"
+    "test": "node --test frontend/coordinates.test.js frontend/tests/*.test.js"
   }
 }

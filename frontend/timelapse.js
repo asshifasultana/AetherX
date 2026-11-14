@@ -17,6 +17,7 @@ const state = {
   playing: false,
   userPaused: false,
   viewMode: 'time-lapse',
+  pinnedKey: '',
   speed: 1,
   band: null,
   combineExposures: true,
@@ -248,6 +249,7 @@ function updateCurrent({ keepSlider = false } = {}) {
   const frame = state.frames[state.index];
   if (!frame) {
     $('timeline-date').textContent = 'Waiting for observations';
+    $('timeline-meta').hidden = false;
     $('timeline-meta').textContent = 'Search for a target to build a dated timeline.';
     $('timeline').value = '0';
     $('timeline').style.setProperty('--progress', '0%');
@@ -257,21 +259,11 @@ function updateCurrent({ keepSlider = false } = {}) {
     return;
   }
   $('timeline-date').textContent = frameDate(frame);
-  const details = [`Frame ${state.index + 1} of ${state.frames.length}`, `D${frame.detector}`];
-  const wave = wavelength(frame);
-  if (wave) details.push(wave);
-  details.push(frame.label || frame.release || 'Release not reported');
-  if (frame.mixed) details.push('same-day exposures span releases');
-  if (frame.exposureCount > 1) details.push(`${frame.exposureCount} exposures · per-pixel median stack`);
-  const record = frame.stackRecord;
-  if (record) details.push(`${Math.round(record.exposureSeconds)} s exposure time`, `${record.validPixelContributions.toLocaleString()} valid pixel contributions`);
-  if (state.index > 0) {
-    const gap = frameGaps(state.frames)[state.index - 1];
-    if (gap) details.push(`${formatGap(gap.days)} after previous`);
-  }
-  $('timeline-meta').textContent = details.join(' · ');
+  $('timeline-meta').textContent = '';
+  $('timeline-meta').hidden = true;
   const sources = frame.exposures || [frame];
   const ids = sources.map(item => item.observationId || item.productId || 'ID not reported');
+  const record = frame.stackRecord;
   const failed = new Set(record?.failedObservationIds || []);
   const pendingText = frame.exposureCount > 1 ? 'Stack record is created when this frame finishes loading. ' : 'Single-exposure frame; no stacking was performed. ';
   $('frame-provenance-text').textContent = `${record ? `${record.method}. ` : pendingText}${record ? `${record.usedExposureCount} of ${record.requestedExposureCount} exposures loaded; ${record.validPixelContributions.toLocaleString()} valid input-pixel contributions covered ${record.coveredOutputPixels.toLocaleString()} output pixels; ${Math.round(record.exposureSeconds)} s total exposure time. ` : ''}UTC period: ${sources[0]?.observedStartUtc || 'unknown'} through ${sources.at(-1)?.observedEndUtc || sources.at(-1)?.observedStartUtc || 'unknown'}. Source observation IDs: ${ids.map(id => `${id}${failed.has(id) ? ' (failed)' : ''}`).join(', ')}.`;
@@ -281,7 +273,13 @@ function updateCurrent({ keepSlider = false } = {}) {
     $('timeline').style.setProperty('--progress', `${fraction * 100}%`);
   }
   $('timeline').setAttribute('aria-valuetext', `${frameDate(frame)}, frame ${state.index + 1} of ${state.frames.length}`);
-  for (const tick of $('timeline-ticks').children) tick.classList.toggle('current', Number(tick.dataset.index) === state.index);
+  for (const tick of $('timeline-ticks').children) {
+    tick.classList.toggle('current', Number(tick.dataset.index) === state.index);
+    tick.classList.toggle('reference', Boolean(state.pinnedKey) && observationKey(state.frames[Number(tick.dataset.index)] || {}) === state.pinnedKey);
+  }
+  const pinnedHere = Boolean(state.pinnedKey) && observationKey(frame) === state.pinnedKey;
+  $('set-reference').textContent = pinnedHere ? 'Reference ✓' : 'Set as reference';
+  $('set-reference').setAttribute('aria-pressed', String(pinnedHere));
   const currentKey = observationKey(frame);
   for (const [key, entry] of state.thumbs) {
     const active = key === currentKey;
@@ -460,6 +458,11 @@ function togglePlayback() {
 }
 
 $('play-button').addEventListener('click', togglePlayback);
+$('set-reference').addEventListener('click', () => {
+  const frame = state.frames[state.index];
+  if (!frame) return;
+  window.dispatchEvent(new CustomEvent('sky:reference-frame-pinned', { detail: { key: observationKey(frame) } }));
+});
 $('step-back').addEventListener('click', () => { pausePlayback({ manual: true }); void selectFrame(state.index - 1); });
 $('step-forward').addEventListener('click', () => { pausePlayback({ manual: true }); void selectFrame(state.index + 1); });
 $('speed-button').addEventListener('click', () => {
@@ -495,7 +498,13 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   const modeChanged = detail.viewMode && detail.viewMode !== state.viewMode;
   if (modeChanged) {
     state.viewMode = detail.viewMode;
-    if (state.viewMode !== 'time-lapse') pausePlayback();
+    // Difference and motion trail can still be played frame by frame; blink
+    // animates on its own and a deep stack has no timeline position.
+    if (state.viewMode === 'deep-stack' || state.viewMode === 'blink') pausePlayback();
+  }
+  if (detail.pinnedReferenceKey !== undefined && detail.pinnedReferenceKey !== state.pinnedKey) {
+    state.pinnedKey = detail.pinnedReferenceKey || '';
+    updateCurrent({ keepSlider: true });
   }
   const fov = detail.fovArcmin === undefined ? prefetch.fov : Number(detail.fovArcmin);
   if (fov !== prefetch.fov) {
@@ -542,8 +551,8 @@ window.addEventListener('sky:observations-loading', () => {
 });
 
 async function activateTimeline() {
-  if (!state.frames.length || state.viewMode !== 'time-lapse') return;
-  if (state.frames.length > 1 && !state.userPaused) await playPlayback();
+  if (!state.frames.length || state.viewMode === 'deep-stack') return;
+  if (state.viewMode === 'time-lapse' && state.frames.length > 1 && !state.userPaused) await playPlayback();
   else await selectFrame(state.index);
 }
 
@@ -590,6 +599,7 @@ window.addEventListener('sky:deep-stack-built', event => {
     ? `Deep stack ready; ${record.failedObservationIds.length} source exposures were skipped. See the frame contribution CSV for statuses.`
     : `Deep stack ready from ${record.usedFrameCount} UTC-day frames. The median stack excludes masked, missing, and uncovered samples.`;
   if (record.excludedByFrameLimit) $('timeline-status').textContent += ` ${record.excludedByFrameLimit} later frame${record.excludedByFrameLimit === 1 ? ' was' : 's were'} outside the configured limit.`;
+  $('timeline-meta').hidden = false;
   $('timeline-meta').textContent = `Deep median · ${record.usedFrameCount}/${record.availableFrameCount} available UTC-day frames · ${record.usedExposureCount} exposures · ${record.validPixelContributions.toLocaleString()} valid frame-pixel contributions · ${Math.round(record.exposureSeconds)} s total`;
   $('frame-provenance-text').textContent = `${record.method}. Source observation IDs: ${record.observationIds.join(', ')}. Skipped IDs: ${record.failedObservationIds.join(', ') || 'none'}. ${record.excludedByFrameLimit || 0} frames excluded by the configured limit. Full product IDs and exposure-level details are available in the contributor CSV.`;
 });
@@ -601,7 +611,7 @@ window.addEventListener('sky:cutout-rendered', event => {
   const key = observationKey(observation);
   state.shownKey = key;
   prefetch.fetched.add(key);
-  paintThumbFrom(observation, document.getElementById('sky-canvas'));
+  paintThumbFrom(observation, event.detail?.canvas || document.getElementById('sky-canvas'));
   const current = state.frames[state.index];
   if (current && key === observationKey(current)) {
     setStatus(`Showing ${frameDate(current)} · D${current.detector}.`);

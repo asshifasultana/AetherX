@@ -57,11 +57,12 @@ test('viewer paints previews, preserves every contributor and suppresses stale r
     await showCutout(exposure(0));
     assert.ok(elements.get('sky-canvas').pixels?.length);
     const clearPixels = elements.get('sky-canvas').pixels.slice();
-    emit('sky:viewer-settings-changed', { qualityOverlay: true, showTargetMarker: true, labelAsteroids: true });
+    // Overlays draw on their own canvas: the science image pixels never change.
+    emit('sky:viewer-settings-changed', { qualityOverlay: true, showCrosshair: true, showCompass: true });
     await showCutout(exposure(0));
     assert.deepEqual(elements.get('sky-canvas').pixels, clearPixels);
-    assert.equal(elements.get('target-marker').hidden, true);
-    assert.equal(elements.get('quality-legend').hidden, true);
+    assert.equal(elements.get('quality-legend').hidden, false);
+    assert.equal(elements.get('colour-bar').hidden, false);
     assert.equal(elements.get('source-mark').hidden, true);
     const originalFetch = globalThis.fetch;
     let inspected;

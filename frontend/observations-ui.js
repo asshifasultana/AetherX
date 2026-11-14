@@ -158,7 +158,9 @@ function renderResults() {
     $('detector-summary').append(card);
   }
   $('results-warnings').replaceChildren();
-  for (const warning of (result.warnings || []).filter(text => !text.startsWith('Wavelength bounds describe each image'))) $('results-warnings').append(make('p', warning));
+  const actionable = (result.warnings || []).filter(text => text.startsWith('More archive products are available'));
+  for (const warning of actionable) $('results-warnings').append(make('p', warning));
+  $('results-warnings').hidden = !actionable.length;
   renderRows();
 }
 $('load-more-observations').addEventListener('click', async () => {

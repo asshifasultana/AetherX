@@ -25,8 +25,31 @@ export const QUALITY_FLAGS = Object.freeze([
   [29, 'SATELLITE_HALO', 'Satellite halo artifact', 'artifact']
 ].map(([bit, name, description, category]) => Object.freeze({ bit, name, description, category })));
 const KNOWN_FLAG_MASK = QUALITY_FLAGS.reduce((mask, flag) => mask | (2 ** flag.bit), 0) >>> 0;
+export const DEFAULT_MASK_BITS = MASKED_FLAG_BITS.reduce((mask, bit) => mask | (2 ** bit), 0) >>> 0;
+// Flags that can be opted into masking: saturation, nonlinearity and streaks.
+// FULLSAMPLE, SOURCE and GHOST_FPA are informational and are never maskable.
+const CAUTION_MASKABLE_BITS = Object.freeze([1, 15, 25]);
+const MISSING_BIT = 9;
 
-export function assessPixelQuality({ covered, value, flags = 0, flagsAvailable = true, maskEnabled = true }) {
+/**
+ * Bit mask for a chosen set of flag categories. Missing data is always masked.
+ * The four default categories reproduce MASKED_FLAG_BITS exactly.
+ */
+export function maskBitsFor(categories = ['transient', 'detector', 'correction', 'artifact']) {
+  const chosen = new Set(categories);
+  let mask = 2 ** MISSING_BIT;
+  for (const flag of QUALITY_FLAGS) {
+    if (!chosen.has(flag.category)) continue;
+    if (flag.category === 'caution' ? CAUTION_MASKABLE_BITS.includes(flag.bit) : MASKED_FLAG_BITS.includes(flag.bit)) mask += 2 ** flag.bit;
+  }
+  return mask >>> 0;
+}
+
+export function isValidMaskBits(value) {
+  return Number.isInteger(value) && value >= 0 && value <= 0xffffffff && ((value & ~KNOWN_FLAG_MASK) >>> 0) === 0;
+}
+
+export function assessPixelQuality({ covered, value, flags = 0, flagsAvailable = true, maskEnabled = true, maskBits = DEFAULT_MASK_BITS }) {
   const unknownBits = (flags & ~KNOWN_FLAG_MASK) >>> 0;
   const setFlags = QUALITY_FLAGS.filter(flag => (flags & (2 ** flag.bit)) !== 0);
   if (unknownBits) setFlags.push({ bit: null, name: 'UNKNOWN_FLAG_BITS', description: `Unrecognized flag bits 0x${unknownBits.toString(16).toUpperCase()}`, category: 'caution' });
@@ -35,7 +58,7 @@ export function assessPixelQuality({ covered, value, flags = 0, flagsAvailable =
     return { state: 'missing_data', label: 'Missing pixel data', missing: true, excluded: true, setFlags };
   }
   if (!flagsAvailable) return { state: 'unassessed', label: 'Science value present; FITS quality flags unavailable', missing: false, excluded: false, setFlags };
-  const masked = unknownBits !== 0 || setFlags.some(flag => MASKED_FLAG_BITS.includes(flag.bit));
+  const masked = unknownBits !== 0 || ((flags & maskBits) >>> 0) !== 0;
   if (masked && maskEnabled) return { state: 'masked', label: 'Excluded by quality mask', missing: false, excluded: true, setFlags };
   if (masked) return { state: 'flagged_included', label: 'Flagged but currently included', missing: false, excluded: false, setFlags };
   return { state: 'valid', label: 'Valid measured pixel', missing: false, excluded: false, setFlags };
@@ -71,10 +94,10 @@ export function detectSingleExposureGlitches(samples) {
   return glitches;
 }
 
-export function summarizeExposureSamples(samples, maskEnabled = true, glitches = new Set()) {
+export function summarizeExposureSamples(samples, maskEnabled = true, glitches = new Set(), maskBits = DEFAULT_MASK_BITS) {
   const counts = { examined: 0, valid: 0, masked: 0, missing: 0, uncovered: 0, flaggedIncluded: 0, unassessed: 0, glitches: 0 };
   for (const [index, sample] of samples.entries()) {
-    const status = assessPixelQuality({ ...sample, maskEnabled });
+    const status = assessPixelQuality({ ...sample, maskEnabled, maskBits });
     counts.examined++;
     if (glitches.has(index)) { counts.glitches++; continue; }
     if (status.state === 'valid') counts.valid++;

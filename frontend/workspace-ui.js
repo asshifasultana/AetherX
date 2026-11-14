@@ -35,29 +35,50 @@ export function mountWorkspace() {
     sizeToolbar();
     new ResizeObserver(sizeToolbar).observe(toolbar);
   }
-  const mobile = window.matchMedia('(max-width: 900px)');
-  const toggles = [$('sidebar-toggle'), $('sidebar-rail-toggle'), $('sidebar-collapse')];
-  let open = false, returnFocus = $('sidebar-toggle');
-  function setOpen(next, { focus = false, trigger } = {}) {
-    open = next;
-    if (trigger && open) returnFocus = trigger;
-    workspace.dataset.sidebarOpen = String(open);
-    content.hidden = !open;
-    sidebar.inert = mobile.matches && !open;
-    $('sidebar-rail-toggle').hidden = open || mobile.matches;
-    $('sidebar-backdrop').hidden = !mobile.matches || !open;
-    if (mobile.matches && open) { sidebar.setAttribute('role', 'dialog'); sidebar.setAttribute('aria-modal', 'true'); }
-    else { sidebar.removeAttribute('role'); sidebar.removeAttribute('aria-modal'); }
-    for (const toggle of toggles) toggle.setAttribute('aria-expanded', String(open));
-    $('sidebar-toggle').setAttribute('aria-label', open ? 'Close settings sidebar' : 'Open settings sidebar');
+  const settingsToggles = [$('sidebar-toggle'), $('sidebar-rail-toggle'), $('sidebar-collapse')];
+  const agent = $('ai-guide'), agentToggle = $('agent-toggle'), agentClose = $('agent-close');
+  const backdrop = $('sidebar-backdrop');
+  let settingsOpen = false, agentOpen = false, returnFocus = $('sidebar-toggle');
+  function renderDrawers({ focus = false } = {}) {
+    workspace.dataset.sidebarOpen = String(settingsOpen);
+    workspace.dataset.agentOpen = String(agentOpen);
+    sidebar.inert = !settingsOpen;
+    agent.inert = !agentOpen;
+    $('sidebar-rail-toggle').hidden = true;
+    sidebar.toggleAttribute('aria-modal', settingsOpen);
+    agent.toggleAttribute('aria-modal', agentOpen);
+    if (settingsOpen) sidebar.setAttribute('role', 'dialog'); else sidebar.removeAttribute('role');
+    if (agentOpen) agent.setAttribute('role', 'dialog'); else agent.removeAttribute('role');
+    for (const toggle of settingsToggles) toggle.setAttribute('aria-expanded', String(settingsOpen));
+    agentToggle.setAttribute('aria-expanded', String(agentOpen));
+    $('sidebar-toggle').setAttribute('aria-label', settingsOpen ? 'Close settings' : 'Open settings');
+    agentToggle.setAttribute('aria-label', agentOpen ? 'Close AI guide' : 'Open AI guide');
+    const anyOpen = settingsOpen || agentOpen;
+    backdrop.tabIndex = anyOpen ? 0 : -1;
+    backdrop.setAttribute('aria-hidden', String(!anyOpen));
     if (focus) {
-      if (open) $('sidebar-collapse').focus();
-      else (mobile.matches ? returnFocus : $('sidebar-toggle')).focus();
+      if (settingsOpen) $('sidebar-collapse').focus();
+      else if (agentOpen) agentClose.focus();
+      else returnFocus.focus();
     }
   }
-  for (const toggle of toggles) toggle.addEventListener('click', () => setOpen(!open, { focus: true, trigger: toggle }));
-  $('sidebar-backdrop').addEventListener('click', () => setOpen(false, { focus: true }));
-  mobile.addEventListener('change', () => { help.dismiss(); setOpen(false); });
+  function setSettingsOpen(next, options = {}) {
+    settingsOpen = next;
+    if (next) { agentOpen = false; returnFocus = options.trigger || $('sidebar-toggle'); }
+    renderDrawers(options);
+  }
+  function setAgentOpen(next, options = {}) {
+    agentOpen = next;
+    if (next) { settingsOpen = false; returnFocus = options.trigger || agentToggle; }
+    renderDrawers(options);
+  }
+  $('sidebar-toggle').addEventListener('click', () => setSettingsOpen(!settingsOpen, { focus: true, trigger: $('sidebar-toggle') }));
+  $('sidebar-collapse').addEventListener('click', () => setSettingsOpen(false, { focus: true }));
+  agentToggle.addEventListener('click', () => setAgentOpen(!agentOpen, { focus: true, trigger: agentToggle }));
+  agentClose.addEventListener('click', () => setAgentOpen(false, { focus: true }));
+  backdrop.addEventListener('click', () => {
+    settingsOpen = false; agentOpen = false; renderDrawers({ focus: true });
+  });
 
   const tooltip = $('settings-tooltip');
   let active;
@@ -101,16 +122,20 @@ export function mountWorkspace() {
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       if (help.visible) { help.dismiss(); event.preventDefault(); return; }
-      if (mobile.matches && open) { setOpen(false, { focus: true }); event.preventDefault(); }
+      if (settingsOpen || agentOpen) {
+        settingsOpen = false; agentOpen = false; renderDrawers({ focus: true }); event.preventDefault();
+      }
     }
-    if (event.key !== 'Tab' || !mobile.matches || !open) return;
-    const controls = [...content.querySelectorAll('button, input, select, summary, a[href]')].filter(element => element.getClientRects().length && !element.disabled);
+    if (event.key !== 'Tab' || (!settingsOpen && !agentOpen)) return;
+    const activeDrawer = settingsOpen ? content : agent;
+    const controls = [...activeDrawer.querySelectorAll('button, input, textarea, select, summary, a[href]')].filter(element => element.getClientRects().length && !element.disabled);
     const first = controls[0], last = controls.at(-1);
+    if (!first || !last) return;
     if (event.shiftKey && document.activeElement === first) { last.focus(); event.preventDefault(); }
     else if (!event.shiftKey && document.activeElement === last) { first.focus(); event.preventDefault(); }
   });
-  for (const toggle of toggles) toggle.addEventListener('click', help.dismiss);
-  setOpen(open);
+  for (const toggle of [...settingsToggles, agentToggle, agentClose]) toggle.addEventListener('click', help.dismiss);
+  renderDrawers();
 }
 
 if (typeof document !== 'undefined') mountWorkspace();

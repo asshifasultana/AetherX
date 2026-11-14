@@ -32,7 +32,7 @@ for (const file of publicFiles) {
   }
   if (missing.length) throw new Error(`Static files imported but not published:\n${missing.join('\n')}`);
 }
-for (const [name, maxDuration] of [['observations', 120], ['moving-observations', 120], ['observation-quality', 30], ['pixel-quality', 10], ['index-status', 10], ['cutout', 120], ['crop', 30], ['resolve-object', 15], ['gaia-sources',15]]) {
+for (const [name, maxDuration] of [['observations', 120], ['moving-observations', 120], ['observation-quality', 30], ['pixel-quality', 10], ['index-status', 10], ['cutout', 120], ['crop', 30], ['resolve-object', 15], ['gaia-sources',15], ['wise-sources',15]]) {
   const directory = path.join(output, 'functions', 'api', `${name}.func`);
   await mkdir(path.join(directory, 'api'), { recursive: true });
   await mkdir(path.join(directory, 'lib'), { recursive: true });
@@ -43,16 +43,16 @@ for (const [name, maxDuration] of [['observations', 120], ['moving-observations'
   if (name === 'crop') for (const library of ['range-fits.js', 'fits-engine.js', 'rice.js', 'background.js', 'pixel-quality.js']) await copyFile(path.join(frontend, 'lib', library), path.join(directory, 'lib', library));
   if (name === 'pixel-quality') await copyFile(path.join(frontend, 'lib', 'pixel-quality.js'), path.join(directory, 'lib', 'pixel-quality.js'));
   if (name === 'resolve-object') await copyFile(path.join(frontend, 'coordinates.js'), path.join(directory, 'coordinates.js'));
-  if (name === 'gaia-sources') {
+  if (['gaia-sources', 'wise-sources'].includes(name)) {
     await copyFile(path.join(frontend,'lib','gaia-catalog.js'),path.join(directory,'lib','gaia-catalog.js'));
     for(const module of ['gaia-core.js','sky-context-core.js','sky-projection.js']) await copyFile(path.join(frontend,module),path.join(directory,module));
   }
-  if (!['cutout', 'crop', 'resolve-object','gaia-sources'].includes(name)) {
+  if (!['cutout', 'crop', 'resolve-object','gaia-sources','wise-sources'].includes(name)) {
     await copyFile(path.join(frontend, 'presets.js'), path.join(directory, 'presets.js'));
     const libraries = name === 'moving-observations' ? ['observations.js', 'search-store.js'] : ['observations.js', 'quality.js', 'index-store.js', 'search-store.js'];
     for (const library of libraries) await copyFile(path.join(frontend, 'lib', library), path.join(directory, 'lib', library));
   }
-  if (!['moving-observations', 'observation-quality', 'cutout', 'crop', 'resolve-object','gaia-sources'].includes(name)) {
+  if (!['moving-observations', 'observation-quality', 'cutout', 'crop', 'resolve-object','gaia-sources','wise-sources'].includes(name)) {
     try { await cp(path.join(frontend, 'data'), path.join(directory, 'data'), { recursive: true }); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }
   }

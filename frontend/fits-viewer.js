@@ -746,6 +746,7 @@ async function showDeepStack() {
       controller.abort();
       resetViewer(error.message); status.classList.add('is-error');
       document.getElementById('cutout-cache-state').textContent = 'Deep stack unavailable';
+      window.dispatchEvent(new CustomEvent('sky:deep-stack-error'));
     }
   }
 }
@@ -777,7 +778,7 @@ function commitCutout(observation, entry, { announce = true, preview = false } =
   caption.textContent = `${formatWavelength(observation)} · ${release}${processing}${stackLabel} · ${settings.fovArcmin}′ square · north up${presetMotion(target) ? ' · proper-motion aligned' : target.fixedSkyFor ? ' · fixed sky, star moves' : ''}${masked ? ` · ${masked} flagged pixels masked` : ''}`;
   status.hidden = true;
   document.getElementById('export-sky-png').disabled = preview;
-  document.getElementById('cutout-cache-state').textContent = image.stackRecord ? 'Aligned median stack · browser caching enabled' : 'Retrieved from NASA archive · browser caching enabled';
+  document.getElementById('cutout-cache-state').textContent = '';
   if (!preview) window.dispatchEvent(new CustomEvent('sky:cutout-rendered', { detail: { observation, stackRecord: image.stackRecord || null } }));
   // Playback frames are not shared state: only a frame the user opened updates
   // the address bar. Click the sky image to mark a candidate source.

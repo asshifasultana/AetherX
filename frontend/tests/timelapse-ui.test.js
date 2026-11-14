@@ -100,3 +100,83 @@ test('live tutorial previews show the selected frame without autoplay or backgro
   assert.equal(downloads, 0);
   assert.equal(ui.timers.size, 0);
 });
+
+test('search loader waits for the selected image and every timeline preview', async () => {
+  let finishImage, finishPreview;
+  const ui = mount({ ready: false,
+    show: () => new Promise(resolve => { finishImage = resolve; }),
+    warm: () => new Promise(resolve => { finishPreview = resolve; }) });
+  ui.emit('sky:observations-loading');
+  assert.equal(ui.get('preview-loading').hidden, false);
+  ui.load(); await flush();
+  assert.equal(ui.get('preview-loading').hidden, false);
+  ui.emit('sky:cutout-rendered', { observation: observations[0] });
+  finishImage({}); await flush();
+  assert.equal(ui.get('preview-loading').hidden, false);
+  const timer = [...ui.timers.values()].find(item => item.delay === 200);
+  const batch = timer.fn(); await flush();
+  assert.equal(ui.get('preview-loading').hidden, false);
+  finishPreview(); await batch; await flush();
+  assert.equal(ui.get('preview-loading').hidden, true);
+});
+
+test('empty or failed archive searches dismiss the loader', () => {
+  for (const failed of [false, true]) {
+    const ui = mount(); ui.emit('sky:observations-loading');
+    ui.emit('sky:observations-loaded', { observations: [], failed });
+    assert.equal(ui.get('preview-loading').hidden, true);
+  }
+});
+
+test('failed image downloads settle loading instead of trapping the viewer', async () => {
+  const ui = mount({ ready: false,
+    show: (frame, emit) => { emit('sky:cutout-error', { observation: frame }); },
+    warm: async () => { throw new Error('Unavailable'); } });
+  ui.emit('sky:observations-loading'); ui.load(); await flush();
+  const timer = [...ui.timers.values()].find(item => item.delay === 200);
+  timer.fn(); await flush();
+  assert.equal(ui.get('preview-loading').hidden, true);
+});
+
+test('HUD sweeps to 90 quickly, slows below 100, and resets for a new search', () => {
+  const ui = mount({ ready: false });
+  const tick = delay => {
+    const entry = [...ui.timers.entries()].find(([, timer]) => timer.delay === delay);
+    assert.ok(entry, `Expected a ${delay}ms progress tick`);
+    ui.timers.delete(entry[0]); entry[1].fn();
+  };
+  ui.emit('sky:observations-loading');
+  assert.equal(ui.get('preview-loading-percent').textContent, '00');
+  for (let i = 0; i < 10; i++) tick(70);
+  assert.equal(ui.get('preview-loading-percent').textContent, '90');
+  for (let i = 0; i < 400; i++) tick(250);
+  assert.equal(ui.get('preview-loading').hidden, false);
+  assert.ok(Number(ui.get('preview-loading-percent').textContent) < 100);
+  ui.emit('sky:observations-loaded', { observations: [] });
+  assert.equal(ui.get('preview-loading-percent').textContent, '100');
+  assert.equal(ui.get('preview-loading').hidden, true);
+  assert.ok(![...ui.timers.values()].some(timer => timer.delay === 70 || timer.delay === 250));
+  ui.emit('sky:observations-loading');
+  assert.equal(ui.get('preview-loading-percent').textContent, '00');
+});
+
+test('loading facts rotate through stars, SPHEREx and Planet Nine, and stop when ready', () => {
+  const ui = mount({ ready: false });
+  const tick = delay => {
+    const entry = [...ui.timers.entries()].find(([, timer]) => timer.delay === delay);
+    assert.ok(entry); ui.timers.delete(entry[0]); entry[1].fn();
+  };
+  ui.emit('sky:observations-loading');
+  assert.match(ui.get('preview-loading-fact').textContent, /100 billion stars/);
+  tick(6000); tick(180);
+  assert.match(ui.get('preview-loading-fact').textContent, /SPHEREx.*102/);
+  tick(6000); tick(180); tick(6000); tick(180);
+  assert.match(ui.get('preview-loading-fact').textContent, /Planet Nine.*yet to be discovered/);
+  // Finishing in the middle of a fade cancels the pending text swap too.
+  tick(6000);
+  const lastFact = ui.get('preview-loading-fact').textContent;
+  ui.emit('sky:observations-loaded', { observations: [] });
+  assert.equal(ui.get('preview-loading').hidden, true);
+  assert.ok(![...ui.timers.values()].some(timer => timer.delay === 6000 || timer.delay === 180));
+  assert.equal(ui.get('preview-loading-fact').textContent, lastFact);
+});

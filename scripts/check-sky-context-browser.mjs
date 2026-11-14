@@ -9,6 +9,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { createAppServer } from '../frontend/server.mjs';
 import { createGaiaCatalog } from '../frontend/lib/gaia-catalog.js';
+import { createWiseHandler } from '../frontend/api/wise-sources.js';
 import { createGaiaHandler } from '../frontend/api/gaia-sources.js';
 import { makeFits } from '../frontend/tests/fixtures/fits-builder.js';
 const root=new URL('../.local/sky-context-smoke/',import.meta.url);await mkdir(root,{recursive:true});
@@ -18,11 +19,13 @@ const bytes=makeFits({ra:56.75,dec:24.1167});
 const observations=[2,3].map(day=>({accessUrl:`https://irsa.ipac.caltech.edu/ibe/data/spherex/qr3/level2/fixture${day}.fits`,detector:1,observationId:`obs-${day}`,productId:`fixture-${day}`,observedStartUtc:`2026-01-0${day}T00:00:00Z`,observedEndUtc:`2026-01-0${day}T00:01:40Z`,exposureSeconds:100,release:'QR3',wavelengthMinUm:.8,wavelengthMaxUm:1.0,quality:{archiveFlag:0,summary:'Synthetic fixture'}}));
 let gaiaRequests=0,fitsRequests=0,culturalRequests=0;
 const gaia=createGaiaHandler(createGaiaCatalog({fetchImpl:async()=>new Response('source_id,ra,dec,ref_epoch,pmra,pmdec,phot_g_mean_mag\n5350358584482202880,56.75,24.1167,2016,0,0,10\n')}));
+const wise = createWiseHandler({ fetchImpl: async () => new Response('designation,ra,dec,w1mpro,w1sigmpro,w2mpro,w2sigmpro,ph_qual,cc_flags\nJ034700.00+240700.0,56.75,24.1167,12,.02,13,,AUUU,0000\n') });
 const app=createAppServer().listeners('request')[0];
 const server=createServer(async(req,res)=>{
   const url=new URL(req.url,'http://localhost');
   if(url.pathname==='/cultural-sky.json')culturalRequests++;
   if(url.pathname==='/api/observations'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({query:{raDeg:56.75,decDeg:24.1167,detector:'all'},source:{name:'Synthetic browser fixture',kind:'live',retrievedAt:new Date().toISOString()},observations,count:2,matchedProducts:2,duplicatesRemoved:0,truncated:false,nextCursor:null,warnings:[]}));return;}
+  if(url.pathname==='/api/wise-sources'){await wise(req,res);return;}
   if(url.pathname==='/api/gaia-sources'){gaiaRequests++;await gaia(req,res);return;}
   if(url.pathname==='/api/cutout'){fitsRequests++;res.writeHead(200,{'Content-Type':'application/fits'}).end(bytes);return;}
   await app(req,res);
@@ -50,24 +53,37 @@ try {
   await send('Fetch.enable',{patterns:[{urlPattern:'*nasa-irsa-spherex.s3*'}]});
   await send('Page.addScriptToEvaluateOnNewDocument',{source:"globalThis.Worker=undefined;window.__gridEvents=[];addEventListener('sky:display-grid-changed',e=>__gridEvents.push(e.detail));"});
   await send('Emulation.setDeviceMetricsOverride',{width:1280,height:1000,deviceScaleFactor:1,mobile:false});
-  await send('Page.navigate',{url:`http://127.0.0.1:${port}/viewer.html?ra=56.75&dec=24.1167&fov=1&band=1&gaia=1&culture=vedic`});
+  await send('Page.navigate',{url:`http://127.0.0.1:${port}/viewer.html?ra=56.75&dec=24.1167&fov=1&band=1&gaia=1&wise=1&culture=vedic`});
   await waitFor("document.querySelector('#gaia-source-list')?.children.length===1");
   await evaluate("document.querySelector('#cultural-context').open=true");
   await waitFor("document.querySelectorAll('.culture-card').length>0");
   assert.equal(await evaluate("document.querySelector('#culture-filter').value"),'vedic');
   assert.match(await evaluate("document.querySelector('#gaia-status').textContent"),/epoch 2026/);
+  await waitFor("document.querySelector('#wise-source-list')?.children.length===1");
+  // Let the viewer finish its scheduled prefetch before counting toggle traffic.
+  for (let previous = -1; previous !== fitsRequests;) {
+    previous = fitsRequests;
+    await new Promise(resolve => setTimeout(resolve, 400));
+  }
   const before=fitsRequests;
   const sciencePixels=await evaluate("document.querySelector('#sky-canvas').toDataURL()");
   await evaluate("document.querySelector('#gaia-stars').click();document.querySelector('#gaia-stars').click()");
   await waitFor("document.querySelector('#gaia-source-list').children.length===1");
   assert.equal(fitsRequests,before,'Gaia toggles must not reload FITS');
   assert.equal(await evaluate("document.querySelector('#sky-canvas').toDataURL()"),sciencePixels,'Overlay state cannot change exported science pixels');
+  await evaluate("document.querySelector('#survey-layers-button').click();document.querySelector('#wise-source-list').closest('details').open=true;document.querySelector('#wise-source-list button').click()");
+  assert.match(await evaluate("document.querySelector('#survey-source-details').textContent"),/W2 upper limit/);
+  assert.ok(await evaluate("document.querySelector('#wise-source-list button').getAttribute('aria-pressed')==='true'"));
   await evaluate("document.querySelector('#gaia-stars').focus()");
+
   await send('Input.dispatchKeyEvent',{type:'keyDown',key:' ',code:'Space',windowsVirtualKeyCode:32});
   await send('Input.dispatchKeyEvent',{type:'keyUp',key:' ',code:'Space',windowsVirtualKeyCode:32});
   assert.equal(await evaluate("document.querySelector('#gaia-stars').checked"),false,'Gaia supports keyboard activation');
   await evaluate("document.querySelector('#gaia-stars').click()");
   await waitFor("document.querySelector('#gaia-source-list').children.length===1");
+  await evaluate("document.querySelector('#survey-layers-close').click(); const sky=document.querySelector('#sky-canvas'), r=sky.getBoundingClientRect(); sky.dispatchEvent(new MouseEvent('click',{clientX:r.left+r.width/2,clientY:r.top+r.height/2,bubbles:true}))");
+  assert.equal(await evaluate("document.querySelector('#survey-candidate-list').children.length"),2,'Overlapping catalog sources can be selected separately');
+  await evaluate("document.querySelector('#survey-layers-close').click()");
   await send('Runtime.evaluate',{expression:"document.querySelector('.viewer-shell').requestFullscreen()",awaitPromise:true,userGesture:true});
   await waitFor("!!document.fullscreenElement");
   assert.ok(await evaluate("Math.abs(document.querySelector('#gaia-canvas').clientWidth-document.querySelector('#sky-canvas').clientWidth)<1"),'Fullscreen canvases stay aligned');
@@ -79,6 +95,9 @@ try {
   await evaluate("document.querySelector('#cultural-context').scrollIntoView({behavior:'instant',block:'start'});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))");
   const shot=await send('Page.captureScreenshot',{format:'png'});await writeFile(new URL('desktop.png',root),Buffer.from(shot.data,'base64'));
   await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
+  await evaluate("document.querySelector('#survey-layers-button').click()");
+  assert.ok(await evaluate("(() => { const r = document.querySelector('#survey-layers').getBoundingClientRect(); return Math.abs(r.bottom - innerHeight) < 2 && Math.abs(r.width - innerWidth) < 2; })()"),'Mobile survey layers open as a bottom sheet');
+  await evaluate("document.querySelector('#survey-layers-close').click()");
   await evaluate("document.querySelector('#cultural-context').scrollIntoView({behavior:'instant',block:'start'});new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))");
   assert.ok(await evaluate('document.documentElement.scrollWidth<=window.innerWidth+1'),'Mobile layout must not overflow');
   const mobile=await send('Page.captureScreenshot',{format:'png'});await writeFile(new URL('mobile.png',root),Buffer.from(mobile.data,'base64'));

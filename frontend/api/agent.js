@@ -48,51 +48,6 @@ export function retryAfterSeconds(headers) {
   return null;
 }
 
-const DEFAULT_RATE_COOLDOWN_MS = 20_000;
-const KEY_FAULT_COOLDOWN_MS = 60 * 60_000;
-const MAX_INLINE_WAIT_S = 6;
-
-/** Keys from OPENROUTER_API_KEYS (comma, semicolon or whitespace separated) plus OPENROUTER_API_KEY. */
-export function parseApiKeys(env = {}) {
-  const raw = [env.OPENROUTER_API_KEYS, env.OPENROUTER_API_KEY].filter(Boolean).join(',');
-  return [...new Set(raw.split(/[\s,;]+/).map(key => key.trim()).filter(Boolean))];
-}
-
-const nextUtcMidnight = at => { const date = new Date(at); return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1); };
-
-/** When a rate-limited key may be used again, from OpenRouter's X-RateLimit-Reset (epoch ms or s). */
-export function rateLimitResetAt(headers, data) {
-  const value = Number(headers?.get?.('x-ratelimit-reset') ?? data?.error?.metadata?.headers?.['X-RateLimit-Reset']);
-  if (!Number.isFinite(value) || value <= 0) return null;
-  return value < 1e12 ? value * 1000 : value;
-}
-
-/**
- * Round-robin pool of OpenRouter keys. Each request starts at the next key in
- * turn; a key that hits its per-minute or per-day limit (or is rejected) is
- * benched until it should work again, and the request moves on to the next key.
- * State lives in memory, so it survives warm serverless invocations only.
- */
-export class KeyPool {
-  constructor(keys) {
-    this.entries = keys.map(key => ({ key, until: 0, status: null }));
-    this.cursor = 0;
-  }
-  get size() { return this.entries.length; }
-  /** Usable keys at time `at`, in round-robin order; advances the cursor. */
-  take(at) {
-    const n = this.entries.length;
-    const start = this.cursor;
-    this.cursor = (this.cursor + 1) % n;
-    const ordered = [];
-    for (let i = 0; i < n; i++) ordered.push(this.entries[(start + i) % n]);
-    return ordered.filter(entry => entry.until <= at);
-  }
-  bench(entry, until, status) { entry.until = Math.max(entry.until, until); entry.status = status; }
-  /** Benched entries, soonest first. */
-  benched(at) { return this.entries.filter(entry => entry.until > at).sort((a, b) => a.until - b.until); }
-}
-
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 // Some reasoning models put their thinking inline; visitors should not see it.
 const stripThinking = text => typeof text === 'string' ? text.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim() || null : null;
@@ -159,14 +114,6 @@ function openRouterError(status, retryAfter = null) {
 }
 
 export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), env = process.env, now = () => Date.now(), pause = sleep } = {}) {
-  let pool = null;
-  let poolSignature = '';
-  const getPool = () => {
-    const keys = parseApiKeys(env);
-    const signature = keys.join('\n');
-    if (!pool || signature !== poolSignature) { pool = new KeyPool(keys); poolSignature = signature; }
-    return pool;
-  };
   return async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -176,8 +123,8 @@ export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), en
       res.end(JSON.stringify({ error: error instanceof AgentError ? error.message : 'The guide failed unexpectedly. Please retry.', code: error instanceof AgentError ? error.code : 'INTERNAL_ERROR', ...(error instanceof AgentError ? error.extra : {}) }));
     };
     if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); fail(new AgentError(405, 'METHOD_NOT_ALLOWED', 'Use POST to talk to the guide.')); return; }
-    const keys = getPool();
-    if (!keys.size) { fail(new AgentError(503, 'AGENT_UNCONFIGURED', 'The AI guide is not set up on this server yet (missing OPENROUTER_API_KEYS).')); return; }
+    const key = env.OPENROUTER_API_KEY;
+    if (!key) { fail(new AgentError(503, 'AGENT_UNCONFIGURED', 'The AI guide is not set up on this server yet (missing OPENROUTER_API_KEY).')); return; }
     const client = String(req.headers?.['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'local';
     if (rateLimited(client, now())) { fail(new AgentError(429, 'RATE_LIMITED', 'Too many questions in a minute. Please slow down a little.')); return; }
     try {
@@ -195,52 +142,23 @@ export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), en
         max_tokens: 700,
         ...(model.startsWith('openai/gpt-oss') ? { reasoning: { effort: 'low' } } : {})
       };
-      const requestBody = JSON.stringify(payload);
-      const callWith = async entry => {
+      let reply;
+      // Retry once for short rate limits. Longer waits go back to the browser.
+      for (let attempt = 0; attempt < 2; attempt++) {
         const response = await fetchImpl(OPENROUTER_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${entry.key}` },
-          body: requestBody,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+          body: JSON.stringify(payload),
           signal: AbortSignal.timeout(20_000)
         });
         const data = await response.json().catch(() => null);
         const upstreamError = data?.error ?? data?.choices?.[0]?.error;
-        if (response.ok && !upstreamError) return { data };
-        const status = response.ok ? Number(upstreamError?.code) : response.status;
-        const at = now();
-        if (status === 429) {
-          // Bench this key until its limit resets: per-day limits until the
-          // reset time (or next UTC midnight), per-minute ones briefly.
-          const retryAfter = retryAfterSeconds(response.headers);
-          const daily = /per[- ]?day|daily/i.test(String(upstreamError?.message ?? ''));
-          const until = rateLimitResetAt(response.headers, data)
-            ?? (retryAfter !== null ? at + retryAfter * 1000 : daily ? nextUtcMidnight(at) : at + DEFAULT_RATE_COOLDOWN_MS);
-          keys.bench(entry, until, 429);
-          return { rotate: true };
-        }
-        if (status === 401 || status === 403 || status === 402) {
-          // Rejected or out of credits: try the other keys, retry this one later.
-          keys.bench(entry, at + KEY_FAULT_COOLDOWN_MS, status);
-          return { rotate: true };
-        }
-        throw openRouterError(status);
-      };
-
-      let reply;
-      // Try every usable key in round-robin order. If they are all benched and
-      // one frees up within a few seconds, wait once; otherwise tell the browser.
-      for (let round = 0, waitedMs = 0; round < 2 && !reply; round++) {
-        for (const entry of keys.take(now() + waitedMs)) {
-          const result = await callWith(entry);
-          if (result.data) { reply = result.data; break; }
-        }
-        if (reply) break;
-        const benched = keys.benched(now());
-        const limited = benched.find(entry => entry.status === 429);
-        if (!limited) throw openRouterError(benched[0]?.status ?? 502);
-        const wait = Math.max(0, (limited.until - now()) / 1000);
-        if (round === 0 && wait <= MAX_INLINE_WAIT_S) { waitedMs = Math.ceil(wait) * 1000 + 250; await pause(waitedMs); continue; }
-        throw openRouterError(429, wait);
+        if (response.ok && !upstreamError) { reply = data; break; }
+        const status = response.ok ? Number(upstreamError.code) : response.status;
+        const wait = status === 429 ? retryAfterSeconds(response.headers) : null;
+        const error = openRouterError(status, wait);
+        if (error.code === 'AGENT_BUSY' && attempt === 0 && wait !== null && wait <= 6) { await pause(wait * 1000 + 250); continue; }
+        throw error;
       }
       const message = reply?.choices?.[0]?.message;
       if (!message) throw new AgentError(502, 'AGENT_UPSTREAM', 'The guide returned an empty answer. Please retry.');

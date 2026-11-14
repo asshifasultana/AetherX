@@ -62,6 +62,7 @@ if (typeof window !== 'undefined') {
     const patch={};
     if(typeof event.detail?.culture==='string')patch.culture=event.detail.culture;
     if(typeof event.detail?.gaia==='boolean')patch.gaia=event.detail.gaia;
+    if (typeof event.detail?.wise === 'boolean') patch.wise = event.detail.wise;
     update(patch);
   });
   window.addEventListener('sky:search-entry', event => {

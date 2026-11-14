@@ -11,6 +11,7 @@ import cropHandler from './api/crop.js';
 import pixelQualityHandler from './api/pixel-quality.js';
 import movingObservationsHandler from './api/moving-observations.js';
 import gaiaHandler from './api/gaia-sources.js';
+import wiseHandler from './api/wise-sources.js';
 import starDetailsHandler from './api/star-details.js';
 import agentHandler from './api/agent.js';
 import { CONTEXT_PUBLIC_FILES } from './context-assets.js';
@@ -23,6 +24,7 @@ export function createAppServer() { return createServer(async (req, res) => {
     if (pathname === '/api/observations') { await observationsHandler(req, res); return; }
     if (pathname === '/api/moving-observations') { await movingObservationsHandler(req, res); return; }
     if (pathname === '/api/agent') { await agentHandler(req, res); return; }
+    if (pathname === '/api/wise-sources') { await wiseHandler(req,res); return; }
     if (pathname === '/api/gaia-sources') { await gaiaHandler(req,res); return; }
     if (pathname === '/api/star-details') { await starDetailsHandler(req, res); return; }
     if (pathname === '/api/observation-quality') { await qualityHandler(req, res); return; }

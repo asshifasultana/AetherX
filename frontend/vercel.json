@@ -12,6 +12,9 @@
     "api/observation-quality.js": {
       "maxDuration": 30
     },
+    "api/pixel-quality.js": {
+      "maxDuration": 10
+    },
     "api/cutout.js": {
       "maxDuration": 120
     },

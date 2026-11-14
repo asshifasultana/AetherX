@@ -146,8 +146,13 @@ test('local server serves the UI and routes API errors without exposing private 
   try {
     assert.equal((await fetch(base + '/')).status, 200);
     assert.equal((await fetch(base + '/observations-ui.js')).status, 200);
+    assert.equal((await fetch(base + '/lib/pixel-quality.js')).status, 200);
+    assert.equal((await fetch(base + '/lib/rice.js')).status, 200);
+    assert.equal((await fetch(base + '/lib/background.js')).status, 200);
+    assert.equal((await fetch(base + '/lib/stack.js')).status, 200);
     for (const path of ['/lib/observations.js', '/api/observations.js', '/server.mjs', '/tests/fixtures/irsa-sample.csv']) assert.equal((await fetch(base + path)).status, 404);
     assert.equal((await fetch(base + '/api/observations?raDeg=invalid&decDeg=0')).status, 400);
     assert.equal((await fetch(base + '/api/observation-quality?url=http://localhost')).status, 400);
+    assert.equal((await fetch(base + '/api/pixel-quality')).status, 200);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });

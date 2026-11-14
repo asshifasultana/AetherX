@@ -229,8 +229,12 @@ export async function showCutout(observation, { quiet = false } = {}) {
     status.hidden = true;
     cacheState.textContent = 'Retrieved from IRSA · browser caching enabled';
     document.getElementById('target-marker').hidden = !settings.showTargetMarker;
+    window.dispatchEvent(new CustomEvent('sky:cutout-rendered', { detail: { observation } }));
   } catch (error) {
-    if (sequence === activeSequence && !requestController.signal.aborted) { resetViewer(error.message); status.classList.add('is-error'); cacheState.textContent = 'Cutout unavailable'; }
+    if (sequence === activeSequence && !requestController.signal.aborted) {
+      resetViewer(error.message); status.classList.add('is-error'); cacheState.textContent = 'Cutout unavailable';
+      window.dispatchEvent(new CustomEvent('sky:cutout-error', { detail: { observation, error } }));
+    }
   }
 }
 

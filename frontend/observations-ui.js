@@ -10,6 +10,9 @@ let targetName = 'Barnard’s Star', result = null, page = 0, controller, reques
 let submittedParams, searchFailed = false;
 const qualityCache = new Map();
 const sourceLabel = data => data.source.kind === 'scheduled-index' ? 'Preset index fallback' : data.cached ? 'Cached IRSA search' : 'Live IRSA search';
+const emit = (type, detail) => {
+  if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent(type, { detail }));
+};
 
 function updateTarget() { $('search-target').textContent = `${targetName} · ${position.raDeg.toFixed(6)}°, ${position.decDeg >= 0 ? '+' : ''}${position.decDeg.toFixed(6)}° · ICRS`; }
 window.addEventListener('sky:target-selected', event => {
@@ -27,9 +30,10 @@ async function search() {
   result = null; page = 0; $('observation-results').hidden = true; $('search-error').hidden = true;
   $('archive-mode-label').textContent = 'IRSA archive';
   const startDate = $('search-start').value, endDate = $('search-end').value;
-  if (startDate && endDate && startDate > endDate) { setBusy(false); $('search-error').textContent = 'Through date must be on or after the from date.'; $('search-error').hidden = false; return; }
+  if (startDate && endDate && startDate > endDate) { setBusy(false); $('search-error').textContent = 'Through date must be on or after the from date.'; $('search-error').hidden = false; emit('sky:observations-loaded', { observations: [], targetName, position: { ...position }, failed: true }); return; }
   const params = new URLSearchParams({ raDeg: position.raDeg, decDeg: position.decDeg, detector: $('search-detector').value, release: $('search-release').value, startDate, endDate });
   submittedParams = params;
+  emit('sky:observations-loading', { targetName, position: { ...position } });
   setBusy(true); $('search-status').textContent = `Searching IRSA for ${targetName}. Archive queries can take up to 90 seconds.`;
   const timeout = setTimeout(() => activeController.abort('timeout'), 100000);
   try {
@@ -45,13 +49,15 @@ async function search() {
       ? 'The preset fallback index has no matches for these filters. Live IRSA search was unavailable; current coverage could not be checked.'
       : 'No observations cover this position with the selected filters. Try another date range, release, or detector.';
     renderResults();
+    emit('sky:observations-loaded', { observations: data.observations, targetName, position: { ...position }, source: data.source, count: data.count });
   } catch (error) {
     if (current !== requestNumber) return;
-    if (activeController.signal.aborted && activeController.signal.reason !== 'timeout') { $('search-status').textContent = 'Search cancelled. You can search again.'; return; }
+    if (activeController.signal.aborted && activeController.signal.reason !== 'timeout') { $('search-status').textContent = 'Search cancelled. You can search again.'; emit('sky:observations-loaded', { observations: [], targetName, position: { ...position }, failed: true }); return; }
     searchFailed = true;
     $('search-status').textContent = 'Search did not complete.';
     $('search-error').textContent = activeController.signal.reason === 'timeout' ? 'The archive search timed out. Try a shorter date range or one detector.' : error.message;
     $('search-error').hidden = false;
+    emit('sky:observations-loaded', { observations: [], targetName, position: { ...position }, failed: true });
   } finally { clearTimeout(timeout); if (current === requestNumber) setBusy(false); }
 }
 $('observation-search-form').addEventListener('submit', event => { event.preventDefault(); search(); });
@@ -92,6 +98,7 @@ $('load-more-observations').addEventListener('click', async () => {
     const observations = preferredProducts([...previous.observations, ...data.observations]);
     result = { ...data, observations, count: observations.length, matchedProducts: previous.matchedProducts + data.matchedProducts, duplicatesRemoved: previous.matchedProducts + data.matchedProducts - observations.length };
     renderResults(); $('search-status').textContent = `${result.count.toLocaleString()} detector images loaded${result.nextCursor ? '. More observations are available.' : '. All matching archive products have been loaded.'}`;
+    emit('sky:observations-loaded', { observations: result.observations, targetName, position: { ...position }, source: result.source, count: result.count });
   } catch (error) {
     if (current !== requestNumber) return;
     $('search-status').textContent = 'Existing observations are retained.';

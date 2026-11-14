@@ -73,7 +73,26 @@
         <div class="demo-note"><span aria-hidden="true">ⓘ</span><p>Cutouts are centered on the selected sky position and rendered north up at the same scale, so comparing observations keeps the sky fixed.</p></div>
       </aside>
 
-      <div class="timeline-panel"><div class="timeline-heading"><div><span class="step-number">03</span><h3>A little time travel</h3><span class="demo-chip">COMING LATER</span></div><span id="frame-count">NO IMAGES LOADED</span></div><div class="playback-row"><button id="play-button" class="play-button" aria-label="Playback unavailable until images are connected" disabled>▶</button><div class="timeline-track"><input id="timeline" type="range" min="0" max="11" value="0" aria-label="Observation timeline unavailable until images are connected" disabled><div class="timeline-ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="timeline-labels"><span>FIRST FRAME</span><span>A SKY IN MOTION</span><span>LATEST FRAME</span></div></div><button id="speed-button" class="speed-button" aria-label="Playback speed" disabled>1× <span>speed</span></button></div></div>
+      <div class="timeline-panel" aria-labelledby="timeline-heading">
+        <div class="timeline-heading"><div><span class="step-number">03</span><h3 id="timeline-heading">A little time travel</h3><span class="demo-chip">ARCHIVE TIMELAPSE</span></div><span id="frame-count">NO IMAGES LOADED</span></div>
+        <div class="timeline-now"><strong id="timeline-date">Waiting for observations</strong><span id="timeline-meta">Search for a target to build a dated timeline.</span></div>
+        <div class="playback-row">
+          <div class="step-controls" role="group" aria-label="Frame stepping">
+            <button id="step-back" class="step-button" type="button" aria-label="Previous observation" disabled><span aria-hidden="true">◀</span></button>
+            <button id="play-button" class="play-button" type="button" aria-label="Play observation time-lapse" aria-pressed="false" disabled>▶</button>
+            <button id="step-forward" class="step-button" type="button" aria-label="Next observation" disabled><span aria-hidden="true">▶</span></button>
+          </div>
+          <div class="timeline-track">
+            <input id="timeline" type="range" min="0" max="1000" step="1" value="0" aria-label="Observation timeline" aria-valuetext="No observations loaded" disabled>
+            <div id="timeline-ticks" class="timeline-ticks" aria-hidden="true"></div>
+            <div id="timeline-gaps" class="timeline-gaps" aria-hidden="true"></div>
+            <div class="timeline-labels"><span id="timeline-start">FIRST FRAME</span><span id="timeline-gap-note">SPACED BY ACTUAL DATE</span><span id="timeline-end">LATEST FRAME</span></div>
+          </div>
+          <button id="speed-button" class="speed-button" type="button" aria-label="Playback speed, 1 times" disabled><strong id="speed-value">1×</strong> <span>speed</span></button>
+        </div>
+        <div id="timeline-filmstrip" class="timeline-filmstrip" role="group" aria-label="Observation thumbnails"></div>
+        <p id="timeline-status" class="timeline-status" role="status" aria-live="polite">Search for a target to build a dated time-lapse. Timeline ticks are placed at the real observation dates, so long gaps appear as long spaces.</p>
+      </div>
       <section class="viewer-settings" aria-labelledby="settings-heading">
         <div class="settings-title"><div><p class="eyebrow">YOUR SKY, YOUR PERSPECTIVE</p><h2 id="settings-heading">Shape your observation</h2></div><button id="reset-button" class="reset-settings" type="button">Reset settings ↺</button></div>
         <div class="settings-grid">
@@ -133,5 +152,6 @@
   <script type="module" src="app.js"></script>
   <script type="module" src="observations-ui.js"></script>
   <script type="module" src="fits-viewer.js"></script>
+  <script type="module" src="timelapse.js"></script>
 </body>
 </html>

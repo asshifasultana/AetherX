@@ -1,0 +1,385 @@
+import {
+  buildFrames, frameDelayMs, frameFractions, frameGaps, frameTime, formatGap,
+  formatGapShort, nearestFrameIndex, nearestFrameIndexByTime, nextSpeed, observationKey
+} from './timelapse-core.js';
+import { showCutout } from './fits-viewer.js';
+
+const $ = id => document.getElementById(id);
+const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const timeFormat = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
+
+const state = {
+  observations: [],
+  frames: [],
+  fractions: [],
+  index: 0,
+  playing: false,
+  speed: 1,
+  band: null,
+  combineExposures: true,
+  timer: null,
+  token: 0,
+  scrubTimer: null,
+  thumbs: new Map(),
+  cache: new Map(),
+  shownKey: null
+};
+
+const dateOf = frame => new Date(frameTime(frame));
+const shortDate = frame => dateFormat.format(dateOf(frame));
+const frameDate = frame => `${shortDate(frame)} · ${timeFormat.format(dateOf(frame))} UTC`;
+const formatRange = () => {
+  if (!state.frames.length) return '';
+  const first = state.frames[0], last = state.frames[state.frames.length - 1];
+  return state.frames.length === 1 ? shortDate(first) : `${shortDate(first)} – ${shortDate(last)}`;
+};
+const wavelength = frame => {
+  const low = Number(frame.wavelengthMinUm), high = Number(frame.wavelengthMaxUm);
+  return Number.isFinite(low) && Number.isFinite(high) ? `${low.toFixed(2)}–${high.toFixed(2)} μm` : '';
+};
+const setStatus = text => { $('timeline-status').textContent = text; };
+
+function updatePlayButton() {
+  const button = $('play-button');
+  button.textContent = state.playing ? '❚❚' : '▶';
+  button.setAttribute('aria-label', state.playing ? 'Pause observation time-lapse' : 'Play observation time-lapse');
+  button.setAttribute('aria-pressed', String(state.playing));
+  button.classList.toggle('is-playing', state.playing);
+}
+
+function updateStepButtons() {
+  const last = state.frames.length - 1;
+  $('step-back').disabled = state.frames.length < 2 || state.index <= 0;
+  $('step-forward').disabled = state.frames.length < 2 || state.index >= last;
+}
+
+function drawPlaceholder(canvas, frame) {
+  const context = canvas.getContext('2d');
+  const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, '#16242a');
+  gradient.addColorStop(1, '#0a1114');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillStyle = '#aec4a8';
+  context.font = '600 16px "DM Sans", sans-serif';
+  context.fillText(`D${frame.detector}`, canvas.width / 2, canvas.height / 2 - 3);
+  context.fillStyle = '#68806e';
+  context.font = '9px "DM Sans", sans-serif';
+  context.fillText('PREVIEW', canvas.width / 2, canvas.height / 2 + 13);
+}
+
+function paintThumb(canvas, source) {
+  if (!source) return;
+  const context = canvas.getContext('2d');
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(source, 0, 0, canvas.width, canvas.height);
+}
+
+function restoreThumb(canvas, dataUrl) {
+  const image = new Image();
+  image.onload = () => paintThumb(canvas, image);
+  image.src = dataUrl;
+}
+
+function renderTicks() {
+  const ticks = $('timeline-ticks'), gaps = $('timeline-gaps');
+  ticks.replaceChildren();
+  gaps.replaceChildren();
+  state.frames.forEach((frame, index) => {
+    const tick = document.createElement('i');
+    tick.style.left = `${state.fractions[index] * 100}%`;
+    tick.dataset.index = String(index);
+    tick.title = frameDate(frame);
+    ticks.append(tick);
+  });
+  const significant = frameGaps(state.frames).filter(gap => gap.days >= 1);
+  const shown = significant.length > 12
+    ? [...significant].sort((a, b) => b.days - a.days).slice(0, 12).sort((a, b) => a.afterIndex - b.afterIndex)
+    : significant;
+  for (const gap of shown) {
+    const width = (state.fractions[gap.afterIndex + 1] - state.fractions[gap.afterIndex]) * 100;
+    if (width < 2.5) continue;
+    const badge = document.createElement('span');
+    badge.className = 'timeline-gap';
+    badge.style.left = `${((state.fractions[gap.afterIndex] + state.fractions[gap.afterIndex + 1]) / 2) * 100}%`;
+    badge.textContent = formatGapShort(gap.days);
+    badge.title = `${formatGap(gap.days)} between ${frameDate(state.frames[gap.afterIndex])} and ${frameDate(state.frames[gap.afterIndex + 1])}`;
+    gaps.append(badge);
+  }
+}
+
+function renderFilmstrip() {
+  const strip = $('timeline-filmstrip');
+  strip.replaceChildren();
+  state.thumbs.clear();
+  state.frames.forEach((frame, index) => {
+    const key = observationKey(frame);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'thumb';
+    button.dataset.index = String(index);
+    button.title = `${frameDate(frame)} · D${frame.detector}${frame.exposureCount > 1 ? ` · ${frame.exposureCount} exposures combined` : ''}`;
+    button.setAttribute('aria-label', `Show ${frameDate(frame)}, detector ${frame.detector}`);
+    const canvas = document.createElement('canvas');
+    canvas.width = 68;
+    canvas.height = 68;
+    drawPlaceholder(canvas, frame);
+    const cached = state.cache.get(key);
+    if (cached) restoreThumb(canvas, cached);
+    const label = document.createElement('small');
+    label.textContent = shortDate(frame);
+    button.append(canvas, label);
+    if (frame.exposureCount > 1) {
+      const meta = document.createElement('span');
+      meta.className = 'thumb-meta';
+      meta.textContent = `${frame.exposureCount} exposures`;
+      button.append(meta);
+    }
+    button.addEventListener('click', () => {
+      pausePlayback();
+      void selectFrame(index);
+    });
+    state.thumbs.set(key, { button, canvas });
+    strip.append(button);
+  });
+}
+
+function updateCurrent({ keepSlider = false } = {}) {
+  const frame = state.frames[state.index];
+  if (!frame) {
+    $('timeline-date').textContent = 'Waiting for observations';
+    $('timeline-meta').textContent = 'Search for a target to build a dated timeline.';
+    $('timeline').value = '0';
+    $('timeline').style.setProperty('--progress', '0%');
+    $('timeline').setAttribute('aria-valuetext', 'No observations loaded');
+    updateStepButtons();
+    return;
+  }
+  $('timeline-date').textContent = frameDate(frame);
+  const details = [`Frame ${state.index + 1} of ${state.frames.length}`, `D${frame.detector}`];
+  const wave = wavelength(frame);
+  if (wave) details.push(wave);
+  if (frame.exposureCount > 1) details.push(`${frame.exposureCount} exposures combined`);
+  if (state.index > 0) {
+    const gap = frameGaps(state.frames)[state.index - 1];
+    if (gap) details.push(`${formatGap(gap.days)} after previous`);
+  }
+  $('timeline-meta').textContent = details.join(' · ');
+  const fraction = state.frames.length > 1 ? state.fractions[state.index] : 0;
+  if (!keepSlider) {
+    $('timeline').value = String(Math.round(fraction * 1000));
+    $('timeline').style.setProperty('--progress', `${fraction * 100}%`);
+  }
+  $('timeline').setAttribute('aria-valuetext', `${frameDate(frame)}, frame ${state.index + 1} of ${state.frames.length}`);
+  for (const tick of $('timeline-ticks').children) tick.classList.toggle('current', Number(tick.dataset.index) === state.index);
+  const currentKey = observationKey(frame);
+  for (const [key, entry] of state.thumbs) {
+    const active = key === currentKey;
+    entry.button.classList.toggle('current', active);
+    if (active) entry.button.setAttribute('aria-current', 'true');
+    else entry.button.removeAttribute('aria-current');
+    if (active && state.playing) {
+      const strip = $('timeline-filmstrip');
+      const left = entry.button.offsetLeft;
+      if (left < strip.scrollLeft || left + entry.button.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+        strip.scrollLeft = left - strip.clientWidth / 2 + entry.button.offsetWidth / 2;
+      }
+    }
+  }
+  updateStepButtons();
+}
+
+function render() {
+  const count = state.frames.length;
+  $('frame-count').textContent = count
+    ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
+    : 'NO IMAGES LOADED';
+  $('timeline-start').textContent = count ? shortDate(state.frames[0]).toUpperCase() : 'FIRST FRAME';
+  $('timeline-end').textContent = count ? shortDate(state.frames[count - 1]).toUpperCase() : 'LATEST FRAME';
+  const gaps = frameGaps(state.frames);
+  const largest = gaps.reduce((maximum, gap) => Math.max(maximum, gap.days), 0);
+  $('timeline-gap-note').textContent = count > 1
+    ? largest >= 1 ? `REAL DATES · LARGEST GAP ${formatGapShort(largest).toUpperCase()}` : 'REAL DATES · SAME-DAY EXPOSURES'
+    : 'SPACED BY ACTUAL DATE';
+  $('timeline').disabled = count < 2;
+  $('play-button').disabled = count < 2;
+  $('speed-button').disabled = count < 2;
+  renderTicks();
+  renderFilmstrip();
+  updatePlayButton();
+  updateCurrent();
+}
+
+function rebuild({ keepTime = false, announce = true } = {}) {
+  pausePlayback();
+  const previous = keepTime && state.frames[state.index] ? frameTime(state.frames[state.index]) : null;
+  const requestedBand = state.band;
+  state.frames = buildFrames(state.observations, { band: requestedBand, combineExposures: state.combineExposures });
+  let fallbackBand = null;
+  if (!state.frames.length && state.observations.length && requestedBand !== null) {
+    const counts = new Map();
+    for (const item of state.observations) {
+      const detector = Number(item.detector);
+      if (Number.isFinite(detector)) counts.set(detector, (counts.get(detector) || 0) + 1);
+    }
+    // Prefer the band with the most archive products when the viewer band has none.
+    const available = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([detector]) => detector);
+    if (available.length) {
+      fallbackBand = available[0];
+      state.frames = buildFrames(state.observations, { band: fallbackBand, combineExposures: state.combineExposures });
+    }
+  }
+  state.fractions = frameFractions(state.frames);
+  state.index = previous === null || !state.frames.length ? 0 : nearestFrameIndexByTime(state.frames, previous);
+  state.thumbs.clear();
+  render();
+  if (!state.frames.length) {
+    setStatus(state.observations.length
+      ? `No D${state.band ?? '?'} observations in these results. Choose another detector band or run a new search.`
+      : 'No observations loaded. Search the archive to build a dated time-lapse.');
+  } else if (fallbackBand !== null) {
+    setStatus(`No D${requestedBand} frames in these results. Showing D${fallbackBand} instead; choose a detector band above to change the sequence.`);
+  } else if (announce) {
+    setStatus(`${state.frames.length} dated ${state.frames.length === 1 ? 'frame' : 'frames'} ready. Press play, step with the arrow buttons, or choose a thumbnail. Uneven tick spacing shows real gaps in time.`);
+  }
+  return state.frames;
+}
+
+async function selectFrame(index) {
+  if (!state.frames.length) return;
+  state.index = Math.max(0, Math.min(state.frames.length - 1, index));
+  updateCurrent();
+  const frame = state.frames[state.index];
+  setStatus(`Loading ${frameDate(frame)} · D${frame.detector}…`);
+  await showCutout(frame);
+  if (state.frames[state.index] === frame) {
+    setStatus(`Frame ${state.index + 1} of ${state.frames.length} · ${frameDate(frame)}. Use ← → or the timeline to scrub.`);
+  }
+}
+
+function pausePlayback() {
+  state.playing = false;
+  state.token++;
+  clearTimeout(state.timer);
+  state.timer = null;
+  updatePlayButton();
+}
+
+function scheduleNext(delay) {
+  clearTimeout(state.timer);
+  const token = state.token;
+  state.timer = setTimeout(async () => {
+    if (!state.playing || token !== state.token) return;
+    await selectFrame((state.index + 1) % state.frames.length);
+    if (state.playing && token === state.token) scheduleNext(frameDelayMs(state.speed));
+  }, delay);
+}
+
+async function playPlayback() {
+  if (state.frames.length < 2) return;
+  state.playing = true;
+  state.token++;
+  updatePlayButton();
+  const frame = state.frames[state.index];
+  if (state.shownKey !== observationKey(frame)) await selectFrame(state.index);
+  if (state.playing) scheduleNext(frameDelayMs(state.speed));
+}
+
+function togglePlayback() {
+  if (state.playing) pausePlayback();
+  else void playPlayback();
+}
+
+$('play-button').addEventListener('click', togglePlayback);
+$('step-back').addEventListener('click', () => { pausePlayback(); void selectFrame(state.index - 1); });
+$('step-forward').addEventListener('click', () => { pausePlayback(); void selectFrame(state.index + 1); });
+$('speed-button').addEventListener('click', () => {
+  state.speed = nextSpeed(state.speed);
+  $('speed-value').textContent = `${state.speed}×`;
+  $('speed-button').setAttribute('aria-label', `Playback speed, ${state.speed} times`);
+  if (state.playing) { pausePlayback(); void playPlayback(); }
+});
+$('timeline').addEventListener('input', event => {
+  if (!state.frames.length) return;
+  pausePlayback();
+  state.index = nearestFrameIndex(state.frames, Number(event.target.value) / 1000);
+  updateCurrent({ keepSlider: true });
+  clearTimeout(state.scrubTimer);
+  state.scrubTimer = setTimeout(() => { void selectFrame(state.index); }, 180);
+});
+$('timeline').addEventListener('change', () => {
+  if (!state.frames.length) return;
+  clearTimeout(state.scrubTimer);
+  void selectFrame(state.index);
+});
+
+document.addEventListener('keydown', event => {
+  if (!state.frames.length || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes(event.target?.tagName)) return;
+  if (event.key === 'ArrowLeft') { event.preventDefault(); pausePlayback(); void selectFrame(state.index - 1); }
+  else if (event.key === 'ArrowRight') { event.preventDefault(); pausePlayback(); void selectFrame(state.index + 1); }
+  else if (event.code === 'Space') { event.preventDefault(); togglePlayback(); }
+});
+
+window.addEventListener('sky:viewer-settings-changed', event => {
+  const detail = event.detail || {};
+  const band = detail.band === undefined ? state.band : Number(detail.band);
+  const combine = detail.combineExposures === undefined ? state.combineExposures : Boolean(detail.combineExposures);
+  if (band === state.band && combine === state.combineExposures) return;
+  // Playing a cutout syncs the viewer to its detector. If the timeline already
+  // holds that band (including a fallback band), keep playback running.
+  const framesMatchBand = state.frames.length > 0 && state.frames.every(frame => Number(frame.detector) === band);
+  if (detail.source === 'cutout' && framesMatchBand) { state.band = band; return; }
+  state.band = band;
+  state.combineExposures = combine;
+  rebuild({ keepTime: true });
+});
+
+window.addEventListener('sky:target-selected', () => { state.shownKey = null; });
+
+window.addEventListener('sky:observations-loading', () => {
+  state.observations = [];
+  rebuild({ announce: false });
+  setStatus('Searching the archive for dated observations…');
+});
+
+window.addEventListener('sky:observations-loaded', event => {
+  state.observations = Array.isArray(event.detail?.observations) ? event.detail.observations : [];
+  rebuild();
+  if (event.detail?.failed) setStatus('The archive search did not complete. Adjust the filters and try again.');
+});
+
+window.addEventListener('sky:cutout-rendered', event => {
+  const observation = event.detail?.observation;
+  if (!observation) return;
+  const key = observationKey(observation);
+  state.shownKey = key;
+  const entry = state.thumbs.get(key);
+  const source = document.getElementById('sky-canvas');
+  if (entry && source) {
+    paintThumb(entry.canvas, source);
+    entry.button.classList.add('has-thumb');
+    try { state.cache.set(key, entry.canvas.toDataURL('image/jpeg', 0.72)); } catch {}
+  }
+  const current = state.frames[state.index];
+  if (current && key === observationKey(current)) {
+    setStatus(`Showing ${frameDate(current)} · D${current.detector}.`);
+  }
+});
+
+window.addEventListener('sky:cutout-error', event => {
+  const observation = event.detail?.observation;
+  if (!observation) return;
+  const current = state.frames[state.index];
+  if (current && observationKey(current) === observationKey(observation)) {
+    state.shownKey = null;
+    setStatus(`Frame ${state.index + 1} could not be loaded: ${event.detail.error?.message || 'the cutout is unavailable.'} Playback is paused.`);
+    pausePlayback();
+  }
+});
+
+$('speed-value').textContent = `${state.speed}×`;
+render();
+setStatus('Search for a target to build a dated time-lapse. Timeline ticks are placed at the real observation dates, so long gaps appear as long spaces.');

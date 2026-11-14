@@ -66,12 +66,12 @@ const modeDescriptions = {
 };
 const checkboxes = { 'combine-exposures': 'combineExposures', 'hide-bad-pixels': 'hideBadPixels', invert: 'invert', 'crosshair-toggle': 'showTargetMarker', 'label-asteroids': 'labelAsteroids' };
 const selects = { stretch: 'stretch', colours: 'colours', 'asteroid-magnitude': 'asteroidMagnitude' };
-function emitSettings() {
-  window.dispatchEvent(new CustomEvent('sky:viewer-settings-changed', { detail: { ...viewerSettings } }));
+function emitSettings(source) {
+  window.dispatchEvent(new CustomEvent('sky:viewer-settings-changed', { detail: { ...viewerSettings, source } }));
 }
 window.addEventListener('sky:cutout-detector-selected', event => {
   if (!Number.isInteger(event.detail?.detector)) return;
-  viewerSettings.band = event.detail.detector; renderSettings();
+  viewerSettings.band = event.detail.detector; renderSettings(); emitSettings('cutout');
 });
 function updateButtons(attribute, value) {
   document.querySelectorAll('[data-' + attribute + ']').forEach(button => {
@@ -102,7 +102,7 @@ $('reset-button').addEventListener('click', () => {
 });
 renderSettings();
 // Publish the initial UI settings after the other page modules have attached their listeners.
-window.addEventListener('load', emitSettings, { once: true });
+window.addEventListener('load', () => emitSettings(), { once: true });
 $('expand-button').addEventListener('click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();

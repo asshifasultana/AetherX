@@ -5,6 +5,7 @@ import { browserWorkerClass } from './fixtures/browser-worker.js';
 import { colormap } from '../lib/colormaps.js';
 
 
+
 class Element extends EventTarget {
   constructor() {
     super(); this.width = 10; this.height = 10; this.hidden = false; this.dataset = {}; this.style = {}; this.textContent = ''; this.draws = 0;

@@ -1,4 +1,4 @@
-import { mkdir, copyFile, writeFile, cp, readFile } from 'node:fs/promises';
+import { mkdir, copyFile, writeFile, cp, readFile, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { CONTEXT_PUBLIC_FILES } from '../frontend/context-assets.js';
@@ -14,6 +14,8 @@ publicFiles.push('moving-target.js', 'moving-worker.js', 'lib/moving-view.js', '
 publicFiles.push(...AGENT_PUBLIC_FILES);
 publicFiles.push('spectrum-explorer.js');
 publicFiles.push(...CONTEXT_PUBLIC_FILES);
+// Start clean so functions dropped or merged since the last build do not linger.
+await rm(output, { recursive: true, force: true });
 await mkdir(path.join(output, 'static'), { recursive: true });
 for (const file of publicFiles) {
   const destination = path.join(output, 'static', file);
@@ -33,7 +35,7 @@ for (const file of publicFiles) {
   }
   if (missing.length) throw new Error(`Static files imported but not published:\n${missing.join('\n')}`);
 }
-for (const [name, maxDuration] of [['observations', 120], ['moving-observations', 120], ['observation-quality', 30], ['pixel-quality', 10], ['index-status', 10], ['cutout', 120], ['crop', 30], ['resolve-object', 15], ['gaia-sources',15], ['wise-sources',15]]) {
+for (const [name, maxDuration] of [['observations', 120], ['moving-observations', 120], ['observation-quality', 30], ['pixel-quality', 10], ['index-status', 10], ['cutout', 120], ['crop', 30], ['resolve-object', 15], ['gaia-sources',15]]) {
   const directory = path.join(output, 'functions', 'api', `${name}.func`);
   await mkdir(path.join(directory, 'api'), { recursive: true });
   await mkdir(path.join(directory, 'lib'), { recursive: true });
@@ -82,17 +84,25 @@ for (const [name, maxDuration] of [['observations', 120], ['moving-observations'
   await writeFile(path.join(directory, 'package.json'), JSON.stringify({ type: 'module' }));
   await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: 'api/agent.js', launcherType: 'Nodejs', maxDuration: 30 }, null, 2));
 }
-// Guide helpers: the vision second opinion (reuses the key parser in agent.js),
-// the JPL known-object check and the saved-records store.
-for (const [name, maxDuration, extra] of [['agent-vision', 30, ['api/agent.js', 'lib/agent-tools.js', 'lib/agent-guard.js', 'viewer-settings.js']], ['known-objects', 30, []], ['cases', 10, []]]) {
-  const directory = path.join(output, 'functions', 'api', `${name}.func`);
-  for (const file of [`api/${name}.js`, ...extra]) {
-    const destination = path.join(directory, file);
-    await mkdir(path.dirname(destination), { recursive: true });
-    await copyFile(path.join(frontend, file), destination);
-  }
-  await writeFile(path.join(directory, 'package.json'), JSON.stringify({ type: 'module' }));
-  await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: `api/${name}.js`, launcherType: 'Nodejs', maxDuration }, null, 2));
+// The Hobby plan allows 12 functions per deployment, so related endpoints share
+// one: the guide helpers (vision second opinion, JPL known-object check, saved
+// records) ride in the agent function, and WISE in the Gaia one. config.json
+// rewrites their URLs to the host function with ?__route=<name>.
+const ROUTE_GROUPS = {
+  agent: { routes: ['agent', 'agent-vision', 'known-objects', 'cases'], maxDuration: 30 },
+  'gaia-sources': { routes: ['gaia-sources', 'wise-sources'], maxDuration: 15 },
+};
+for (const [host, { routes, maxDuration }] of Object.entries(ROUTE_GROUPS)) {
+  const directory = path.join(output, 'functions', 'api', `${host}.func`);
+  for (const file of [...routes.map(name => `api/${name}.js`), 'lib/route-group.js']) await copyFile(path.join(frontend, file), path.join(directory, file));
+  const imports = routes.map((name, i) => `import handler${i} from './${name}.js';`).join('\n');
+  const table = routes.map((name, i) => `  ${JSON.stringify(name)}: handler${i},`).join('\n');
+  await writeFile(path.join(directory, 'api', '_group.js'), `import { createRouteGroup } from '../lib/route-group.js';\n${imports}\nexport default createRouteGroup({\n${table}\n}, ${JSON.stringify(host)});\n`);
+  await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: 'api/_group.js', launcherType: 'Nodejs', maxDuration }, null, 2));
 }
-await writeFile(path.join(output, 'config.json'), JSON.stringify({ version: 3 }, null, 2));
-console.log(`Vercel output ready: ${publicFiles.length} public assets, fourteen Node.js API functions, and the preset observation index.`);
+const routes = Object.entries(ROUTE_GROUPS).map(([host, group]) => ({
+  src: `^/api/(${group.routes.filter(name => name !== host).join('|')})/?$`,
+  dest: `/api/${host}?__route=$1`,
+}));
+await writeFile(path.join(output, 'config.json'), JSON.stringify({ version: 3, routes }, null, 2));
+console.log(`Vercel output ready: ${publicFiles.length} public assets, eleven Node.js API functions (serving fifteen endpoints), and the preset observation index.`);

@@ -1,6 +1,6 @@
 import { suggestNames } from './object-names.js';
-// Keep pending resolution separate from the active sky position.
-export function createLookupController({ fetchImpl = fetch, render, select }) {
+// Reject stale responses before publishing a resolved target.
+export function createLookupController({ fetchImpl = fetch, render, select, autoSelect = false }) {
   let generation = 0, controller, pending;
   function invalidate() { generation++; controller?.abort(); pending = null; render({ state: 'idle' }); }
   async function resolve(name) {
@@ -13,6 +13,7 @@ export function createLookupController({ fetchImpl = fetch, render, select }) {
       if (!response.ok) { render({ state: 'error', invalidName: response.status === 400 || response.status === 404, message: data.error || 'Object lookup failed. Please retry.', suggestions: response.status === 404 && data.code === 'NOT_FOUND' ? suggestNames(name) : [] }); return; }
       if (!Number.isFinite(data.raDeg) || data.raDeg < 0 || data.raDeg >= 360 || !Number.isFinite(data.decDeg) || data.decDeg < -90 || data.decDeg > 90 || data.frame !== 'icrs' || !data.source?.resolver) throw new Error('Invalid resolver response');
       pending = data; render({ state: 'ready', data });
+      if (autoSelect && current === generation) { pending = null; select(data); }
     } catch {
       if (current === generation) render({ state: 'error', message: 'Object lookup is temporarily unavailable. Retry or use presets or coordinates.', suggestions: [] });
     }
@@ -22,12 +23,13 @@ export function createLookupController({ fetchImpl = fetch, render, select }) {
 }
 export function mountObjectLookup(select) {
   const $ = id => document.getElementById(id);
-  const form = $('object-lookup-form'), input = $('lookup-name');
-  const lookup = createLookupController({ select, render({ state, data, message, invalidName = false, suggestions = [] }) {
+  const form = $('target-search-form'), input = $('lookup-name');
+  const lookup = createLookupController({ select, autoSelect: true, render({ state, data, message, invalidName = false, suggestions = [] }) {
     form.setAttribute('aria-busy', String(state === 'loading'));
-    $('resolve-object').disabled = state === 'loading';
+    $('target-search-submit').disabled = state === 'loading';
+    $('target-search-submit').textContent = state === 'loading' ? 'Resolving…' : 'Search ↗';
     $('lookup-confirmation').hidden = state !== 'ready';
-    $('lookup-status').textContent = state === 'loading' ? 'Resolving object name…' : state === 'ready' ? 'Catalog position found. Review it, then use this target.' : message || '';
+    $('lookup-status').textContent = state === 'loading' ? 'Resolving object name…' : state === 'ready' ? 'Catalog position found.' : message || '';
     input.setAttribute('aria-invalid', String(invalidName));
     $('lookup-suggestions').replaceChildren();
     if (state === 'ready') {
@@ -44,8 +46,6 @@ export function mountObjectLookup(select) {
       }
     }
   } });
-  form.addEventListener('submit', event => { event.preventDefault(); lookup.resolve(input.value); });
   input.addEventListener('input', lookup.invalidate);
-  $('use-resolved-target').addEventListener('click', lookup.confirm);
   return lookup;
 }

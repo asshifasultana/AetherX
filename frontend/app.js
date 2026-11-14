@@ -5,7 +5,7 @@ import { initialViewIssues, initialViewState, isEmbedded } from './share.js';
 import { encodeViewState } from './url-state.js';
 const $ = id => document.getElementById(id);
 // A shared link is authoritative. A curated target supplies the label and the
-// highlighted card, while explicit coordinates in the link always win.
+// highlighted quick pick, while explicit coordinates in the link always win.
 const restoredTargetId = initialViewState.targetId && presets[initialViewState.targetId] ? initialViewState.targetId : null;
 // Opening a bare page keeps the old behaviour: nothing is searched until the
 // visitor chooses a destination. Only a link that carries a view restores one.
@@ -39,28 +39,61 @@ function showPosition(data) {
 }
 const objectLookup = mountObjectLookup(data => {
   position = { raDeg: data.raDeg, decDeg: data.decDeg, frame: data.frame };
-  selected = null; updateSelection(); fillInputs(); clearErrors();
-  showPosition({ name: data.resolvedName || data.submittedName, type: 'CATALOG POSITION · ICRS', description: `Resolved through ${data.source.name} / ${data.source.resolver}. Fixed catalog position; no proper-motion correction. Observation availability is checked separately.` });
+  selected = null; updateSelection(); clearErrors();
+  showPosition({ name: data.resolvedName || data.submittedName, type: 'CATALOG POSITION · ICRS', description: `Resolved through ${data.source.name} / ${data.source.resolver}. Fixed catalog position; no proper-motion correction.` });
 });
 document.querySelectorAll('[data-target]').forEach(button => button.addEventListener('click', () => {
   objectLookup.invalidate();
   selected = button.dataset.target; const target = presets[selected];
   position = { raDeg: target.raDeg, decDeg: target.decDeg, frame: 'icrs', targetId: selected };
-  updateSelection(); fillInputs(); clearErrors(); showPosition(target);
+  $('lookup-name').value = target.name;
+  updateSelection(); clearErrors(); showPosition(target);
 }));
+const nameDrafts = { object: '', moving: '' };
+let currentEntryMode = 'object';
 function entryMode(mode) {
+  nameDrafts[currentEntryMode] = $('lookup-name').value;
   objectLookup.invalidate();
-  for (const [tab, panel, value] of [['preset-tab', 'preset-panel', 'presets'], ['manual-tab', 'coordinate-form', 'coordinates'], ['object-tab', 'object-lookup-form', 'object']]) {
-    const active = mode === value; $(panel).hidden = !active; $(tab).classList.toggle('selected', active); $(tab).setAttribute('aria-pressed', String(active));
+  currentEntryMode = mode;
+  $('target-type').value = mode;
+  const coordinates = mode === 'coordinates', moving = mode === 'moving';
+  for (const [id, active] of [['name-fields', !coordinates], ['coordinate-fields', coordinates], ['moving-fields', moving]]) {
+    $(id).hidden = !active; $(id).disabled = !active;
   }
+  $('lookup-name').value = nameDrafts[mode] || '';
+  $('lookup-name').maxLength = moving ? 80 : 200;
+  $('lookup-name').placeholder = moving ? 'e.g. 3I/ATLAS or 4 Vesta' : 'e.g. Sirius or M31';
+  $('lookup-label').textContent = moving ? 'Designation' : 'Object name';
+  $('lookup-help').textContent = coordinates
+    ? 'ICRS reference frame · RA 0° to <360° · Dec −90° to +90°'
+    : moving ? 'Enter a comet or asteroid designation and a UTC date range.'
+    : 'Enter a common name or catalog identifier, or choose a quick pick below.';
+  $('preset-panel').hidden = mode !== 'object';
+  $('lookup-feedback').hidden = mode !== 'object';
+  $('moving-feedback').hidden = !moving;
+  $('target-search-status').hidden = moving;
+  clearErrors();
 }
-$('preset-tab').addEventListener('click', () => entryMode('presets'));
-$('manual-tab').addEventListener('click', () => entryMode('coordinates'));
-$('object-tab').addEventListener('click', () => entryMode('object'));
+$('target-type').addEventListener('change', () => entryMode($('target-type').value));
+$('moving-search-link').addEventListener('click', () => { entryMode('moving'); $('lookup-name').focus(); });
+// Keep archive progress and failures next to the entry point as well as results.
+window.addEventListener('sky:observations-loading', event => {
+  $('target-search-status').textContent = `Searching observations for ${event.detail.targetName}…`;
+});
+window.addEventListener('sky:observations-loaded', event => {
+  $('target-search-status').textContent = event.detail.failed && !$('search-error').hidden
+    ? $('search-error').textContent : $('search-status').textContent;
+});
 $('coordinate-format').addEventListener('change', () => { fillInputs(); clearErrors(); });
 for (const axis of ['ra', 'dec']) $(axis).addEventListener('input', () => { selected = null; updateSelection(); $(axis + '-error').textContent = ''; $(axis).removeAttribute('aria-invalid'); });
-$('coordinate-form').addEventListener('submit', event => {
-  event.preventDefault(); clearErrors(); const parsed = {}; let firstInvalid;
+$('target-search-form').addEventListener('submit', event => {
+  event.preventDefault();
+  if (currentEntryMode === 'moving') return;
+  if (currentEntryMode === 'object') {
+    if ($('target-search-form').reportValidity()) objectLookup.resolve($('lookup-name').value);
+    return;
+  }
+  clearErrors(); const parsed = {}; let firstInvalid;
   for (const axis of ['ra', 'dec']) {
     try { parsed[axis + 'Deg'] = parseCoordinate($(axis).value, axis, $('coordinate-format').value); }
     catch (error) { $(axis + '-error').textContent = error.message; $(axis).setAttribute('aria-invalid', 'true'); firstInvalid ??= $(axis); }
@@ -68,7 +101,7 @@ $('coordinate-form').addEventListener('submit', event => {
   if (firstInvalid) { firstInvalid.focus(); return; }
   objectLookup.invalidate();
   position = { ...parsed, frame: 'icrs' }; selected = null; updateSelection();
-  showPosition({ name: 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Your destination is set. Scroll down to Find your observations and search this position.' });
+  showPosition({ name: 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Searching observations at your selected sky position.' });
 });
 const modeDescriptions = {
   'time-lapse': 'Play observations in date order to follow changes over time.',

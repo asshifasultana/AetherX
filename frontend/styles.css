@@ -313,3 +313,37 @@ footer p,footer>span{font-size:15px;color:#59695e}
 .moving-target .moving-exposures { max-height: 14rem; overflow: auto; margin-block: .65rem; }
 .moving-target .moving-exposures label { display: block; }
 .moving-target canvas { display: block; width: min(100%, 24rem); margin-block: 1rem; image-rendering: pixelated; background: #08090e; }
+
+/* One destination entry point, with mode-specific fields and compact quick picks. */
+.target-search fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.target-search-row { display: grid; grid-template-columns: minmax(170px, .65fr) minmax(0, 2fr) auto; gap: 16px; align-items: end; }
+.target-search label { font-size: 16px; }
+.target-kind, .target-name-fields { display: grid; gap: 8px; }
+.target-search input, .target-search select { display: block; width: 100%; min-width: 0; min-height: 48px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 6px; background: #fafbf7; color: var(--ink); font: inherit; }
+.target-search input[aria-invalid=true] { border-color: #b4543f; }
+.target-search-row > .primary-button { grid-column: auto; margin: 0; min-height: 48px; white-space: nowrap; padding: 11px 24px; }
+.target-search .coordinate-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.target-search .coordinate-fields label:first-of-type { grid-column: 1 / -1; }
+.target-search .coordinate-fields input, .target-search .coordinate-fields select { margin-top: 8px; }
+.target-search .coordinate-fields label > span { display: inline; margin-left: 4px; }
+.target-search .moving-fields { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; margin-top: 16px; }
+.target-search .moving-fields label { display: grid; gap: 8px; flex: 1 1 160px; }
+.target-search .moving-fields button, #moving-cancel, #moving-choices button { min-height: 48px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 6px; background: white; }
+.target-quick-picks { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.target-quick-picks > span { font-size: 14px; color: var(--muted); margin-right: 4px; }
+.target-quick-picks button { min-height: 44px; border: 1px solid var(--line); border-radius: 24px; padding: 8px 14px; background: transparent; font-size: 14px; }
+.target-quick-picks button:hover, .target-quick-picks button.active { background: var(--lime); border-color: #abbf99; }
+#lookup-status:empty, #moving-status:empty, #target-search-status:empty { margin: 0; }
+#moving-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+.target-search .lookup-confirmation { padding: 14px 16px; }
+.target-search .lookup-confirmation h3 { font-size: 17px; margin-bottom: 6px; }
+.target-search .lookup-confirmation p { margin: 6px 0; font-size: 14px; }
+@media (max-width: 760px) {
+  .target-search-row { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .target-search-row > .primary-button { width: 100%; }
+  .target-search .coordinate-fields { grid-template-columns: minmax(0, 1fr); }
+  .target-search .coordinate-fields label { grid-column: 1; }
+  .target-search .moving-fields { flex-direction: column; align-items: stretch; }
+  .target-search .moving-fields label { flex-basis: auto; }
+  .target-quick-picks > span { flex-basis: 100%; }
+}

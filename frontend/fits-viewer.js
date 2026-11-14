@@ -560,13 +560,29 @@ export function isCutoutReady(observation) {
   return renderedFrames.has(renderKey(observation));
 }
 
+// One UTC-day frame can hold dozens of exposures: for Barnard's Star the median
+// day has 8 and the busiest has 36. Each exposure is a separate multi-megabyte
+// cutout, so stacking every one turns a single frame into minutes of
+// downloading (8 x 2.9 MB, or 105 MB for a 36-exposure day). Sample evenly
+// across the day instead, and disclose how many were left out.
+const MAX_STACK_EXPOSURES = 6;
+function sampleExposures(list) {
+  if (list.length <= MAX_STACK_EXPOSURES) return list;
+  const picked = [];
+  for (let i = 0; i < MAX_STACK_EXPOSURES; i++) {
+    picked.push(list[Math.round(i * (list.length - 1) / (MAX_STACK_EXPOSURES - 1))]);
+  }
+  return [...new Set(picked)];
+}
+
 export async function warmCutout(observation, signal, priority = 2, onExposure = null) {
   const generation = dataGeneration;
   const key = renderKey(observation);
   const rendered = renderedFrames.get(key);
   if (rendered) return rendered;
   assertStackBudget([observation], settings.fovArcmin);
-  const exposures = (observation.exposures || [observation]).filter(item => item?.accessUrl);
+  const available = (observation.exposures || [observation]).filter(item => item?.accessUrl);
+  const exposures = sampleExposures(available);
   if (exposures.length <= 1) {
     const entry = await warmSingleCutout(exposures[0] || observation, signal, priority);
     if (generation !== dataGeneration) throw new DOMException('Viewer changed.', 'AbortError');
@@ -595,6 +611,12 @@ export async function warmCutout(observation, signal, priority = 2, onExposure =
   }
   const element = document.createElement('canvas');
   const stacked = await paintStackCanvas(element, entries, exposures, signal);
+  // Report how many exposures the day actually offered, so a sampled stack is
+  // never mistaken for the complete set.
+  if (available.length > exposures.length) {
+    stacked.record.requestedExposureCount = available.length;
+    stacked.record.omittedExposureCount = available.length - exposures.length;
+  }
   signal?.throwIfAborted();
   if (generation !== dataGeneration) throw new DOMException('Viewer changed.', 'AbortError');
   const image = stackedImage(stacked.values, stacked.counts, sourceImages[0], stacked.record, sourceUrls);
@@ -727,7 +749,10 @@ function commitCutout(observation, entry, { announce = true, preview = false } =
   const masked = image.flags && settings.hideBadPixels ? Array.from(image.flags).filter(value => (value & BAD_PIXEL_MASK) !== 0).length : 0;
   const release = observation.release || observation.collection || 'Release not reported';
   const processing = observation.processingVersion ? ` · ${observation.processingVersion}` : '';
-  const stackLabel = image.stackRecord ? ` · median stack ${image.stackRecord.usedExposureCount}/${image.stackRecord.requestedExposureCount} exposures · ${Math.round(image.stackRecord.exposureSeconds)} s total` : '';
+  const omitted = image.stackRecord?.omittedExposureCount || 0;
+  const stackLabel = image.stackRecord
+    ? ` · median stack ${image.stackRecord.usedExposureCount} exposures${omitted ? ` of ${image.stackRecord.requestedExposureCount} (evenly sampled for download time)` : ''} · ${Math.round(image.stackRecord.exposureSeconds)} s total`
+    : '';
   caption.textContent = `${date} · D${observation.detector} · ${formatWavelength(observation)} · ${release}${processing}${stackLabel} · ${settings.fovArcmin}′ square · north up${presetMotion(target) ? ' · proper-motion aligned' : ''}${masked ? ` · ${masked} flagged pixels masked` : ''}`;
   status.hidden = true;
   document.getElementById('export-sky-png').disabled = preview;

@@ -88,6 +88,7 @@
             <p class="lab-game-status" id="lab-game-status" role="status"></p>
           </div>
           <div class="lab-controls">
+            <div class="lab-sliders">
             <div class="lab-slider">
               <label for="lab-distance">Distance <output id="lab-distance-out" for="lab-distance">—</output></label>
               <div class="lab-range"><span class="lab-band" id="lab-distance-band" title="Planet Nine models"></span><input id="lab-distance" type="range" min="0" max="1000" step="1" value="700"></div>
@@ -97,6 +98,7 @@
               <label for="lab-mag">Brightness <output id="lab-mag-out" for="lab-mag">—</output></label>
               <div class="lab-range"><span class="lab-band" id="lab-mag-band" title="Planet Nine models"></span><span class="lab-limit-tick" id="lab-limit-tick" title="This image’s 5σ limit"></span><input id="lab-mag" type="range" min="14" max="24" step="0.1" value="16"></div>
               <div class="lab-scale"><span>brighter · 14</span><span class="lab-band-key"><i class="lab-tick-key"></i> this image’s limit</span><span>24 · fainter</span></div>
+            </div>
             </div>
             <button type="button" class="lab-button lab-p9" id="lab-planet-nine">Plant a model Planet Nine</button>
             <dl class="lab-readout">

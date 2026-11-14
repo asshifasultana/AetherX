@@ -12,7 +12,9 @@
     if (!document.documentElement.classList.contains('is-tour-preview') && (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top)) document.documentElement.classList.add('is-embed');
     // A search from the home page arrives mid-transition: keep the viewer hidden until
     // search-loader.js has the loading screen up, so nothing flashes in between.
-    try { if (sessionStorage.getItem('spherex-arrival') === '1') { sessionStorage.removeItem('spherex-arrival'); if (!document.documentElement.classList.contains('is-embed') && !document.documentElement.classList.contains('is-tour-preview')) document.documentElement.classList.add('is-arriving'); } } catch (error) {}</script>
+    try { if (sessionStorage.getItem('spherex-arrival') === '1') { sessionStorage.removeItem('spherex-arrival'); if (!document.documentElement.classList.contains('is-embed') && !document.documentElement.classList.contains('is-tour-preview')) document.documentElement.classList.add('is-arriving'); } } catch (error) {}
+    // If the loading screen never takes over (its script failed to load), show the viewer rather than a black page.
+    setTimeout(function () { var loader = document.getElementById('preview-loading'); if (document.documentElement.classList.contains('is-arriving') && !(loader && loader.open)) document.documentElement.classList.remove('is-arriving'); }, 4000);</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="viewer-page">

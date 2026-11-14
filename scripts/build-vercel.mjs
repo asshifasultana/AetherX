@@ -13,6 +13,8 @@ publicFiles.push('moving-target.js', 'moving-worker.js', 'lib/moving-view.js', '
   'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js');
 publicFiles.push(...AGENT_PUBLIC_FILES);
 publicFiles.push('spectrum-explorer.js');
+// The search loading screen and the constellation/distance lines it shows.
+publicFiles.push('search-loader.js', 'lib/constellation.js', 'lib/distance.js');
 publicFiles.push(...CONTEXT_PUBLIC_FILES);
 // Start clean so functions dropped or merged since the last build do not linger.
 await rm(output, { recursive: true, force: true });
@@ -31,6 +33,15 @@ for (const file of publicFiles) {
     for (const [, specifier] of source.matchAll(/(?:^|[\s;])(?:import|export)\s*(?:[^'"]*?\sfrom\s*)?['"](\.{1,2}\/[^'"]+)['"]/g)) {
       const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier.split(/[?#]/)[0]));
       if (!published.has(target)) missing.push(`${file} imports ${target}`);
+    }
+  }
+  // Pages load their entry modules and stylesheets by tag, not by import.
+  for (const file of publicFiles.filter(name => name.endsWith('.html'))) {
+    const source = await readFile(path.join(frontend, file), 'utf8');
+    for (const [, reference] of source.matchAll(/<(?:script|link)\b[^>]*?\s(?:src|href)="([^"]+)"/g)) {
+      if (/^(?:[a-z]+:|\/\/|#|\/$)/i.test(reference)) continue;
+      const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), reference.split(/[?#]/)[0].replace(/^\//, '')));
+      if (!published.has(target)) missing.push(`${file} loads ${target}`);
     }
   }
   if (missing.length) throw new Error(`Static files imported but not published:\n${missing.join('\n')}`);

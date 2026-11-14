@@ -1523,6 +1523,146 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .px-case-main .px-aladin-context{margin-top:18px}
 @media(max-width:760px){.px-map-head{flex-direction:column;align-items:flex-start}.px-map-actions{justify-content:flex-start;gap:10px}.px-case-grid,.px-vote{grid-template-columns:1fr}.px-vote>div:first-child{grid-row:auto}}
 
+
+/* Planet Nine evidence observatory. */
+.px-evidence{margin-top:32px;border:1px solid #ffffff1c;border-radius:16px;overflow:hidden;background:radial-gradient(ellipse at 5% 0%,#425f5030,transparent 50%),#0d1623}
+.ev-header{padding:32px 32px 26px;display:flex;justify-content:space-between;align-items:center;gap:24px;border-bottom:1px solid #ffffff12}
+.ev-header h2{font:500 clamp(24px,2.6vw,36px)/1.2 Manrope,sans-serif;letter-spacing:-1px;margin:10px 0 14px;max-width:630px;color:#e7eddf}
+.ev-header p:not(.px-kicker){font-size:14px;line-height:1.7;color:#9eafad;margin:0}
+.ev-status{display:flex;align-items:center;gap:8px;border:1px solid #ffffff20;border-radius:30px;padding:9px 12px;font-size:9px;letter-spacing:1px;color:#b5c0b6;white-space:nowrap}
+.ev-status i{width:5px;height:5px;border-radius:50%;background:#d6c08a}
+.ev-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.ev-column{--ev-accent:#bad3a5;padding:26px 28px 28px;min-width:0}
+.ev-against{--ev-accent:#e1b294;border-left:1px solid #ffffff14;background:#ffffff02}
+.ev-column-head{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.ev-column-head>span{color:var(--ev-accent);font:500 23px Manrope,sans-serif}
+.ev-column-head p{font-size:11px;color:#8e9e9f;margin:0;border-left:1px solid #ffffff20;padding-left:14px}
+.ev-card{display:grid;grid-template-columns:110px minmax(0,1fr);gap:17px;padding:22px 0;border-top:1px solid #ffffff12;align-items:start}
+.ev-card svg{width:110px;height:90px;color:var(--ev-accent);background:radial-gradient(ellipse,#ffffff05,transparent 70%);margin-top:7px}
+.ev-card svg .ev-outlier{stroke:#edf0e7;stroke-dasharray:4 3;stroke-width:1.8}
+.ev-number{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--ev-accent)}
+.ev-card h3{font:600 17px/1.4 Manrope,sans-serif;color:#e4e9df;margin:6px 0 9px}
+.ev-card p{font-size:12px;line-height:1.75;color:#9caeae;margin:0 0 13px}
+.ev-card a{display:inline-flex;gap:16px;font-size:10px;color:var(--ev-accent);border-bottom:1px solid #ffffff25;padding-bottom:3px}
+.ev-card a:hover{color:#fff;border-color:currentColor}
+.ev-card a:focus-visible{outline:2px solid var(--ev-accent);outline-offset:5px}
+.ev-footer{display:flex;align-items:center;gap:16px;padding:22px 30px;border-top:1px solid #ffffff18;background:#ffffff03}
+.ev-footer-mark{font:italic 24px Georgia,serif;color:#d2d9bc;border:1px solid #d2d9bc40;border-radius:50%;width:38px;height:38px;display:grid;place-items:center;flex-shrink:0}
+.ev-footer strong{font-size:13px;font-weight:500;color:#dbe3d4}
+.ev-footer p{font-size:12px;line-height:1.6;margin:3px 0 0;color:#91a2a2}
+.ev-schematic-note{margin-left:auto;font-size:9px;line-height:1.7;color:#7f9397;flex-shrink:0}
+@media(max-width:1000px){.ev-card{grid-template-columns:80px minmax(0,1fr);gap:12px}.ev-card svg{width:80px}.ev-header{align-items:flex-start;flex-direction:column}.ev-schematic-note{display:none}}
+@media(max-width:760px){.ev-columns{grid-template-columns:1fr}.ev-against{border-left:0;border-top:1px solid #ffffff18}.ev-header{padding:24px}.ev-column{padding:22px 24px}.ev-card{grid-template-columns:86px minmax(0,1fr)}.ev-card svg{width:86px}.ev-footer{padding:20px 24px}.ev-header h2{font-size:28px}.ev-card p{font-size:13px}}
+
+/* Keep the evidence available without filling the initial page. */
+.ev-toggle{list-style:none;display:flex;align-items:center;gap:20px;padding:24px 28px;cursor:pointer;color:#e4e9df}
+.ev-toggle::-webkit-details-marker{display:none}
+.ev-toggle:hover{background:#ffffff04}
+.ev-toggle:focus-visible{outline:2px solid #bad3a5;outline-offset:-4px;border-radius:16px}
+.ev-toggle-icon{display:grid;place-items:center;width:48px;height:48px;flex-shrink:0;border:1px solid #bad3a533;border-radius:50%;color:#bad3a5;font-size:30px;background:#bad3a508}
+.ev-toggle-copy{display:flex;flex-direction:column;gap:5px}
+.ev-toggle-copy .px-kicker{margin:0;font-size:9px}
+.ev-toggle-copy strong{font:500 21px Manrope,sans-serif;letter-spacing:-.4px}
+.ev-toggle-copy>span:last-child{color:#95a7a6;font-size:12px;line-height:1.6}
+.ev-toggle-action{margin-left:auto;display:flex;align-items:center;gap:18px;color:#cad8bb;font-size:12px}
+.ev-chevron{font-size:23px;transition:transform .2s}
+.ev-open-label{display:none}
+.px-evidence[open] .ev-open-label{display:inline}
+.px-evidence[open] .ev-closed-label{display:none}
+.px-evidence[open] .ev-chevron{transform:rotate(180deg)}
+.px-evidence[open] .ev-toggle{border-bottom:1px solid #ffffff14}
+@media(max-width:760px){.ev-toggle{padding:20px;gap:13px}.ev-toggle-icon{width:36px;height:36px;font-size:24px}.ev-toggle-copy strong{font-size:18px}.ev-toggle-action{gap:0}.ev-toggle-action>span:not(.ev-chevron){display:none}.ev-toggle-copy .px-kicker{font-size:8px;letter-spacing:.6px}}
+@media(prefers-reduced-motion:reduce){.ev-chevron{transition:none}}
+
+/* Supporting PlanetX information opens on demand. */
+.px-details-grid,.px-info-grid{align-items:start}
+.px-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.px-disclosure{padding:0;overflow:hidden}
+.px-disclosure>summary{display:flex;align-items:center;gap:16px;list-style:none;padding:23px 25px;cursor:pointer}
+.px-disclosure>summary::-webkit-details-marker{display:none}
+.px-disclosure>summary:hover{background:#ffffff04}
+.px-disclosure>summary:focus-visible{outline:2px solid #bad3a5;outline-offset:-4px;border-radius:12px}
+.px-disclosure-chevron{margin-left:auto;color:#bad3a5;font-size:23px;flex-shrink:0;transition:transform .2s}
+.px-disclosure[open]>summary .px-disclosure-chevron{transform:rotate(180deg)}
+.px-disclosure[open]>summary{border-bottom:1px solid #ffffff12}
+.px-disclosure-body{padding:18px 25px 24px}
+.px-disclosure-body>p{color:#a7b2b0;font-size:13px;line-height:1.75;margin:0 0 16px}
+.px-disclosure-body>p:last-child{margin-bottom:0}
+.px-method-disclosure{margin-top:18px}
+.px-disclosure-body .px-source{font-size:11px;color:#86979a}
+@media(max-width:760px){.px-info-grid{grid-template-columns:1fr;gap:12px}.px-disclosure>summary{padding:18px}.px-disclosure-body{padding:16px 18px 20px}.px-disclosure>summary h2{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.px-disclosure-chevron{transition:none}}
+
+/* Different entry points for inspection, browsing, reading and help. */
+.px-coordinate-inspector{background:linear-gradient(110deg,#162b2d,#101c29);border-color:#83b7ac40;border-left:3px solid #83b7ac;box-shadow:none;border-radius:5px 12px 12px 5px}
+.px-coordinate-inspector>summary{min-height:106px}
+.px-coordinate-inspector>summary h2{font-family:ui-monospace,SFMono-Regular,monospace;font-size:17px;letter-spacing:-.5px}
+.px-inspector-dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:#9ac8b9;box-shadow:0 0 9px #9ac8b960;margin-right:5px}
+.px-coordinate-inspector .px-kicker{color:#8db4ae;font-size:9px;letter-spacing:1.4px}
+.px-case-drawer{background:linear-gradient(120deg,#24251f,#181f28);border-color:#cbb17c30;box-shadow:0 4px 0 -1px #0c1420,0 5px 0 -1px #cbb17c28;border-radius:12px}
+.px-case-drawer>summary{min-height:106px}
+.px-case-drawer .px-kicker{font-size:9px;color:#c7b58b;letter-spacing:1.4px}
+.px-case-drawer>summary h2{font-size:18px}
+.px-folder-icon{color:#d4bc82;font-size:24px;margin-right:6px;vertical-align:-2px}
+.px-case-open{margin-left:auto;color:#d4bc82;font-size:11px;white-space:nowrap}
+.px-when-open{display:none}.px-case-drawer[open] .px-when-open{display:inline}.px-case-drawer[open] .px-when-closed{display:none}
+.px-info-grid{gap:28px;border-top:1px solid #ffffff14;margin-top:30px;padding-top:8px}
+.px-visibility-note,.px-terms-note{border:0;border-radius:0;background:none;box-shadow:none;overflow:visible}
+.px-visibility-note>summary,.px-terms-note>summary{padding:19px 0;min-height:92px;gap:12px}
+.px-visibility-note>summary h2,.px-terms-note>summary h2{font-size:16px;font-weight:500}
+.px-visibility-note .px-kicker{color:#9db8c8;font-size:9px;letter-spacing:1.5px}
+.px-terms-note .px-kicker{color:#baa7c7;font-size:9px;letter-spacing:1.5px}
+.px-note-plus{display:grid;place-items:center;margin-left:auto;flex-shrink:0;width:26px;height:26px;border:1px solid #ffffff24;border-radius:50%;color:#a8b8bc;font-size:19px;font-weight:400;transition:transform .2s}
+.px-info-grid details[open] .px-note-plus{transform:rotate(45deg)}
+.px-info-grid .px-disclosure-body{padding:3px 0 18px 15px;border-left:2px solid #9db8c845;margin:8px 0 0}
+.px-info-grid .px-terms-note .px-disclosure-body{border-color:#baa7c745}
+.px-info-grid details[open]>summary{border-bottom:0}
+.px-info-grid summary:hover{background:none}.px-info-grid summary:hover h2{color:#fff}
+.px-method-disclosure{width:100%;margin-top:8px;border:0;border-top:1px dashed #ffffff20;border-radius:0;background:none;box-shadow:none}
+.px-method-disclosure>summary{justify-content:flex-start;gap:10px;padding:16px 0}
+.px-method-disclosure>summary h2{font-family:inherit;font-size:12px;font-weight:400;letter-spacing:0;color:#9caeae}
+.px-method-disclosure .px-method-mark{width:20px;height:20px;flex-basis:20px;font-size:13px;border-color:#aabd9440}
+.px-method-disclosure .px-disclosure-chevron{margin-left:3px;font-size:15px;color:#8e9f99}
+.px-method-disclosure .px-disclosure-body{max-width:900px;padding:4px 30px 18px}
+.px-method-disclosure[open]>summary{border-bottom:0}
+.px-method-disclosure>summary:hover{background:none}.px-method-disclosure>summary:hover h2{color:#d6e2c9}
+@media(max-width:760px){.px-info-grid{gap:0}.px-terms-note{border-top:1px solid #ffffff12}.px-case-drawer>summary,.px-coordinate-inspector>summary{min-height:90px}.px-case-drawer>summary h2{font-size:16px}.px-case-open{font-size:10px}.px-method-disclosure>summary h2{font-size:12px}.px-visibility-note>summary,.px-terms-note>summary{padding:18px 0}.px-method-disclosure .px-disclosure-body{padding-left:0;padding-right:0}}
+@media(prefers-reduced-motion:reduce){.px-note-plus{transition:none}}
+
+/* Align the map tools and supporting evidence to a shared layout rhythm. */
+.planetx-page .px-details-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:20px}
+.px-coordinate-inspector,.px-case-drawer{border-radius:10px;box-shadow:none}
+.px-coordinate-inspector>summary,.px-case-drawer>summary{min-height:96px;padding:20px 24px;align-items:center}
+.px-coordinate-inspector>summary>div,.px-case-drawer>summary>div{min-width:0}
+.px-coordinate-inspector .px-kicker,.px-case-drawer .px-kicker{margin:0 0 8px;line-height:1.2}
+.px-coordinate-inspector>summary h2,.px-case-drawer>summary h2{font-family:Manrope,sans-serif;font-size:18px;font-weight:600;line-height:1.4;letter-spacing:-.4px;margin:0}
+.px-coordinate-inspector .px-inspector-dot{display:none}
+.px-folder-icon{display:none}
+.px-coordinate-inspector .px-disclosure-chevron,.px-case-open{align-self:center;margin-left:auto;flex-shrink:0}
+.px-case-open{padding:7px 11px;border:1px solid #cbb17c30;border-radius:6px;font-size:11px}
+.px-evidence{margin-top:16px;border-radius:10px;background:#101b27}
+.ev-toggle{padding:20px 24px;gap:18px;min-height:102px}
+.ev-toggle-icon{width:40px;height:40px;font-size:26px}
+.ev-toggle-copy{gap:4px}
+.ev-toggle-copy .px-kicker{font-size:9px;line-height:1.3;letter-spacing:1.4px}
+.ev-toggle-copy strong{font-size:20px;line-height:1.4}
+.ev-toggle-copy>span:last-child{font-size:12px;line-height:1.6}
+.ev-toggle-action{gap:12px;padding:8px 12px;border:1px solid #bad3a52b;border-radius:6px;white-space:nowrap}
+.ev-chevron{font-size:18px;line-height:1}
+.px-info-grid{margin-top:24px}
+@media(max-width:760px){
+  .planetx-page .px-details-grid{grid-template-columns:1fr;gap:10px;margin-top:14px}
+  .px-coordinate-inspector>summary,.px-case-drawer>summary{min-height:82px;padding:18px}
+  .px-coordinate-inspector>summary h2,.px-case-drawer>summary h2{font-size:16px}
+  .px-evidence{margin-top:10px}
+  .ev-toggle{padding:18px;gap:12px;min-height:96px}
+  .ev-toggle-copy strong{font-size:18px}
+  .ev-toggle-copy .px-kicker{font-size:8px;letter-spacing:.8px}
+  .ev-toggle-icon{width:32px;height:32px;font-size:22px}
+  .ev-toggle-action{border:0;padding:0;gap:0}
+}
+
+
 /* PlanetX case file in the viewer (planetx-casefile.js), below Star Details. */
 .px-casefile{display:block}
 .px-casefile h3{margin:4px 0 6px;font-size:20px}

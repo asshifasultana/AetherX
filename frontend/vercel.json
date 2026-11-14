@@ -31,6 +31,9 @@
     },
     "api/resolve-object.js": {
       "maxDuration": 15
+    },
+    "api/star-details.js": {
+      "maxDuration": 10
     }
   }
 }

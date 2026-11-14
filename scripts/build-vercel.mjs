@@ -45,6 +45,16 @@ for (const [name, maxDuration] of [['observations', 120], ['moving-observations'
   await writeFile(path.join(directory, 'package.json'), JSON.stringify({ type: 'module' }));
   await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: `api/${name}.js`, launcherType: 'Nodejs', maxDuration, ...(name === 'crop' ? { regions: ['iad1'] } : {}) }, null, 2));
 }
+{
+  const directory = path.join(output, 'functions', 'api', 'star-details.func');
+  for (const file of ['api/star-details.js', 'lib/star-profiles.js', 'lib/star-profile-store.js']) {
+    const destination = path.join(directory, file);
+    await mkdir(path.dirname(destination), { recursive: true });
+    await copyFile(path.join(frontend, file), destination);
+  }
+  await writeFile(path.join(directory, 'package.json'), JSON.stringify({ type: 'module' }));
+  await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: 'api/star-details.js', launcherType: 'Nodejs', maxDuration: 10 }, null, 2));
+}
 // The AI guide proxy only needs its tool schemas and the settings rules they use.
 {
   const directory = path.join(output, 'functions', 'api', 'agent.func');
@@ -57,4 +67,4 @@ for (const [name, maxDuration] of [['observations', 120], ['moving-observations'
   await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: 'api/agent.js', launcherType: 'Nodejs', maxDuration: 30 }, null, 2));
 }
 await writeFile(path.join(output, 'config.json'), JSON.stringify({ version: 3 }, null, 2));
-console.log(`Vercel output ready: ${publicFiles.length} public assets, ten Node.js API functions, and the preset observation index.`);
+console.log(`Vercel output ready: ${publicFiles.length} public assets, eleven Node.js API functions, and the preset observation index.`);

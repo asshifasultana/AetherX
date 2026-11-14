@@ -154,13 +154,20 @@
         <details><summary>Gaia stars in this field</summary><ul id="gaia-source-list" class="gaia-source-list" tabindex="0" aria-label="Gaia source positions"></ul><a href="https://www.cosmos.esa.int/web/gaia/dr3" target="_blank" rel="noopener noreferrer">Gaia DR3 · ESA/Gaia/DPAC ↗</a></details>
       </div>
       <details id="cultural-context" class="cultural-context">
-        <summary>Cultural sky context</summary>
-        <label for="culture-filter">Tradition</label><select id="culture-filter"><option value="all">All included traditions</option></select>
-        <p id="culture-status" role="status">Expand to load cited sky accounts.</p>
-        <p id="culture-coverage" class="context-coverage" role="note"></p>
-        <button id="culture-retry" class="reset-settings" type="button" hidden>Retry cultural context</button>
-        <div id="culture-results"></div>
-        <p class="context-source-note">Accounts belong to specific communities and sources; no community endorsement is implied. <a href="/cultural-sources.json">Source manifest and coverage ↗</a></p>
+        <summary>Star Details</summary>
+        <section id="star-profile" class="star-profile" aria-label="Selected star" hidden>
+          <article id="star-profile-card" class="culture-card"></article>
+          <p id="star-profile-status" role="status"></p>
+          <button id="star-profile-retry" class="reset-settings" type="button" hidden>Retry star details</button>
+        </section>
+        <section id="sky-culture" aria-labelledby="sky-culture-heading">
+          <h3 id="sky-culture-heading">Sky Culture</h3>
+          <label for="culture-filter">Tradition</label><select id="culture-filter"><option value="all">All included traditions</option></select>
+          <p id="culture-status" role="status">Expand to load cited sky accounts.</p>
+          <p id="culture-coverage" class="context-coverage" role="note"></p>
+          <button id="culture-retry" class="reset-settings" type="button" hidden>Retry cultural context</button>
+          <div id="culture-results"></div>
+        </section>
       </details>
       </section>
     <section id="ai-guide" class="observations-section ai-guide" aria-labelledby="ai-guide-heading">
@@ -257,6 +264,7 @@
   <script type="module" src="workspace-ui.js"></script>
   <script type="module" src="moving-target.js"></script>
   <script type="module" src="sky-context.js"></script>
+  <script type="module" src="star-details.js"></script>
   <script type="module" src="gaia-overlay.js"></script>
   <script type="module" src="agent-ui.js"></script>
 </body>

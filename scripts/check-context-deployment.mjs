@@ -18,5 +18,11 @@ try {
   await deployed.default({method:'GET',url:'/api/gaia-sources?ra=bad'},response);
   assert.equal(response.statusCode,400);assert.equal(response.body.code,'INVALID_INPUT');
   assert.equal((await fetch(base+'/api/gaia-sources?ra=bad')).status,400);
-  console.log(`Verified ${CONTEXT_PUBLIC_FILES.length} context assets, isolated Vercel Gaia imports, local API routing, and private-source exclusions.`);
+  const stars=await import(new URL('../.vercel/output/functions/api/star-details.func/api/star-details.js',import.meta.url));
+  await stars.createStarDetailsHandler(null)({method:'GET',url:'/api/star-details?preset=epsilon'},response);
+  assert.equal(response.body.profile.name,'Epsilon Indi B');
+  const localStar=await fetch(base+'/api/star-details?preset=epsilon');
+  assert.equal((await localStar.json()).profile.name,'Epsilon Indi B');
+  assert.equal((await fetch(base+'/lib/star-profiles.js')).status,404);
+  console.log(`Verified ${CONTEXT_PUBLIC_FILES.length} context assets, isolated Vercel Gaia and star profile imports, local API routing, and private-source exclusions.`);
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

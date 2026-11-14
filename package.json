@@ -7,6 +7,7 @@
   },
   "scripts": {
     "build:cultures": "node scripts/ingest-sky-cultures.mjs",
+    "import:stars": "node --env-file-if-exists=.env scripts/import-star-profiles.mjs",
     "cache:culture-anchors": "node scripts/cache-sky-anchors.mjs",
     "update:index": "node scripts/update-observation-index.mjs",
     "refresh:cache": "node scripts/refresh-search-cache.mjs",

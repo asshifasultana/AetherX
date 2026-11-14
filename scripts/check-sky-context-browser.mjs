@@ -90,6 +90,12 @@ try {
   assert.equal(await evaluate("document.querySelector('#cultural-context').open"),false,'Embedded context starts collapsed');
   assert.equal(await evaluate("document.querySelector('#culture-filter').value"),'lakota');
   assert.equal(culturalRequests,loadedCultures,'Collapsed context must not fetch the cultural dataset');
+  await send('Page.navigate',{url:`http://127.0.0.1:${port}/viewer.html?searchType=object&q=GJ+699&ra=269.4521&dec=4.6934`});
+  await waitFor("document.querySelector('#object-name')?.textContent==='GJ 699'");
+  await evaluate("document.querySelector('#cultural-context').open=true");
+  await waitFor("document.querySelector('#star-profile-card')?.textContent.includes('Edward Emerson Barnard (identified its rapid motion)')");
+  assert.ok(await evaluate("document.querySelector('#star-profile-card').textContent.includes('How it was discovered') && document.querySelector('#star-profile-card').textContent.includes('10 arcseconds per year')"));
+  assert.equal(await evaluate("document.querySelector('#cultural-context > summary').textContent"),'Star Details');
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({passed:true,gaiaRequests,fitsRangeRequests:fitsRequests,screenshots:fileURLToPath(root)},null,2));
 } finally {ws?.close();child.kill();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

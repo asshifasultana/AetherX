@@ -40,12 +40,15 @@ function showPosition(data) {
   fixedTargetData = data; renderTarget(data);
   $('target-coordinates').hidden = false; $('moving-position-note').hidden = true;
   $('announcement').textContent = `${data.name} selected. The observation search has been updated.`;
-  window.dispatchEvent(new CustomEvent('sky:target-selected', { detail: { ...position } }));
+  const starTarget = position.targetId ? { preset: position.targetId } : data.catalogName ? { name: data.catalogName } : null;
+  window.dispatchEvent(new CustomEvent('sky:target-selected', {
+    detail: { ...position, starTarget: starTarget && { ...starTarget, label: data.name, description: data.description, type: data.type } }
+  }));
 }
 const objectLookup = mountObjectLookup(data => {
   position = { raDeg: data.raDeg, decDeg: data.decDeg, frame: data.frame };
   selected = null; updateSelection();
-  showPosition({ name: data.resolvedName || data.submittedName, type: 'CATALOG POSITION · ICRS', description: `Resolved through ${data.source.name} / ${data.source.resolver}. Fixed catalog position; no proper-motion correction.` });
+  showPosition({ name: data.resolvedName || data.submittedName, catalogName: data.resolvedName || data.submittedName, type: 'CATALOG POSITION · ICRS', description: `Resolved through ${data.source.name} / ${data.source.resolver}. Fixed catalog position; no proper-motion correction.` });
 });
 const targetSearch = mountTargetSearch({
   initialPosition: position,
@@ -249,7 +252,7 @@ targetSearch.setEntry(initialEntry);
 if (isEmbedded) document.documentElement.classList.add('is-embed');
 function restoredTarget() {
   if (restoredTargetId) return presets[restoredTargetId];
-  if (initialEntry.query) return { name: initialEntry.query, type: 'CATALOG POSITION · ICRS', description: 'Restored catalog position from this link.' };
+  if (initialEntry.type === 'object' && initialEntry.query) return { name: initialEntry.query, catalogName: initialEntry.query, type: 'CATALOG POSITION · ICRS', description: 'Restored catalog position from this link.' };
   return {
     name: 'Shared sky position',
     type: 'SHARED COORDINATES · ICRS',

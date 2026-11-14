@@ -567,16 +567,19 @@ footer p,footer>span{font-size:15px;color:#59695e}
 .cultural-context { margin:24px 0; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--white); }
 .cultural-context > summary { cursor:pointer; font-size:18px; font-weight:600; }
 .cultural-context[open] > summary { margin-bottom:18px; }
+.star-profile:not([hidden]) + #sky-culture { margin-top:20px; }
+.star-profile dl { display:grid; grid-template-columns:max-content minmax(0,1fr); gap:6px 12px; margin:12px 0; }
+.star-profile dt { font-weight:600; }
+.star-profile dd { margin:0; }
+.star-profile summary { cursor:pointer; }
 .cultural-context select { display:block; max-width:100%; margin:8px 0 14px; padding:9px; }
 .culture-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:14px; }
 .culture-card { min-width:0; padding:18px; border:1px solid var(--line); border-radius:10px; overflow-wrap:anywhere; }
 .culture-card h4 { margin:8px 0; font-size:20px; line-height:1.4; }
 .culture-card p { line-height:1.6; }
 .culture-card .eyebrow { font-size:11px; letter-spacing:1px; }
-.culture-card a,.context-source-note a,.gaia-readouts a { text-decoration:underline; text-underline-offset:3px; }
-.culture-card details { font-size:12px; margin:16px 0; }
-.culture-card summary { cursor:pointer; }
-.culture-translation,.context-distance,.context-source-note { color:var(--muted); font-size:13px; }
+.culture-card a,.gaia-readouts a { text-decoration:underline; text-underline-offset:3px; }
+.culture-translation,.context-distance { color:var(--muted); font-size:13px; }
 .context-coverage { padding:12px; border-left:3px solid var(--coral); font-size:13px; line-height:1.6; }
 .context-coverage:empty { display:none; }
 .gaia-readouts { margin:16px 0; font-size:12px; overflow-wrap:anywhere; line-height:1.6; }

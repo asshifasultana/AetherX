@@ -1,13 +1,28 @@
 # SphereX
 
-## Cultural sky context and Gaia
+## Star Details, Sky Culture, and Gaia
 
-Open **Cultural sky context** below the timeline for cited Hawaiian, Vedic,
-Bengali, and Lakota entries. Arabic al-Sufi and Kamilaroi/Euahlayi selectors
+Open **Star Details** below the timeline for the selected named target or preset.
+**Sky Culture** shows reviewed accounts for the displayed field, including cited
+Hawaiian, Vedic, Bengali, and Lakota entries. Arabic al-Sufi and Kamilaroi/Euahlayi selectors
 explain their pending adaptation permissions; the five-group content target is
 not yet complete. Enable **Gaia stars** under Overlays for approximate dated
 catalog markers and an accessible source list. `culture` and `gaia=1` travel in
 shared links. See [content sourcing, maintenance, astrometric limits, and tests](docs/cultural-context-and-gaia.md).
+
+Set a contact-bearing `WIKIMEDIA_USER_AGENT` and run `npm run import:stars` to
+collect English Wikipedia articles using its stellar infobox, plus the reviewed
+preset profiles. The importer follows all result pages and adds Wikidata catalog
+aliases and discovery facts where present. It writes `.local/star-profiles.json`,
+which the local server uses after a restart.
+
+To publish the catalog, apply the [star profiles migration](supabase/migrations/20261109000000_star_profiles.sql)
+to the same Supabase project as the search cache and configure the existing
+server-side `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`. The default import uploads
+when these variables are set. Use `npm run import:stars -- --collect-only` for
+local collection and `npm run import:stars -- --from-snapshot` to upload an
+existing snapshot without repeating the download. The viewer uses the local
+snapshot or bundled profiles when Supabase has no match or is unavailable.
 
 ## Railway deployment
 

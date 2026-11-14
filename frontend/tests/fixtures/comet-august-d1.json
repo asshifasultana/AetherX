@@ -1,0 +1,84 @@
+{
+  "source": "JPL Horizons via ShivenKhurana1/spherex-timelapse@4a3aca56dbf07e90a17daaab63d992054931e0ae/data/tracks/3i-atlas.json",
+  "ephemeris": [
+    {
+      "mjd": 60898.66667,
+      "ra": 245.571874,
+      "dec": -16.635525
+    },
+    {
+      "mjd": 60898.75,
+      "ra": 245.51466,
+      "dec": -16.62742
+    },
+    {
+      "mjd": 60898.83333,
+      "ra": 245.457603,
+      "dec": -16.620857
+    },
+    {
+      "mjd": 60901.08333,
+      "ra": 243.929124,
+      "dec": -16.407722
+    },
+    {
+      "mjd": 60901.16667,
+      "ra": 243.873081,
+      "dec": -16.399383
+    },
+    {
+      "mjd": 60901.25,
+      "ra": 243.816788,
+      "dec": -16.389981
+    }
+  ],
+  "cases": [
+    {
+      "name": "August 2025 D1 continuum",
+      "exposures": [
+        {
+          "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W33_1B/l2b-v20-2025-265/1/level2_2025W33_1B_0134_1D1_spx_l2b-v20-2025-265.fits",
+          "observedStartUtc": "2025-08-11T17:23:58.840Z",
+          "wavelength": 0.7550500589531006,
+          "detector": 1,
+          "mjd": 60898.724986574074
+        },
+        {
+          "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W33_1B/l2b-v20-2025-265/1/level2_2025W33_1B_0134_2D1_spx_l2b-v20-2025-265.fits",
+          "observedStartUtc": "2025-08-11T17:26:07.772Z",
+          "wavelength": 0.7723449476017109,
+          "detector": 1,
+          "mjd": 60898.7264788426
+        },
+        {
+          "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W33_1B/l2b-v20-2025-265/1/level2_2025W33_1B_0134_3D1_spx_l2b-v20-2025-265.fits",
+          "observedStartUtc": "2025-08-11T17:28:16.703Z",
+          "wavelength": 0.7906416776444949,
+          "detector": 1,
+          "mjd": 60898.727971099535
+        },
+        {
+          "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W33_1B/l2b-v20-2025-265/1/level2_2025W33_1B_0576_1D1_spx_l2b-v20-2025-265.fits",
+          "observedStartUtc": "2025-08-14T02:27:37.865Z",
+          "wavelength": 0.7557618979529686,
+          "detector": 1,
+          "mjd": 60901.10252158565
+        },
+        {
+          "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W33_1B/l2b-v20-2025-265/1/level2_2025W33_1B_0576_2D1_spx_l2b-v20-2025-265.fits",
+          "observedStartUtc": "2025-08-14T02:29:46.796Z",
+          "wavelength": 0.7732218352592424,
+          "detector": 1,
+          "mjd": 60901.10401384259
+        },
+        {
+          "url": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W33_1B/l2b-v20-2025-265/1/level2_2025W33_1B_0576_3D1_spx_l2b-v20-2025-265.fits",
+          "observedStartUtc": "2025-08-14T02:31:55.726Z",
+          "wavelength": 0.7916027646403399,
+          "detector": 1,
+          "mjd": 60901.10550608796
+        }
+      ]
+    }
+  ]
+}

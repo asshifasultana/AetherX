@@ -2,6 +2,7 @@ import { preferredProducts } from './observation-products.js';
 import { observeCutout } from './fits-viewer.js';
 import { initialViewState } from './share.js';
 import { summarizeDetectorCoverage } from './timelapse-core.js';
+import { presetMotion } from './presets.js';
 const $ = id => document.getElementById(id);
 const make = (tag, text, className) => { const element = document.createElement(tag); if (text !== undefined) element.textContent = text; if (className) element.className = className; return element; };
 const formatNumber = (value, digits = 3) => Number.isFinite(value) ? value.toFixed(digits).replace(/0+$/, '').replace(/\.$/, '') : 'Not reported';
@@ -16,7 +17,11 @@ const emit = (type, detail) => {
   if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent(type, { detail }));
 };
 
-function updateTarget() { $('search-target').textContent = `${targetName} · ${position.raDeg.toFixed(6)}°, ${position.decDeg >= 0 ? '+' : ''}${position.decDeg.toFixed(6)}° · ICRS`; }
+function updateTarget() {
+  $('search-target').textContent = presetMotion(position)
+    ? `${targetName} · proper-motion search`
+    : `${targetName} · ${position.raDeg.toFixed(6)}°, ${position.decDeg >= 0 ? '+' : ''}${position.decDeg.toFixed(6)}° · ICRS`;
+}
 window.addEventListener('sky:target-selected', event => {
   position = { ...event.detail }; targetName = $('object-name').textContent;
   updateTarget(); search();
@@ -34,6 +39,7 @@ async function search() {
   const startDate = $('search-start').value, endDate = $('search-end').value;
   if (startDate && endDate && startDate > endDate) { setBusy(false); $('search-error').textContent = 'Through date must be on or after the from date.'; $('search-error').hidden = false; emit('sky:observations-loaded', { observations: [], targetName, position: { ...position }, failed: true }); return; }
   const params = new URLSearchParams({ raDeg: position.raDeg, decDeg: position.decDeg, detector: $('search-detector').value, release: $('search-release').value, startDate, endDate });
+  if (presetMotion(position)) params.set('targetId', position.targetId);
   submittedParams = params;
   emit('sky:observations-loading', { targetName, position: { ...position } });
   setBusy(true); $('search-status').textContent = `Searching IRSA for ${targetName}. Archive queries can take up to 90 seconds.`;
@@ -47,7 +53,7 @@ async function search() {
     if (!Array.isArray(data.observations)) throw new Error('The observation service returned an invalid response. Please retry.');
     if (current !== requestNumber) return;
     result = data;
-    $('search-status').textContent = data.count ? `Found ${data.count} detector images covering ${targetName}.` : data.source.fallback
+    $('search-status').textContent = data.count ? `Found ${data.count} ${presetMotion(position) ? 'candidate detector images for' : 'detector images covering'} ${targetName}.` : data.source.fallback
       ? 'The preset fallback index has no matches for these filters. Live IRSA search was unavailable; current coverage could not be checked.'
       : 'No observations cover this position with the selected filters. Try another date range, release, or detector.';
     renderResults();

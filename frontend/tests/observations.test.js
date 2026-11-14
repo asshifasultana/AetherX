@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { validateSearch, buildQuery, parseCsv, normalizeRow, deduplicate, mjdToIso, queryArchive, createSearchService, MAX_RESULTS, scienceUrl } from '../lib/observations.js';
+import { validateSearch, buildQuery, observationQueries, parseCsv, normalizeRow, deduplicate, mjdToIso, queryArchive, createSearchService, MAX_RESULTS, scienceUrl } from '../lib/observations.js';
 import { createObservationsHandler } from '../api/observations.js';
 import { createAppServer } from '../server.mjs';
 import { preferredProducts } from '../observation-products.js';
@@ -39,6 +39,17 @@ test('inclusive UTC dates include overlapping exposures and reject impossible da
   assert.match(query, /p.time_bounds_upper>=/); assert.match(query, /p.time_bounds_lower</);
   assert.match(query, /IN \('D3','SPHEREx-D3'\)/); assert.doesNotMatch(query, /spherex_qr3/);
   for (const extra of [{ startDate: '2025-02-30' }, { endDate: '2025-13-01' }, { startDate: '2025-06-01', endDate: '2025-05-01' }]) assert.throws(() => validateSearch(valid(extra)), { status: 400 });
+});
+test('Barnard’s Star uses distinct archive pointings on either side of a window boundary', () => {
+  const params = valid({ raDeg: '269.4521', decDeg: '4.6934', targetId: 'barnard', startDate: '2025-09-07', endDate: '2025-09-09' });
+  const now = Date.parse('2025-10-01');
+  const queries = observationQueries(validateSearch(params), { now });
+  assert.equal(queries.length, 2);
+  assert.match(queries[0], /p\.time_bounds_lower<60926/);
+  assert.match(queries[1], /p\.time_bounds_lower>=60926/);
+  assert.notEqual(queries[0].match(/POINT\([^)]+\)/)[0], queries[1].match(/POINT\([^)]+\)/)[0]);
+  params.set('decDeg', '4.7');
+  assert.match(observationQueries(validateSearch(params), { now })[0], /POINT\('ICRS',269\.4521,4\.7\)/);
 });
 test('MJD epoch, zero, and missing values are handled without inventing dates', () => {
   assert.equal(mjdToIso(40587), '1970-01-01T00:00:00.000Z');

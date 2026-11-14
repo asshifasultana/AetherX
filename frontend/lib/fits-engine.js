@@ -119,6 +119,38 @@ function bilinear(image, x, y, settings, variance, outputIndex) {
   return weight > 0 ? sum / weight : Number.NaN;
 }
 
+function lanczosWeights(position, start) {
+  const sinc = x => x === 0 ? 1 : Math.sin(Math.PI * x) / (Math.PI * x);
+  return Array.from({ length: 6 }, (_, i) => {
+    const distance = position - start - i;
+    return Math.abs(distance) < 3 ? sinc(distance) * sinc(distance / 3) : 0;
+  });
+}
+
+// Require the entire stencil. Renormalizing a truncated signed kernel can
+// amplify noise at detector boundaries or next to masked stellar pixels.
+function lanczos3(image, x, y, settings, variance, outputIndex) {
+  const x0 = Math.floor(x) - 2, y0 = Math.floor(y) - 2;
+  if (x0 < 0 || y0 < 0 || x0 + 5 >= image.width || y0 + 5 >= image.height) return NaN;
+  const wx = lanczosWeights(x, x0), wy = lanczosWeights(y, y0);
+  let sum = 0, weight = 0, varianceSum = 0;
+  for (let dy = 0; dy < 6; dy++) for (let dx = 0; dx < 6; dx++) {
+    const index = (y0 + dy) * image.width + x0 + dx;
+    const value = image.values[index];
+    if (!Number.isFinite(value) || (settings.hideBadPixels && (image.flags?.[index] & BAD_PIXEL_MASK))
+      || image.derivedTransientPixels?.has(index)) return NaN;
+    const w = wx[dx] * wy[dy];
+    sum += w * value;
+    weight += w;
+    if (variance && w !== 0) {
+      const v = image.variance[index];
+      varianceSum += Number.isFinite(v) && v > 0 ? w * w * v : NaN;
+    }
+  }
+  if (variance) variance[outputIndex] = varianceSum / (weight * weight);
+  return sum / weight;
+}
+
 export function projectSkyToPixel(image, ra, dec) {
   const h = image.header, matrix = image.matrix;
   const deg = Math.PI / 180, ra0 = Number(h.CRVAL1) * deg, dec0 = Number(h.CRVAL2) * deg;
@@ -206,18 +238,22 @@ export function projectImage(image, target, settings, grid = skyGrid(target, set
   const values = new Float32Array(grid.width ** 2), flags = new Uint32Array(values.length), covered = new Uint8Array(values.length);
   values.fill(NaN);
   const variance = image.variance ? new Float32Array(values.length).fill(NaN) : undefined;
+  const lanczosUsed = settings.resampling === 'lanczos3' ? new Uint8Array(values.length) : undefined;
   let coveredPixels = 0;
   for (let i = 0; i < values.length; i++) {
     const p = projectSkyToPixel(image, grid.coordinates[2 * i], grid.coordinates[2 * i + 1]);
     if (!p) continue;
     const [x, y] = p;
     if (x >= 0 && y >= 0 && x < image.width && y < image.height) { covered[i] = 1; coveredPixels++; }
-    const sample = bilinear(image, x, y, settings, variance, i);
+    let sample = lanczosUsed ? lanczos3(image, x, y, settings, variance, i) : NaN;
+    if (Number.isFinite(sample)) lanczosUsed[i] = 1;
+    else sample = bilinear(image, x, y, settings, variance, i);
     if (Number.isFinite(sample)) values[i] = sample - background;
     const ix = Math.round(x), iy = Math.round(y);
     if (ix >= 0 && iy >= 0 && ix < image.width && iy < image.height) flags[i] = image.flags?.[iy * image.width + ix] || 0;
   }
-  return { values, flags, variance, covered, background, coverage: coveredPixels / values.length, width: grid.width };
+  return { values, flags, variance, covered, background, coverage: coveredPixels / values.length, width: grid.width,
+    ...(lanczosUsed ? { lanczosUsed } : {}) };
 }
 
 export function prepareImage(image, target, settings) {
@@ -227,4 +263,7 @@ export function prepareImage(image, target, settings) {
   image.projectionKey = projectionKey(target, settings);
   return image;
 }
-export function projectionKey(target, settings) { return [target.raDeg, target.decDeg, settings.fovArcmin, Boolean(settings.hideBadPixels)].join('|'); }
+export function projectionKey(target, settings) {
+  const key = [target.raDeg, target.decDeg, settings.fovArcmin, Boolean(settings.hideBadPixels)].join('|');
+  return settings.resampling === 'lanczos3' ? key + '|lanczos3' : key;
+}

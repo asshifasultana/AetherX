@@ -8,13 +8,15 @@ import indexStatusHandler from './api/index-status.js';
 import resolveObjectHandler from './api/resolve-object.js';
 import cutoutHandler from './api/cutout.js';
 import pixelQualityHandler from './api/pixel-quality.js';
+import movingObservationsHandler from './api/moving-observations.js';
 const root = fileURLToPath(new URL('.', import.meta.url));
-const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' };
+const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.json': 'application/json' };
 export function createAppServer() { return createServer(async (req, res) => {
   try {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
     if (pathname === '/api/resolve-object') { await resolveObjectHandler(req, res); return; }
     if (pathname === '/api/observations') { await observationsHandler(req, res); return; }
+    if (pathname === '/api/moving-observations') { await movingObservationsHandler(req, res); return; }
     if (pathname === '/api/observation-quality') { await qualityHandler(req, res); return; }
     if (pathname === '/api/index-status') { await indexStatusHandler(req, res); return; }
     if (pathname === '/api/cutout') { await cutoutHandler(req, res); return; }
@@ -22,7 +24,8 @@ export function createAppServer() { return createServer(async (req, res) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, { Allow: 'GET, HEAD' }).end(); return; }
     const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     const relative = path.relative(root, file).replaceAll('\\', '/');
-    if (!['index.html', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js'].includes(relative)) { res.writeHead(404).end(); return; }
+    if (!['index.html', 'comet-benchmark.js', 'comet-benchmark.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js',
+      'moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js', 'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js'].includes(relative)) { res.writeHead(404).end(); return; }
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] });
     res.end(await readFile(file));
   } catch { res.writeHead(404).end('Not found'); }

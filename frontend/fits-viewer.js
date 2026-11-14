@@ -5,6 +5,7 @@ import { matrixFor, projectSkyToPixel, projectionKey } from './lib/fits-engine.j
 import { imagePipeline } from './image-pipeline.js';
 import { ByteCache, assertStackBudget } from './lib/image-resources.js';
 import { observationKey } from './timelapse-core.js';
+import { exposureCenter, presetMotion } from './presets.js';
 
 const canvas = document.getElementById('sky-canvas');
 const context = canvas.getContext('2d', { alpha: false });
@@ -16,6 +17,7 @@ const pixelInspector = document.getElementById('pixel-inspector');
 const pixelInspectorResult = document.getElementById('pixel-inspector-result');
 let target = { raDeg: 269.4521, decDeg: 4.6934 }, settings = { fovArcmin: 16, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false };
 let activeObservation = null, activeSequence = 0, cutoutController = null;
+let displayedCenter = target;
 let inspectionCanvasPoint = null;
 let pixelInspectionSequence = 0;
 let activeFrameExposures = [];
@@ -89,6 +91,7 @@ window.addEventListener('sky:viewer-settings-changed', event => {
 });
 
 function resetViewer(message) {
+  displayedCenter = target;
   document.querySelector('.viewer')?.classList.remove('has-image');
   canvas.dataset.deepStack = 'false';
   document.getElementById('export-sky-png').disabled = true;
@@ -216,8 +219,8 @@ function applyChrome(coverage) {
 
 async function drawImage(image) {
   const sequence = activeSequence, repaint = ++repaintSequence;
-  const requestedTarget = { ...target }, requestedSettings = { ...settings };
-  if (!image.stackRecord && image.projectionKey !== projectionKey(target, settings)) {
+  const requestedTarget = image.pointing || target, requestedSettings = { ...settings };
+  if (!image.stackRecord && image.projectionKey !== projectionKey(requestedTarget, settings)) {
     image.projection = await imagePipeline.project(image, requestedTarget, requestedSettings);
     image.projectionKey = projectionKey(requestedTarget, requestedSettings);
   }
@@ -250,7 +253,7 @@ function positionMark() {
   }
   const point = skyToCanvas({
     raDeg: markedSource.raDeg, decDeg: markedSource.decDeg, size,
-    centerRaDeg: target.raDeg, centerDecDeg: target.decDeg
+    centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg
   });
   if (!point) { sourceMark.hidden = true; return; }
   // Clamp to the frame so a source outside the current field of view is still
@@ -279,7 +282,7 @@ canvas.addEventListener('click', event => {
   const x = ((event.clientX - rect.left) / rect.width) * size;
   const y = ((event.clientY - rect.top) / rect.height) * size;
   const sky = canvasToSky({
-    x, y, size, centerRaDeg: target.raDeg, centerDecDeg: target.decDeg
+    x, y, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg
   });
   if (settings.inspectPixels) { inspectionCanvasPoint = { x, y }; inspectPixel(activeObservation.image, sky); return; }
   if (sky) setMarkedSource(sky);
@@ -291,7 +294,7 @@ canvas.addEventListener('pointermove', event => {
   const rect = canvas.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
   const size = canvas.width, x = (event.clientX - rect.left) * size / rect.width, y = (event.clientY - rect.top) * size / rect.height;
-  const sky = canvasToSky({ x, y, size, centerRaDeg: target.raDeg, centerDecDeg: target.decDeg });
+  const sky = canvasToSky({ x, y, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
   readout.textContent = formatHoveredPixel(activeObservation.image, sky);
   const viewerRect = document.querySelector('.viewer').getBoundingClientRect();
   readout.style.left = `${Math.max(10, Math.min(viewerRect.width - 300, event.clientX - viewerRect.left + 12))}px`;
@@ -323,7 +326,7 @@ canvas.addEventListener('keydown', event => {
   if (event.key === 'ArrowRight') inspectionCanvasPoint.x++;
   inspectionCanvasPoint.x = Math.max(0, Math.min(size - 1, inspectionCanvasPoint.x));
   inspectionCanvasPoint.y = Math.max(0, Math.min(size - 1, inspectionCanvasPoint.y));
-  inspectPixel(activeObservation.image, canvasToSky({ ...inspectionCanvasPoint, size, centerRaDeg: target.raDeg, centerDecDeg: target.decDeg }));
+  inspectPixel(activeObservation.image, canvasToSky({ ...inspectionCanvasPoint, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg }));
 });
 
 async function inspectPixel(image, sky) {
@@ -426,12 +429,19 @@ function localSignalAndNoise(image, x, y) {
 
 function getAvailableExposureSamples(sky, activeImage) {
   const items = [], entries = [];
+  const tracked = Boolean(presetMotion(target));
   let currentIndex = -1;
   for (const [url, image] of decodedFrames) {
     let params;
     try { params = new URL(url, location.origin).searchParams; } catch { continue; }
-    if (Number(params.get('raDeg')) !== target.raDeg || Number(params.get('decDeg')) !== target.decDeg || Number(params.get('fovArcmin')) !== settings.fovArcmin || Number(image.header.DETECTOR) !== Number(settings.band)) continue;
-    const point = projectSkyToPixel(image, sky.raDeg, sky.decDeg);
+    const isContributor = image === activeImage || activeImage.stackSourceUrls?.includes(url);
+    if (Number(params.get('fovArcmin')) !== settings.fovArcmin || Number(image.header.DETECTOR) !== Number(settings.band)) continue;
+    const fixedCenterMatches = Number(params.get('raDeg')) === target.raDeg && Number(params.get('decDeg')) === target.decDeg;
+    if (tracked ? !isContributor : !fixedCenterMatches) continue;
+    const pixelSky = tracked && activeImage.stackRecord && image.pointing
+      ? skyAtContributor(sky, activeImage, image.pointing)
+      : sky;
+    const point = pixelSky && projectSkyToPixel(image, pixelSky.raDeg, pixelSky.decDeg);
     const covered = Boolean(point && point[0] >= 0 && point[1] >= 0 && point[0] < image.width && point[1] < image.height);
     const x = covered ? Math.min(image.width - 1, Math.round(point[0])) : -1, y = covered ? Math.min(image.height - 1, Math.round(point[1])) : -1;
     const pixel = covered ? y * image.width + x : -1;
@@ -458,15 +468,21 @@ function getAvailableExposureSamples(sky, activeImage) {
   return { items, entries, currentIndex };
 }
 
+function skyAtContributor(sky, stack, pointing) {
+  const pixel = projectSkyToPixel(stack, sky.raDeg, sky.decDeg);
+  return pixel && canvasToSky({ x: pixel[0], y: pixel[1], size: stack.width, centerRaDeg: pointing.raDeg, centerDecDeg: pointing.decDeg });
+}
+
 window.addEventListener('sky:clear-source-mark', () => setMarkedSource(null));
 
 // The exact proxy URL for a frame at the current target and field of view. The
 // time-lapse preloader uses the same URL so its cached download is reused.
 export function cutoutRequestUrl(observation) {
+  const pointing = exposureCenter(target, observation);
   const params = new URLSearchParams({
     url: observation.accessUrl,
-    raDeg: target.raDeg,
-    decDeg: target.decDeg,
+    raDeg: pointing.raDeg,
+    decDeg: pointing.decDeg,
     fovArcmin: settings.fovArcmin,
     aligned: '1',
     revision: observation.productModifiedAt || observation.metadataModifiedAt || ''
@@ -479,7 +495,7 @@ export function cutoutRequestUrl(observation) {
 // pixels are shared by URL.
 function displaySignature() {
   return [
-    target.raDeg, target.decDeg, settings.fovArcmin, settings.consistentBrightness ? 1 : 0,
+    target.raDeg, target.decDeg, presetMotion(target) ? 'proper-motion' : '', settings.fovArcmin, settings.consistentBrightness ? 1 : 0,
     settings.viewMode || 'time-lapse', settings.maxStackFrames || 80,
     settings.consistentBrightness && comparisonScale ? comparisonScale.low : '', settings.consistentBrightness && comparisonScale ? comparisonScale.high : '',
     settings.stretch, settings.colours, settings.contrast, settings.invert, settings.hideBadPixels ? 1 : 0, settings.qualityOverlay ? 1 : 0, settings.rejectVisitGlitches ? 1 : 0
@@ -499,12 +515,13 @@ function remember(map, key, value) {
 // by the time a frame is shown, there is no network request, FITS parse or
 // reprojection left to do — only a canvas blit.
 async function warmSingleCutout(observation, signal, priority = 1) {
+  const generation = dataGeneration;
   const url = cutoutRequestUrl(observation);
   const key = url + '|' + displaySignature();
   const rendered = renderedFrames.get(key);
-  if (rendered && rendered.image.projectionKey === projectionKey(target, settings)) return rendered;
-  const requestedTarget = { ...target }, requestedSettings = { ...settings };
+  const requestedTarget = exposureCenter(target, observation), requestedSettings = { ...settings };
   const expected = projectionKey(requestedTarget, requestedSettings);
+  if (rendered && rendered.image.projectionKey === expected) return rendered;
   let image = decodedFrames.get(url);
   if (!image) image = await imagePipeline.load(url, observation.accessUrl, requestedTarget, requestedSettings, { signal, priority });
   else if (image.projectionKey !== expected) {
@@ -512,7 +529,8 @@ async function warmSingleCutout(observation, signal, priority = 1) {
     image.projectionKey = expected;
   }
   signal?.throwIfAborted();
-  if (expected !== projectionKey(target, settings)) throw new DOMException('Viewer settings changed.', 'AbortError');
+  if (generation !== dataGeneration) throw new DOMException('Viewer settings changed.', 'AbortError');
+  image.pointing = requestedTarget;
   remember(decodedFrames, url, image);
   const element = document.createElement('canvas');
   const coverage = paintCanvas(element, image);
@@ -525,14 +543,15 @@ async function warmSingleCutout(observation, signal, priority = 1) {
 function stackedImage(values, counts, reference, record, sourceUrls) {
   const width = Math.max(1, Math.round(settings.fovArcmin * 60 / PIXEL_ARCSEC));
   const scale = PIXEL_ARCSEC / 3600;
+  const pointing = reference.pointing || target;
   const header = {
     ...reference.header, CTYPE1: 'RA---TAN', CTYPE2: 'DEC--TAN',
-    CRVAL1: target.raDeg, CRVAL2: target.decDeg,
+    CRVAL1: pointing.raDeg, CRVAL2: pointing.decDeg,
     CRPIX1: (width + 1) / 2, CRPIX2: (width + 1) / 2,
     CD1_1: -scale, CD1_2: 0, CD2_1: 0, CD2_2: -scale,
     CDELT1: -scale, CDELT2: -scale, A_ORDER: 0, B_ORDER: 0
   };
-  const image = { values, width, height: width, header, flags: null, stackRecord: record, stackContributionCounts: counts, stackSourceUrls: sourceUrls, matrix: null };
+  const image = { values, width, height: width, header, pointing, flags: null, stackRecord: record, stackContributionCounts: counts, stackSourceUrls: sourceUrls, matrix: null };
   image.matrix = matrixFor(header);
   return image;
 }
@@ -546,6 +565,7 @@ export async function warmCutout(observation, signal, priority = 2) {
   const exposures = (observation.exposures || [observation]).filter(item => item?.accessUrl);
   if (exposures.length <= 1) {
     const entry = await warmSingleCutout(exposures[0] || observation, signal, priority);
+    if (generation !== dataGeneration) throw new DOMException('Viewer changed.', 'AbortError');
     remember(renderedFrames, renderKey(observation), entry);
     return entry;
   }
@@ -598,13 +618,15 @@ async function showDeepStack() {
           controller.signal.throwIfAborted();
           if (sequence !== activeSequence) return;
           const retained = entry.image.stackRecord ? entry : {
-            ...entry, image: { header: entry.image.header, stackSourceUrls: [cutoutRequestUrl(frame)] }
+            ...entry, image: { header: entry.image.header, pointing: entry.image.pointing, stackSourceUrls: [cutoutRequestUrl(frame)] }
           };
           loaded.push({ frame, entry: retained });
           loaded.sort((a, b) => frames.indexOf(a.frame) - frames.indexOf(b.frame));
           if (loaded.length === 1) {
             canvas.width = entry.canvas.width; canvas.height = entry.canvas.height;
+            displayedCenter = entry.image.pointing || target;
             context.drawImage(entry.canvas, 0, 0); applyChrome(entry.coverage);
+            positionMark();
           }
         } catch (error) {
           if (controller.signal.aborted || error?.name === 'AbortError' || error?.name === 'ImageBudgetError') throw error;
@@ -623,7 +645,9 @@ async function showDeepStack() {
         const result = await paintStackCanvas(preview, loaded.map(item => ({ ...item.entry, observation: item.frame })), loaded.map(item => item.frame), controller.signal);
         if (sequence !== activeSequence) return;
         canvas.width = preview.width; canvas.height = preview.height;
+        displayedCenter = loaded[0].entry.image.pointing || target;
         context.drawImage(preview, 0, 0); applyChrome(result.coverage);
+        positionMark();
         lastPreview = performance.now();
       }
     }
@@ -643,7 +667,7 @@ async function showDeepStack() {
     const nestedFailed = loaded.flatMap(({ entry }) => entry.stackRecord?.failedObservationIds || []);
     const record = {
       ...stacked.record, deepStack: true,
-      method: 'per-pixel median of separately aligned UTC-day median stacks; unreliable input pixels are excluded',
+      method: `per-pixel median of UTC-day median stacks aligned by ${presetMotion(target) ? 'proper motion' : 'fixed sky position'}; unreliable input pixels are excluded`,
       availableFrameCount: available.length, requestedFrameCount: frames.length, usedFrameCount: loaded.length,
       excludedByFrameLimit: Math.max(0, available.length - frames.length),
       requestedExposureCount: allExposures.length, usedExposureCount: contributorRecords.length,
@@ -662,7 +686,7 @@ async function showDeepStack() {
     activeFrameExposures = allExposures;
     const entry = { canvas: element, image, coverage: stacked.coverage, stackRecord: record };
     commitCutout(observation, entry, { announce: false });
-    caption.textContent = `Deep median stack · ${record.usedFrameCount}/${record.availableFrameCount} UTC-day frames · ${record.usedExposureCount} exposures · ${Math.round(record.exposureSeconds)} s total · D${observation.detector} · ${formatWavelength(observation)} · north up`;
+    caption.textContent = `Deep median stack · ${record.usedFrameCount}/${record.availableFrameCount} UTC-day frames · ${record.usedExposureCount} exposures · ${Math.round(record.exposureSeconds)} s total · D${observation.detector} · ${formatWavelength(observation)} · north up${presetMotion(target) ? ' · proper-motion aligned' : ''}`;
     window.dispatchEvent(new CustomEvent('sky:deep-stack-built', { detail: { record } }));
   } catch (error) {
     if (sequence === activeSequence && !controller.signal.aborted) {
@@ -682,6 +706,7 @@ function commitCutout(observation, entry, { announce = true } = {}) {
   const source = entry.canvas;
   if (canvas.width !== source.width || canvas.height !== source.height) { canvas.width = source.width; canvas.height = source.height; }
   context.drawImage(source, 0, 0);
+  displayedCenter = entry.image.pointing || target;
   applyChrome(entry.coverage);
   positionMark();
   const image = entry.image;
@@ -691,7 +716,7 @@ function commitCutout(observation, entry, { announce = true } = {}) {
   const release = observation.release || observation.collection || 'Release not reported';
   const processing = observation.processingVersion ? ` · ${observation.processingVersion}` : '';
   const stackLabel = image.stackRecord ? ` · median stack ${image.stackRecord.usedExposureCount}/${image.stackRecord.requestedExposureCount} exposures · ${Math.round(image.stackRecord.exposureSeconds)} s total` : '';
-  caption.textContent = `${date} · D${observation.detector} · ${formatWavelength(observation)} · ${release}${processing}${stackLabel} · ${settings.fovArcmin}′ square · north up${masked ? ` · ${masked} flagged pixels masked` : ''}`;
+  caption.textContent = `${date} · D${observation.detector} · ${formatWavelength(observation)} · ${release}${processing}${stackLabel} · ${settings.fovArcmin}′ square · north up${presetMotion(target) ? ' · proper-motion aligned' : ''}${masked ? ` · ${masked} flagged pixels masked` : ''}`;
   status.hidden = true;
   document.getElementById('export-sky-png').disabled = false;
   document.getElementById('cutout-cache-state').textContent = image.stackRecord ? 'Aligned median stack · browser caching enabled' : 'Retrieved from NASA archive · browser caching enabled';

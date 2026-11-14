@@ -58,9 +58,9 @@ function stamp(epsf, x, y) {
   return cells.map(([u, v, value]) => [u, v, value / total]);
 }
 
-function psfColumn(image, x, y, epsfAt) {
+export function psfColumn(image, x, y, epsfAt) {
   const values = new Float64Array(image.values.length);
-  for (const [u, v, value] of stamp(epsfAt(x + image.sourceX, y + image.sourceY), x, y)) {
+  for (const [u, v, value] of stamp(epsfAt(x + (image.sourceX || 0), y + (image.sourceY || 0)), x, y)) {
     if (u >= 0 && v >= 0 && u < image.width && v < image.height) values[v * image.width + u] = value;
   }
   return values;

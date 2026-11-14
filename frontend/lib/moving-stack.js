@@ -95,7 +95,8 @@ export async function stackMovingTarget({
   exposures, ephemeris, size = 49, referenceExposures = exposures,
   referenceRadius = 6, referenceWavelengthTolerance = 0.025,
   load = createFitsRangeLoader(), wavelengthAt = createWavelengthReader(), onStage = () => {}, injectionAmplitude = 0,
-  injections = injectionAmplitude ? [{ amplitude: injectionAmplitude }] : []
+  injections = injectionAmplitude ? [{ amplitude: injectionAmplitude }] : [],
+  alignImage, filterImage, kernelAt, subtract = subtractReference
 }) {
   if (!Number.isInteger(size) || size < 21 || size > 241) throw new Error('Grid size must be 21–241 pixels.');
   if (!exposures.length) throw new Error('No exposures in the requested epoch and wavelength bin.');
@@ -104,15 +105,21 @@ export async function stackMovingTarget({
   for (let start = 0; start < exposures.length; start += 4) {
     await Promise.all(exposures.slice(start, start + 4).map(async exposure => {
       try {
-        const first = positionAt(ephemeris, exposure.mjd);
+        const first = exposure.target ?? positionAt(ephemeris, exposure.mjd);
         let image = await load(exposure.url, first, settings);
         const timing = exposureTiming(image.header, exposure);
-        const target = positionAt(ephemeris, timing.midpoint);
+        const target = exposure.target ?? positionAt(ephemeris, timing.midpoint);
         if (first.raDeg !== target.raDeg || first.decDeg !== target.decDeg) image = await load(exposure.url, target, settings);
-        const projection = projectImage(image, target, settings);
+        if (alignImage) image = await alignImage(image, target, exposure, timing.midpoint);
+        const kernel = kernelAt && await kernelAt(image, target, exposure.detector, settings);
+        const project = native => ({
+          ...projectImage(filterImage ? filterImage(native, target, exposure, timing.midpoint, target) : native, target, settings),
+          kernel
+        });
+        const projection = project(image);
         const [x, y] = projectSkyToPixel(image, target.raDeg, target.decDeg);
         const wavelength = await wavelengthAt(exposure.url, x + image.sourceX, y + image.sourceY);
-        const injected = injections.map(shape => projectImage(injectProfile(image, target, shape), target, settings));
+        const injected = injections.map(shape => project(injectProfile(image, target, shape)));
         frames.push({ ...exposure, ...timing, wavelength, target, projection, injected });
       } catch (error) {
         failures.push({ url: exposure.url, error: error.message });
@@ -128,9 +135,9 @@ export async function stackMovingTarget({
   await report('trackedMedian', tracked, injectionMedians('injected'));
   const byUrl = new Map(frames.map(frame => [frame.url, frame]));
   const referenceTargets = referenceExposures.map(reference => {
-    const target = byUrl.get(reference.url)?.target ??
-      (reference.cometFree ? null : positionAt(ephemeris, reference.mjd + (reference.exposureSeconds || 0) / (2 * SECONDS_PER_DAY)));
-    return { ...reference, target };
+    const target = byUrl.get(reference.url)?.target ?? (reference.cometFree ? null :
+      reference.target ?? positionAt(ephemeris, reference.mjd + (reference.exposureSeconds || 0) / (2 * SECONDS_PER_DAY)));
+    return { ...reference, target, fixedTarget: reference.target };
   });
   for (const frame of frames) {
     const candidates = referenceTargets.filter(other => other.url !== frame.url && other.detector === frame.detector &&
@@ -145,16 +152,23 @@ export async function stackMovingTarget({
           if (error.message === 'No detector coverage for this field.') return;
           throw error;
         }
+        const timing = exposureTiming(image.header, other);
+        const target = other.target ? byUrl.get(other.url)?.target ?? other.fixedTarget ??
+          positionAt(ephemeris, timing.midpoint) : null;
+        if (alignImage) image = await alignImage(image, frame.target, other, timing.midpoint);
         const pixel = projectSkyToPixel(image, frame.target.raDeg, frame.target.decDeg);
         if (!pixel) return;
         const wavelength = await wavelengthAt(other.url, pixel[0] + image.sourceX, pixel[1] + image.sourceY);
         if (Math.abs(wavelength - frame.wavelength) > referenceWavelengthTolerance) return;
-        const projection = projectImage(image, frame.target, settings);
-        const target = other.target ? byUrl.get(other.url)?.target ??
-          positionAt(ephemeris, exposureTiming(image.header, other).midpoint) : null;
+        const kernel = kernelAt && await kernelAt(image, frame.target, other.detector, settings);
+        const project = native => ({
+          ...projectImage(filterImage ? filterImage(native, target, other, timing.midpoint, frame.target) : native, frame.target, settings),
+          kernel
+        });
+        const projection = project(image);
         const simulations = injections.map(shape => {
           const injected = target ? injectProfile(image, target, shape) : image;
-          const simulated = projectImage(injected, frame.target, settings);
+          const simulated = project(injected);
           if (target) maskComet(simulated, frame.target, target, size, referenceRadius);
           return simulated;
         });
@@ -164,9 +178,9 @@ export async function stackMovingTarget({
         references.push({ projection, simulations });
       }));
     }
-    frame.cleaned = references.length >= 2 ? subtractReference(frame.projection, references.map(ref => ref.projection)) : frame.projection;
+    frame.cleaned = references.length >= 2 ? subtract(frame.projection, references.map(ref => ref.projection)) : frame.projection;
     frame.injectedCleaned = frame.injected.map((injected, i) => references.length >= 2 ?
-      subtractReference(injected, references.map(ref => ref.simulations[i])) : injected);
+      subtract(injected, references.map(ref => ref.simulations[i])) : injected);
   }
   const cleaned = trackedMedian(frames, 'cleaned');
   await report('starSubtractedMedian', cleaned, injectionMedians('injectedCleaned'));

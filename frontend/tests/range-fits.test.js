@@ -37,6 +37,20 @@ for (const bitpix of [-32, -64]) for (const sip of [false, true]) {
   });
 }
 
+test('Lanczos falls back at masked pixels and preserves constant sky elsewhere', () => {
+  const image = readFits(bufferOf(makeFits()));
+  image.values.fill(12);
+  const masked = Math.floor(image.height / 2) * image.width + Math.floor(image.width / 2);
+  image.values[masked] = 1e6;
+  const baseline = projectImage(image, target, settings);
+  const trial = projectImage(image, target, { ...settings, resampling: 'lanczos3' });
+  assert.ok(trial.lanczosUsed.includes(1));
+  assert.ok(trial.lanczosUsed.includes(0));
+  near(trial.values, baseline.values, 1e-6);
+  const center = Math.floor(trial.width / 2) * (trial.width + 1);
+  assert.equal(trial.lanczosUsed[center], 0);
+});
+
 test('compressed FLAGS rows match Astropy bit-for-bit and full-file decoding', async () => {
   const fixture = JSON.parse(await readFile(new URL('./fixtures/spherex-rice-astropy.json', import.meta.url), 'utf8'));
   const compressed = Buffer.from(fixture.rows[0].compressed, 'base64');

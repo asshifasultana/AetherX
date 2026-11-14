@@ -43,7 +43,7 @@ Successful name resolution establishes a catalog position, not SPHEREx coverage 
 
 This release uses fixed catalog positions interpreted in ICRS. It does not propagate positions to observation dates or provide Solar System ephemerides. A catalog coordinate system or J2000 label does not by itself establish the position's reference epoch.
 
-For stars with substantial proper motion, such as Barnard’s Star and WISE 0855, future work should retrieve proper-motion measurements, their conventions and uncertainties, and the position's reference epoch. Calculate positions for each observation date, incorporating parallax and radial velocity where available and appropriate. Adapt archive searches to cover the object's changing position, center cutouts at the calculated locations, and update markers and time-lapse alignment. Missing motion or epoch data must be shown explicitly rather than treated as zero motion. This would improve small-cutout centering and tracking across dates, but requires separate scientific validation.
+The Barnard’s Star preset uses linear proper motion for archive searches and centers each cutout at the exposure midpoint. See [the pointing benchmark](docs/stacking-within-observing-periods.md#fixed-star-contrast-benchmark) for coverage and contrast results. Extending this to other nearby sources, such as WISE 0855, requires verified astrometry and a reference epoch for each source. Parallax and radial velocity can be included for finer astrometry.
 
 ## FITS cutouts and aligned display
 

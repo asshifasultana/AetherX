@@ -25,7 +25,7 @@ test('viewer paints previews, preserves every contributor and suppresses stale r
   globalThis.location = { origin: 'http://localhost' };
   const emit = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
   try {
-    const { showCutout } = await import('../fits-viewer.js');
+    const { showCutout, cutoutRequestUrl } = await import('../fits-viewer.js');
     emit('sky:target-selected', { raDeg: 359.999, decDeg: 4.69 });
     emit('sky:viewer-settings-changed', { band: 1, fovArcmin: 1, hideBadPixels: true, viewMode: 'time-lapse' });
     const exposure = i => ({ accessUrl: `https://irsa.ipac.caltech.edu/ibe/data/spherex/qr3/level2/test${i}.fits`, detector: 1, observationId: `obs-${i}`, observedStartUtc: `2026-03-${String(1 + Math.floor(i / 6)).padStart(2, '0')}T00:00:00Z`, exposureSeconds: 100 });
@@ -78,5 +78,10 @@ test('viewer paints previews, preserves every contributor and suppresses stale r
     await pending;
     assert.equal(elements.get('sky-canvas').draws, draws);
     assert.equal(elements.get('export-sky-png').disabled, true);
+    emit('sky:target-selected', { targetId: 'barnard', raDeg: 269.4521, decDeg: 4.6934 });
+    const dec = observedStartUtc => Number(new URL(cutoutRequestUrl({ ...exposure(0), observedStartUtc }), location.origin).searchParams.get('decDeg'));
+    const early = dec('2025-08-27T00:00:00Z'), late = dec('2026-08-27T00:00:00Z');
+    assert.ok(Math.abs(early - 4.76721) < 0.00001);
+    assert.ok(Math.abs((late - early) * 3600 - 10.36) < 0.01);
   } finally { await Worker.close(); for (const key of ['Worker', 'window', 'document', 'location']) delete globalThis[key]; }
 });

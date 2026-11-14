@@ -58,7 +58,9 @@ export function indexedResponse(snapshot, entry, manifest, search, { stale = fal
     warnings: [
       'Wavelength bounds describe each image, not the exact wavelength at the target pixel.',
       'Archive quality flags are reported as provided. FITS pixel flags at the target are not assessed.',
-      'Fixed ICRS position search: proper motion is not propagated to observation dates.',
+      search.targetId
+        ? 'The fallback index was built at the stored position and may miss observations along the star’s path. Cutouts still use proper motion.'
+        : 'Fixed ICRS position search: proper motion is not propagated to observation dates.',
       'Live IRSA search was unavailable. Showing the last successful preset index; newer observations or revisions may be missing.',
       ...(stale ? ['Showing the last successful preset index; newer observations or revisions may be missing.'] : []),
       ...(manifest.status === 'error' ? ['The latest scheduled check failed. These results come from the last successful index.'] : []),

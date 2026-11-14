@@ -280,9 +280,36 @@ footer p,footer>span{font-size:15px;color:#59695e}
 .is-embed .timeline-filmstrip{margin-top:8px}
 .is-embed .demo-note{display:none}
 @media(max-width:760px){.is-embed .viewer{aspect-ratio:1.1}.is-embed main{padding:8px}}
+
+.comet-benchmark{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,390px);gap:28px;align-items:start;margin-top:26px}
+.comet-benchmark h2{font-size:28px;margin:0}
+.comet-benchmark figure{margin:0}
+.comet-benchmark-image{position:relative;border-radius:9px;overflow:hidden;background:#101b20}
+.comet-benchmark canvas{display:block;width:100%;image-rendering:pixelated}
+#comet-aperture{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);aspect-ratio:1;border:1px solid #f2bb8d;border-radius:50%;pointer-events:none}
+.comet-benchmark figcaption{font-size:14px;margin-top:8px;color:var(--muted)}
+.comet-benchmark select{display:block;max-width:100%;padding:8px;margin-top:6px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:var(--paper)}
+.comet-benchmark-scores{display:flex;flex-wrap:wrap;gap:12px 32px;margin:16px 0}
+.comet-benchmark-scores dd{margin:0;font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.comet-benchmark summary{cursor:pointer}
+.comet-benchmark li{overflow-wrap:anywhere}
+.comet-benchmark a{text-decoration:underline}
+.comet-download{display:inline-block;margin-top:10px}
+.is-embed #comet-benchmark{display:none}
+@media(max-width:760px){.comet-benchmark{grid-template-columns:1fr;gap:18px}}
 .source-mark.is-offscreen .source-mark-ring{border-style:dashed;border-color:#e8a06a;box-shadow:0 0 0 1px #101b2099}
 .source-mark.is-offscreen .source-mark-label{color:#f0b98d;border-color:#e8a06a66}
 .pixel-inspector{margin-top:16px;padding:13px 16px;border:1px solid #dfe4dc;border-left:4px solid #305e52;border-radius:7px;background:#f8faf6;font-size:14px;line-height:1.65;overflow-wrap:anywhere}.pixel-inspector strong{display:block;margin-bottom:3px}.pixel-inspector p{margin:0;color:#59675d}.viewer.is-inspecting #sky-canvas{cursor:crosshair}
 .quality-legend{position:absolute;z-index:4;top:18px;left:18px;display:grid;gap:5px;padding:9px 11px;border:1px solid #ffffff30;border-radius:6px;background:#101b20e8;color:#e7eddf;font-size:11px;line-height:1.25;pointer-events:none}.quality-legend span{display:flex;align-items:center;gap:7px}.quality-legend i{width:9px;height:9px;border-radius:2px;background:var(--flag-colour);display:inline-block;flex:none}.quality-hover-readout{position:absolute;z-index:5;max-width:min(290px,calc(100% - 20px));padding:7px 9px;border:1px solid #ffffff3d;border-radius:5px;background:#101b20ee;color:#edf2e8;font-size:12px;line-height:1.4;pointer-events:none;overflow-wrap:anywhere}.viewer #sky-canvas{touch-action:none}.viewer.is-inspecting #sky-canvas,.viewer.is-quality-inspecting #sky-canvas{cursor:crosshair}
 .calibration-note{padding:12px 15px;border-left:3px solid #c58a55;background:#f1eee5;border-radius:0 6px 6px 0;color:#594b39}
 .canvas-actions{display:flex;gap:7px}.canvas-button.export-png{width:auto;padding:0 9px;font-size:12px;letter-spacing:.04em}.frame-provenance{margin:10px 0;padding:10px 13px;border:1px solid var(--line);border-radius:7px;background:#fff;font-size:13px;color:#59695e}.frame-provenance summary{cursor:pointer;font-weight:650;color:var(--ink)}.frame-provenance p{line-height:1.65;overflow-wrap:anywhere}.frame-provenance .reset-settings{padding:7px 10px;font-size:12px}
+.moving-target .moving-fields { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin-block: .8rem; }
+.moving-target .moving-fields label { display: grid; gap: .25rem; }
+.moving-target button, .moving-target select, .moving-target input:not([type="checkbox"], [type="range"]) {
+  color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: .35rem; padding: .45rem .65rem; min-height: 44px;
+}
+.moving-target button[type="submit"], .moving-target #moving-stack { color: white; background: var(--teal); border-color: var(--teal); }
+.moving-target button:disabled { opacity: .5; }
+.moving-target .moving-exposures { max-height: 14rem; overflow: auto; margin-block: .65rem; }
+.moving-target .moving-exposures label { display: block; }
+.moving-target canvas { display: block; width: min(100%, 24rem); margin-block: 1rem; image-rendering: pixelated; background: #08090e; }

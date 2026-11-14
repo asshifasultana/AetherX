@@ -1,5 +1,6 @@
 import { preferredProducts } from '../observation-products.js';
 import { createSearchResources } from './resources.js';
+import { exposureCenter, presetMotion } from '../presets.js';
 // IRSA TAP/CAOM metadata adapter. The reference project's tools/build_index.py
 // informed the archive tables and processing-version selection; no code is copied.
 export const TAP_URL = 'https://irsa.ipac.caltech.edu/TAP/sync';
@@ -39,7 +40,8 @@ export function validateSearch(params) {
     afterUri = Buffer.from(cursor, 'base64url').toString('utf8');
     if (!scienceUrl(afterUri) || !afterUri.startsWith('ibe/data/')) throw new SearchError('Invalid observation cursor. Start a new search.', 400);
   }
-  return { raDeg, decDeg, frame: 'icrs', detector, release, startDate, endDate, startMjd, endMjd, afterUri };
+  const motion = presetMotion({ raDeg, decDeg, targetId: params.get('targetId') });
+  return { raDeg, decDeg, frame: 'icrs', detector, release, startDate, endDate, startMjd, endMjd, afterUri, ...(motion ? { targetId: 'barnard' } : {}) };
 }
 
 export function buildQuery(search, { collections: available = COLLECTIONS } = {}) {
@@ -53,6 +55,7 @@ export function buildQuery(search, { collections: available = COLLECTIONS } = {}
   if (search.detector) conditions.push(`p.energy_bandpassname IN ('D${search.detector}','SPHEREx-D${search.detector}')`);
   if (search.startMjd !== null) conditions.push(`p.time_bounds_upper>=${search.startMjd}`);
   if (search.endMjd !== null) conditions.push(`p.time_bounds_lower<${search.endMjd}`);
+  if (search.windowStartMjd !== undefined) conditions.push(`p.time_bounds_lower>=${search.windowStartMjd}`);
   if (search.afterUri) conditions.push(`a.uri>'${search.afterUri}'`);
   return `SELECT TOP ${MAX_RESULTS + 1}
     ob.observationid AS obs_id,ob.collection AS obs_collection,
@@ -65,6 +68,28 @@ export function buildQuery(search, { collections: available = COLLECTIONS } = {}
     JOIN spherex.observation AS ob ON p.obsid=ob.obsid
     JOIN spherex.artifact AS a ON p.planeid=a.planeid
     WHERE ${conditions.join(' AND ')} ORDER BY a.uri ASC`;
+}
+
+// IRSA TAP accepts one constant footprint position per query. Divide the
+// mission into stable windows so pagination and date filtering use the same
+// search centers. FITS projection uses the exact exposure midpoint.
+export function observationQueries(search, { collections, now }) {
+  if (!search.targetId) return [buildQuery(search, { collections })];
+  const missionStart = 60746; // 2025-03-12 UTC
+  const archiveEnd = Math.floor(now / 86400000 + 40587) + 1;
+  const queries = [];
+  for (let start = missionStart; start < archiveEnd; start += 180) {
+    const end = start + 180;
+    if (search.endMjd !== null && search.endMjd <= start) break;
+    // Include the preceding window when an exposure may cross the date boundary.
+    if (search.startMjd !== null && search.startMjd >= end + 1) continue;
+    const pointing = exposureCenter(search, { startMjd: (start + end) / 2 });
+    queries.push(buildQuery({
+      ...search, ...pointing, windowStartMjd: start,
+      endMjd: Math.min(search.endMjd ?? end, end),
+    }, { collections }));
+  }
+  return queries;
 }
 
 // RFC 4180 quoted fields, embedded line breaks, empty cells, BOM and CRLF.
@@ -196,7 +221,17 @@ export function createSearchService({ fetchImpl = fetch, now = () => Date.now(),
     const release = resources.gate.acquire();
     const record = { controller: new AbortController(), waiters: 0 };
     const request = (async () => {
-      const rows = await queryArchive(buildQuery(search, { collections }), { fetchImpl, timeoutMs, signal: record.controller.signal });
+      const rows = [];
+      const queries = observationQueries(search, { collections, now: now() });
+      const deadline = AbortSignal.timeout(timeoutMs);
+      const signal = AbortSignal.any([record.controller.signal, deadline]);
+      try {
+        for (const query of queries) rows.push(...await queryArchive(query, { fetchImpl, timeoutMs, signal }));
+      } catch (error) {
+        if (deadline.aborted && !record.controller.signal.aborted) throw new SearchError('IRSA search timed out. Please retry or narrow the date range.', 504);
+        throw error;
+      }
+      if (queries.length > 1) rows.sort((a, b) => a.uri < b.uri ? -1 : a.uri > b.uri ? 1 : 0);
       record.controller.signal.throwIfAborted();
       const truncated = rows.length > MAX_RESULTS;
       const observations = deduplicate(rows.slice(0, MAX_RESULTS));
@@ -208,7 +243,7 @@ export function createSearchService({ fetchImpl = fetch, now = () => Date.now(),
         warnings: [
           'Wavelength bounds describe each image, not the exact wavelength at the target pixel.',
           'Archive quality flags are reported as provided. FITS pixel flags at the target are not assessed.',
-          'Fixed ICRS position search: proper motion is not propagated to observation dates.',
+          search.targetId ? 'Archive footprints are searched at predicted positions in 180-day windows. Cutouts use the predicted position at each exposure midpoint.' : 'Fixed ICRS position search: proper motion is not propagated to observation dates.',
           ...(truncated ? [`More archive products are available. Use Load more observations or narrow your filters; the loaded list is incomplete.`] : [])
         ]
       };

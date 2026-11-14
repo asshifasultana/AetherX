@@ -12,7 +12,7 @@
 <body>
   <header class="site-header">
     <a class="brand" href="#" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx<span class="brand-divider"></span><span class="brand-sub">SKY ATLAS</span></a>
-    <nav aria-label="Main navigation"><a class="nav-active" href="#explorer">Explore the sky</a><a href="#mission">The mission <span aria-hidden="true">↗</span></a></nav>
+    <nav aria-label="Main navigation"><a class="nav-active" href="#explorer">Explore the sky</a><a href="#moving-target">Track moving object</a><a href="#comet-benchmark">3I/ATLAS stack</a><a href="#mission">The mission <span aria-hidden="true">↗</span></a></nav>
     <span class="header-note"><span class="status-dot"></span> A different view of the universe</span>
   </header>
 
@@ -143,6 +143,72 @@
       </section>
     </section>
 
+    <section id="moving-target" class="observations-section moving-target" aria-labelledby="moving-heading">
+      <h2 id="moving-heading">Track moving object</h2>
+      <p>Find SPHEREx exposures along the path of a known comet or asteroid.</p>
+      <form id="moving-search" class="moving-fields">
+        <label>Designation <input name="object" placeholder="3I/ATLAS or 4 Vesta" maxlength="80" required></label>
+        <label>Start date (UTC) <input name="startDate" type="date" required></label>
+        <label>End date (UTC) <input name="endDate" type="date" required></label>
+        <label>Search detector <select name="detector"><option value="">All</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label>
+        <button type="submit">Find exposures</button>
+        <button type="button" id="moving-example">Try 3I/ATLAS</button>
+      </form>
+      <p id="moving-status" role="status" aria-live="polite"></p>
+      <button type="button" id="moving-cancel" hidden>Cancel</button>
+      <div id="moving-choices"></div>
+      <div id="moving-selection" hidden>
+        <label>Stack detector <select id="moving-detector"></select></label>
+        <details><summary>Inspect and select exposures</summary><div id="moving-exposures" class="moving-exposures"></div></details>
+        <button type="button" id="moving-load">Load selected exposures</button>
+      </div>
+      <div id="moving-display" hidden>
+        <canvas id="moving-canvas" width="49" height="49" role="img" aria-label="Moving-object cutout"></canvas>
+        <p id="moving-caption"></p>
+        <div id="moving-controls" class="moving-fields" hidden>
+          <button type="button" id="moving-play">Play</button>
+          <label>UTC day <input type="range" id="moving-day" min="0" value="0"></label>
+          <label>Min wavelength (µm) <input id="moving-min" type="number" step="any" min="0"></label>
+          <label>Max wavelength (µm) <input id="moving-max" type="number" step="any" min="0"></label>
+          <button type="button" id="moving-stack">Build tracked stack</button>
+          <button type="button" id="moving-enhance" disabled>Enhanced contrast</button>
+          <label id="moving-stage-control" hidden>Stack view <select id="moving-stage"><option value="tracked">Tracked median</option><option value="enhanced">Enhanced contrast</option></select></label>
+          <button type="button" id="moving-download">Download result</button>
+        </div>
+        <p id="moving-metrics"></p>
+        <details id="moving-report" hidden><summary>Exposure and reference details</summary><ul id="moving-report-list"></ul></details>
+      </div>
+    </section>
+    <section id="comet-benchmark" class="observations-section comet-benchmark" aria-labelledby="comet-heading">
+      <div class="comet-benchmark-copy">
+        <p class="eyebrow">MOVING-TARGET BENCHMARK</p>
+        <h2 id="comet-heading">Comet 3I/ATLAS</h2>
+        <p>Compare the same six August 2025 D1 exposures before and after PSF-matched sky subtraction and weighted stacking.</p>
+        <p id="comet-benchmark-status" role="status">Loading the saved benchmark stack…</p>
+        <div id="comet-benchmark-controls" hidden>
+          <label for="comet-benchmark-stage">Stack to display</label>
+          <select id="comet-benchmark-stage">
+            <option value="1">PSF-matched weighted stack</option>
+            <option value="0">Tracked median</option>
+          </select>
+          <dl class="comet-benchmark-scores">
+            <div><dt id="comet-score-label">Best measured aperture contrast</dt><dd id="comet-score" aria-live="polite"></dd></div>
+            <div><dt>Background scatter</dt><dd id="comet-scatter"></dd></div>
+          </dl>
+          <p id="comet-benchmark-method"></p>
+          <details><summary>Exposure provenance</summary><ul id="comet-exposures"></ul></details>
+          <a class="comet-download" href="comet-benchmark.json" download>Download stack data ↓</a>
+        </div>
+      </div>
+      <figure id="comet-benchmark-figure" hidden>
+        <div class="comet-benchmark-image">
+          <canvas id="comet-benchmark-canvas" role="img"></canvas>
+          <span id="comet-aperture" aria-hidden="true"></span>
+        </div>
+        <figcaption>North up. The ring marks the scoring aperture. Both views use the same display scale.</figcaption>
+      </figure>
+    </section>
+
     <section id="observations" class="observations-section" aria-labelledby="observations-heading">
       <div class="observation-search-title"><div><p class="eyebrow">NASA / IPAC INFRARED SCIENCE ARCHIVE</p><h2 id="observations-heading">Find your observations</h2><p id="search-target" class="search-target">Barnard’s Star · 269.4521°, +4.6934° · ICRS</p></div><span id="archive-mode-label" class="archive-badge">IRSA archive</span></div>
       <div class="index-update-status" aria-labelledby="index-update-heading"><div><h3 id="index-update-heading">Automatic archive updates</h3><p id="index-update-summary" role="status" aria-live="polite">Checking index status…</p><p id="index-update-changes"></p></div><p class="index-update-scope">All positions use cached live IRSA searches first. Daily checks maintain outage fallback metadata for the five preset positions.</p></div>
@@ -177,5 +243,7 @@
   <script type="module" src="fits-viewer.js"></script>
   <script type="module" src="timelapse.js"></script>
   <script type="module" src="share-ui.js"></script>
+  <script type="module" src="comet-benchmark.js"></script>
+  <script type="module" src="moving-target.js"></script>
 </body>
 </html>

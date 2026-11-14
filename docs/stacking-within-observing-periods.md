@@ -20,19 +20,79 @@ Masked, missing, and uncovered pixels are represented as invalid samples and omi
 
 ## Deep median stack
 
-Choose **Deep stack** to build a second median across chronological UTC-day frames. Each day's quality-aware stack is aligned to the target's fixed sky position before the per-pixel median is calculated. **Maximum deep-stack frames** defaults to 80 and can be set from 4 to 400. When there are more available frames than the selected limit, the stack uses the earliest frames and reports how many later frames were excluded. Failed daily frames and failed source exposures are reported separately.
+Choose **Deep stack** to build a second median across chronological UTC-day frames. By default, each day's quality-aware stack is aligned to the selected sky position. The Barnard’s Star preset instead aligns each exposure to the star's predicted position at its midpoint before combining the pixels. **Maximum deep-stack frames** defaults to 80 and can be set from 4 to 400. When there are more available frames than the selected limit, the stack uses the earliest frames and reports how many later frames were excluded. Failed daily frames and failed source exposures are reported separately.
 
 Exposures load through a shared four-job pool using S3 byte ranges, with serialized IRSA cutout fallback. The first completed daily frame appears immediately. Subsequent deep-stack previews include complete daily frames only and refresh at most once per second between batches. Preview progress reports days, loaded exposures, and failed exposures; PNG exports become available after the final median. Completion order does not change contributor ordering. No additional exposure cap is applied. Memory preflight may require a smaller field or a lower explicit frame limit before downloading.
 
-This is a fixed-sky stack. SphereX does not yet propagate a moving target's ephemeris or re-center each date on an object's predicted position, so the current deep stack does not make a moving object accumulate while background stars disappear.
+Barnard’s Star uses linear proper motion. Live archive searches use one predicted position per 180-day window because IRSA TAP accepts one footprint position per query. Cutouts use individual exposure times, and the outage fallback uses the stored index. Enter coordinates manually to view a fixed sky position. Comet ephemeris tracking runs through the separate pipeline below.
+
+## Fixed-star contrast benchmark
+
+`node scripts/benchmark-fixed-stack.mjs --target=barnard --detector=2 --limit=21` compares the daily-then-deep median with a single median, mean, and sky-noise-weighted mean across individual exposures. All four methods use the same quality-masked 49 × 49 projections and sky annulus. The script reports peak contrast, the peak and sky scatter separately, the background-subtracted aperture sum, and the contrast after leaving each UTC date out. The aperture sum is an image diagnostic, not calibrated photometry.
+
+For Barnard's Star the benchmark and viewer propagate the [SIMBAD position and Gaia proper motion](https://simbad.cds.unistra.fr/simbad/sim-id?Ident=Barnard%27s+Star) to each exposure midpoint. This is a linear approximation without parallax or perspective acceleration. Use `--catalog-center` for the older pointing or `--fixed-at=2025-08-27` for a single corrected center. The script selects the earliest matching products in the local snapshot (optionally bounded by `--from` and `--through` UTC dates) and reports product IDs and coverage exclusions. Use `--live-search` to score live archive candidates and add `--fixed-search` to search the old position while keeping proper-motion alignment. Use `--include-masked-center` to retain exposures with a masked center and enough valid sky pixels.
+
+| D2 field | Usable / sampled | Daily then deep median | Exposure median | Exposure mean | Sky-weighted mean |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Barnard's Star, with proper motion | 9 / 21 | 17,327 | 16,050 | 15,282 | 15,971 |
+| RW Aurigae, fixed pointing | 21 / 21 | 10,949 | 8,424 | 9,101 | 9,144 |
+
+The two-stage median led on both full samples, but the ordering changed on some date omissions. Barnard's Star lay outside the 49 × 49 grid at the stored catalog position, and its corrected peak still had sparse coverage. This run did not reproduce the earlier 9,706 baseline, so the scores are not a before-and-after comparison with that benchmark.
+
+Repeating the Barnard's Star comparison with `--include-masked-center` gave these daily-then-deep median scores on the same 21 snapshot products.
+
+| Pointing | Peak contrast | Included exposures | Exposures contributing to peak |
+| --- | ---: | ---: | ---: |
+| Stored catalog center, star outside cutout | 1.24 (sky) | 21 | 21 |
+| Fixed at 2025-08-27 | 15,826 | 20 | 5 |
+| Exposure midpoint | 15,713 | 20 | 5 |
+
+For 2025-08-20 through 2025-08-31, the live D2 search returned 19 candidates at the old position and 18 using the predicted position. The extra candidate from the old search had insufficient usable sky. With exposure midpoint alignment, both lists gave a peak contrast of 15,144 from the same 18 usable inputs.
+
+Extending the live search through 2026-03-22 gave 36 usable exposures with either alignment. Peak contrast increased from 16,395 at the fixed August pointing to 17,210 with exposure midpoint alignment, a 5.0% gain. The peak amplitude and its five contributors were nearly identical. The gain came from lower measured sky scatter.
+
+To compare the WISE-inspired projection variants on that same date range, run:
+
+```powershell
+node scripts/benchmark-fixed-stack.mjs --live-search --include-masked-center --projection-trials --limit=100 --from=2025-08-20 --through=2026-03-22
+```
+
+The trial uses the same exposure list, pointing, finite-pixel footprint, daily median and scoring annulus in all four variants. The sky plane fits a clipped gradient to projected pixels outside the scoring annulus (radius greater than 20 pixels) and removes its slopes while keeping the central zero point. Lanczos-3 uses the full 6 × 6 stencil where it is valid and falls back to bilinear sampling at masks and edges. The report includes aperture sum, coverage at the peak, how often the peak was sampled with Lanczos, and results after omitting each date.
+
+| D2 field | Exposures | Baseline | Sky plane | Lanczos-3 | Both |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Barnard’s Star | 36 | 17,210 | 17,205 | 15,155 | 15,773 |
+| RW Aurigae | 21 | 10,949 | 10,879 | 12,434 | 12,217 |
+
+For Barnard’s Star, all five exposures contributing at the peak fell back to bilinear sampling. Lanczos increased the measured sky scatter and lowered contrast in all ten date omissions. For RW Aurigae, 11 of the 21 exposures contributing at the peak used Lanczos. The peak rose 17.7%, the aperture sum rose 6.7%, and contrast rose 13.6%. The contrast gain persisted in all four date omissions. The benchmark enables these options explicitly.
+
+Add `--reconstruction-trials` to the same benchmark command to compare the daily-then-deep median with mask-aware Drizzle. Drizzle combines the detector pixels directly using the overlap of each shrunken pixel with the output grid, with a drop width of 0.8 native pixel. It runs on the same 49 × 49 grid and on a 98 × 98 grid at half the pixel spacing. Only the same-grid comparison uses identical peak and sky sample locations. The benchmark injects one calibrated ePSF at a fixed offset and measures recovery in a three-native-pixel aperture. It also reports the scatter across eight off-target apertures, which can include real field sources.
+
+The same option fits the calibrated ePSF and a local sky plane to each exposure’s unmasked native pixels using the archive variance. It reports the median amplitude across exposures and the scatter of fits at off-target positions. The native amplitude contrast is a separate statistic from image peak contrast. The synthetic native fit uses the same ePSF for injection and recovery, which checks the measurement path without testing ePSF model accuracy.
+
+| D2 field | Exposures | Median baseline | Same-grid Drizzle | Half-pixel Drizzle |
+| --- | ---: | ---: | ---: | ---: |
+| Barnard’s Star | 36 | 17,210 | 15,873 | 16,676 |
+| RW Aurigae | 21 | 10,949 | 9,894 | 13,368 |
+
+At matched pixel scale, Drizzle lowered peak contrast by 7.8% and 9.6%, respectively. Aperture recovery of the injected source was 98.4%–99.0% for Drizzle and 99.2%–99.7% for the median. The half-pixel RW Aurigae image gave a higher peak score on its finer grid, while the off-target aperture scatter rose from 2.73 to 2.80 in native-pixel sum units.
+
+Barnard’s Star occupied 15 of 16 subpixel phase bins, with no valid nearest detector pixel at the predicted center. The native fit used stellar wings in nine exposures. RW Aurigae had 20 valid nearest detector pixels and 21 usable native fits. Its native fit uses the [SIMBAD source position](https://simbad.cds.unistra.fr/simbad/sim-id?Ident=RW+Aur), about 10 arcseconds from the historical image grid center.
 
 ## Moving-target pipeline
 
-The browser viewer uses the fixed-sky stack above. The moving-target pipeline runs separately from the command line:
+Open **Track moving object**, enter a known comet or asteroid designation and a UTC date range, then select and load exposures from one detector. IRSA MOST supplies candidates and JPL Horizons supplies astrometric positions as seen from SPHEREx. The worker verifies FITS timing and coverage and reports the local wavelength and estimated smear. The timeline combines exposures by UTC day. Choose the wavelength range before building the tracked median. The download includes the orbit solution, exposure products, exclusions, pixel arrays, and contribution counts.
+
+**Enhanced contrast** checks for independent reference exposures within 30 days on either side of each science exposure, then tries wavelength-matched exposures from other UTC days with the moving object masked. An enhanced pixel needs at least two usable references. Use the tracked image to inspect areas that lack enhancement coverage. The enhanced result reports aperture contrast and synthetic core and outer recovery. These diagnostics are for evaluating the visualization and do not calibrate flux. Loading supports 80 exposures, and enhancement supports 24 per stack.
+
+Live validation on 2026-11-06 found 20 D1 candidates for 3I/ATLAS (August 10–15, 2025) and eight D2 candidates for 4 Vesta (July 2025). The six selected 3I/ATLAS benchmark observations, re-centered with live Horizons solution JPL#55, scored 24.31 for the tracked median and 37.39 for enhanced contrast. The enhanced view covered 84.3% of the grid and recovered 79.6% of the injected diffuse outer coma. The live run uses different positions and reference selection from the pinned comparison below.
+
+The moving-target benchmark also runs from the command line:
 
 ```powershell
 node scripts/benchmark-moving-stack.mjs --manifest manifest.json stack-products.json
 node scripts/benchmark-moving-stack.mjs --compare path/to/spherex-timelapse stack-products.json
+node scripts/export-comet-benchmark.mjs frontend/tests/fixtures/comet-august-d1.json --check
 ```
 
 The manifest contains an `ephemeris` array of spacecraft-relative `{mjd, ra, dec}` points in chronological order and a `cases` array. Each case has a `name` and `exposures` for one epoch and wavelength bin. Supply each exposure's IRSA Level 2 `url`, start `mjd`, and `detector`. Include `endMjd` or `exposureSeconds` when the archive header lacks duration. A case can supply `referenceExposures` explicitly, with `cometFree: true` on independent sky exposures. Otherwise the pipeline builds references from the other exposures in the case, masking their comet positions and checking the reference wavelength at the science position.

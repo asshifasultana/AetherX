@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f6f2">
+  <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
+  <title>SPHEREx — A sky in motion</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx<span class="brand-divider"></span><span class="brand-sub">SKY ATLAS</span></a>
+    <nav aria-label="Main navigation"><a class="nav-active" href="#explorer">Explore the sky</a><a href="#mission">The mission <span aria-hidden="true">↗</span></a></nav>
+    <span class="header-note"><span class="status-dot"></span> A different view of the universe</span>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div><p class="eyebrow"><span></span> AN INFRARED PERSPECTIVE</p><h1 id="page-title">The sky is never <em>still.</em></h1></div>
+      <div class="intro-right"><p>Look closer. Travel through time.<br>Discover a universe that keeps changing.</p><a href="#target-picker">Choose your destination <span>↘</span></a></div>
+    </section>
+
+    <section id="target-picker" class="destination-panel" aria-labelledby="destination-heading">
+      <div class="destination-heading"><span class="step-number">01</span><div><h2 id="destination-heading">Where shall we look?</h2><p>A familiar star. An unfamiliar world.</p></div><div class="input-tabs" role="group" aria-label="Target entry method"><button id="preset-tab" class="selected" aria-pressed="true">Curated targets</button><button id="manual-tab" aria-pressed="false">Coordinates <span>↗</span></button></div></div>
+      <div id="preset-panel" class="target-grid">
+        <button class="target-card active" data-target="barnard" aria-pressed="true"><span class="target-icon icon-1">✦</span><span><strong>Barnard’s Star</strong><small>Our fast-moving neighbor</small></span><span class="target-arrow">↗</span></button>
+        <button class="target-card" data-target="epsilon" aria-pressed="false"><span class="target-icon icon-2">◉</span><span><strong>Epsilon Indi B</strong><small>A brown-dwarf duo</small></span><span class="target-arrow">↗</span></button>
+        <button class="target-card" data-target="wise" aria-pressed="false"><span class="target-icon icon-3">✧</span><span><strong>WISE 0855</strong><small>A world without a star</small></span><span class="target-arrow">↗</span></button>
+        <button class="target-card" data-target="aurigae" aria-pressed="false"><span class="target-icon icon-4">✺</span><span><strong>RW Aurigae</strong><small>A young, restless system</small></span><span class="target-arrow">↗</span></button>
+        <button class="target-card" data-target="draconis" aria-pressed="false"><span class="target-icon icon-5">✹</span><span><strong>R Draconis</strong><small>A star with a rhythm</small></span><span class="target-arrow">↗</span></button>
+      </div>
+      <form id="coordinate-form" hidden novalidate>
+        <div class="coordinate-fields"><label>Coordinate format<select id="coordinate-format"><option value="degrees">Decimal degrees</option><option value="sexagesimal">Hours / degrees, minutes, seconds</option></select></label><label>Right ascension <span id="ra-unit">degrees</span><input id="ra" value="269.4521" autocomplete="off" aria-describedby="ra-error"><small id="ra-error" class="field-error"></small></label><label>Declination <span id="dec-unit">degrees</span><input id="dec" value="4.6934" autocomplete="off" aria-describedby="dec-error"><small id="dec-error" class="field-error"></small></label><button class="primary-button" type="submit">View sky <span>↗</span></button></div>
+        <p class="coordinate-help">ICRS reference frame · RA 0° to &lt;360° · Dec −90° to +90°</p>
+      </form>
+    </section>
+
+    <section id="explorer" class="explorer" aria-label="Sky image viewer">
+      <div class="viewer" role="region" aria-label="Blank placeholder for future infrared observations">
+        <div class="canvas-top"><button id="expand-button" class="canvas-button" aria-label="Expand image placeholder" title="Expand image placeholder">⛶</button></div>
+      </div>
+
+      <aside class="observation-panel">
+        <div class="panel-overline"><span class="step-number">02</span> YOUR OBSERVATION <span class="tiny-star">✦</span></div>
+        <div class="object-title"><span id="object-type" class="object-type">RED DWARF · OPHIUCHUS</span><h2 id="object-name">Barnard’s Star</h2><p id="object-description">One of our closest stellar neighbors, tracing a remarkable path across the night sky.</p></div>
+        <dl class="coordinate-display"><div><dt>RIGHT ASCENSION</dt><dd id="display-ra">269.4521<span>°</span></dd></div><div><dt>DECLINATION</dt><dd id="display-dec">+4.6934<span>°</span></dd></div></dl>
+        <div class="control-section wavelength-section">
+          <div class="control-heading"><h3>Detector & wavelength</h3></div>
+          <p class="settings-help">Choose an infrared band. Wavelengths are shown in micrometres (μm).</p>
+          <div class="band-buttons" role="group" aria-label="Detector band">
+            <button data-band="1" aria-pressed="false"><strong>D1</strong><span>0.75–1.09 μm</span></button>
+            <button data-band="2" class="selected" aria-pressed="true"><strong>D2</strong><span>1.10–1.62 μm</span></button>
+            <button data-band="3" aria-pressed="false"><strong>D3</strong><span>1.63–2.41 μm</span></button>
+            <button data-band="4" aria-pressed="false"><strong>D4</strong><span>2.42–3.82 μm</span></button>
+            <button data-band="5" aria-pressed="false"><strong>D5</strong><span>3.83–4.41 μm</span></button>
+            <button data-band="6" aria-pressed="false"><strong>D6</strong><span>4.42–5.00 μm</span></button>
+          </div>
+          <div class="band-legend"><span id="band-range">1.10 – 1.62 μm</span><span class="spectrum-line"></span><span>INFRARED</span></div>
+        </div>
+        <div class="demo-note"><span aria-hidden="true">ⓘ</span><p>Choose your settings now. Infrared images will appear here once the NASA image service is connected.</p></div>
+      </aside>
+
+      <div class="timeline-panel"><div class="timeline-heading"><div><span class="step-number">03</span><h3>A little time travel</h3><span class="demo-chip">COMING LATER</span></div><span id="frame-count">NO IMAGES LOADED</span></div><div class="playback-row"><button id="play-button" class="play-button" aria-label="Playback unavailable until images are connected" disabled>▶</button><div class="timeline-track"><input id="timeline" type="range" min="0" max="11" value="0" aria-label="Observation timeline unavailable until images are connected" disabled><div class="timeline-ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="timeline-labels"><span>FIRST FRAME</span><span>A SKY IN MOTION</span><span>LATEST FRAME</span></div></div><button id="speed-button" class="speed-button" aria-label="Playback speed" disabled>1× <span>speed</span></button></div></div>
+      <section class="viewer-settings" aria-labelledby="settings-heading">
+        <div class="settings-title"><div><p class="eyebrow">YOUR SKY, YOUR PERSPECTIVE</p><h2 id="settings-heading">Shape your observation</h2></div><button id="reset-button" class="reset-settings" type="button">Reset settings ↺</button></div>
+        <div class="settings-grid">
+          <section class="settings-card" aria-labelledby="view-heading">
+            <div class="control-heading"><h3 id="view-heading">View & processing</h3><span>01</span></div>
+            <fieldset class="settings-fieldset"><legend>View mode</legend><div class="mode-buttons" role="group" aria-label="View mode">
+              <button data-mode="time-lapse" class="selected" aria-pressed="true">Time-lapse</button><button data-mode="blink" aria-pressed="false">Blink</button><button data-mode="difference" aria-pressed="false">Difference</button><button data-mode="motion-trail" aria-pressed="false">Motion trail</button><button data-mode="deep-stack" aria-pressed="false">Deep stack</button>
+            </div><p id="mode-description" class="settings-help" aria-live="polite">Play observations in date order to follow changes over time.</p></fieldset>
+            <fieldset class="settings-fieldset"><legend>Field of view <span class="unit-label">arcminutes</span></legend><div class="fov-buttons" role="group" aria-label="Field of view">
+              <button data-fov="5" class="selected" aria-pressed="true">5′</button><button data-fov="10" aria-pressed="false">10′</button><button data-fov="16" aria-pressed="false">16′</button><button data-fov="25" aria-pressed="false">25′</button>
+            </div></fieldset>
+            <div class="processing-options"><label class="check-row"><input id="combine-exposures" type="checkbox" checked><span>Combine exposures from the same day</span></label><label class="check-row"><input id="hide-bad-pixels" type="checkbox" checked><span>Hide bad pixels<small>Cosmic rays and hot pixels</small></span></label></div>
+          </section>
+          <section class="settings-card" aria-labelledby="display-heading">
+            <div class="control-heading"><h3 id="display-heading">Display & overlays</h3><span>02</span></div>
+            <div class="select-row"><label for="stretch">Stretch</label><select id="stretch"><option value="asinh">Asinh</option><option value="linear">Linear</option><option value="log">Logarithmic</option><option value="sqrt">Square root</option></select></div>
+            <div class="select-row"><label for="colours">Colours</label><select id="colours"><option value="grayscale">Grayscale</option><option value="inferno">Inferno</option><option value="viridis">Viridis</option><option value="magma">Magma</option></select></div>
+            <label class="range-row" for="contrast">Contrast <output id="contrast-value" for="contrast">65%</output></label><input id="contrast" class="range" type="range" min="10" max="100" value="65">
+            <div class="overlay-options"><label class="check-row"><input id="invert" type="checkbox"><span>Invert image<small>Black stars on a white background</small></span></label><label class="check-row"><input id="crosshair-toggle" type="checkbox" checked><span>Show target marker</span></label><label class="check-row"><input id="label-asteroids" type="checkbox"><span>Label known asteroids</span></label></div>
+            <div class="select-row asteroid-row"><label for="asteroid-magnitude">Asteroids brighter than</label><select id="asteroid-magnitude" aria-describedby="magnitude-help"><option value="14">V 14</option><option value="16">V 16</option><option value="18">V 18</option><option value="20" selected>V 20</option><option value="22">V 22</option></select></div>
+            <p id="magnitude-help" class="settings-help">Visual magnitude limit. Lower values show brighter objects.</p>
+          </section>
+        </div>
+        <p class="settings-notice">Settings are ready for future observations. The viewer stays empty until image data is connected.</p>
+      </section>
+    </section>
+
+    <section id="mission" class="mission"><span class="mission-symbol" aria-hidden="true">✳</span><div><p class="eyebrow">ONE SKY. COUNTLESS STORIES.</p><h2>There’s more than meets the eye.</h2><p>SPHEREx studies the universe in infrared light. This atlas is a place to explore familiar objects through a different lens, one sky position at a time.</p></div><a href="https://science.nasa.gov/mission/spherex/" target="_blank" rel="noopener noreferrer">Meet the mission <span>↗</span></a></section>
+  </main>
+  <footer><a class="brand" href="#" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a></footer>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

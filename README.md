@@ -1,1 +1,1 @@
-planetX sphereX
+sphereX

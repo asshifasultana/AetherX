@@ -7,7 +7,7 @@ export function starAlias(name) {
     : compact.toLowerCase();
 }
 
-
+// Reviewed fallback profiles also serve as the batch import manifest.
 export const starProfiles = [
   {
     id: 'barnard', name: 'Barnard’s Star', aliases: ["Barnard's Star", 'GJ 699', 'HIP 87937', 'V2500 Oph', 'V* V2500 Oph'],

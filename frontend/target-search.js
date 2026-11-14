@@ -6,11 +6,12 @@ import { presets } from './presets.js';
 export const searchMarkup = `
 <form id="target-search-form" class="target-search" novalidate aria-busy="false">
         <div class="target-search-row">
-          <label class="target-kind"><span class="search-field-label">Search for</span><select id="target-type"><option value="object">Star / object</option><option value="moving">Moving object</option><option value="coordinates">Coordinates</option></select></label>
-          <fieldset id="name-fields" class="target-name-fields"><legend class="sr-only">Object name</legend><label for="lookup-name" id="lookup-label" class="search-field-label">Object name</label><input id="lookup-name" name="object" maxlength="200" required autocomplete="off" placeholder="e.g. Sirius or M31" aria-describedby="lookup-help lookup-status"></fieldset>
+          <label class="target-kind" hidden><span class="search-field-label">Search for</span><select id="target-type" tabindex="-1" aria-hidden="true"><option value="object">Star / object</option><option value="moving">Moving object</option><option value="coordinates">Coordinates</option></select></label>
+          <fieldset id="name-fields" class="target-name-fields"><legend class="sr-only">Object name</legend><label for="lookup-name" id="lookup-label" class="search-field-label">Object name</label><input id="lookup-name" name="object" maxlength="200" required autocomplete="off" placeholder="Search a star, galaxy, comet or asteroid" aria-describedby="lookup-help lookup-status"></fieldset>
           <fieldset id="coordinate-fields" class="coordinate-fields" hidden disabled><legend class="sr-only">Sky coordinates</legend><label>Coordinate format<select id="coordinate-format"><option value="degrees">Decimal degrees</option><option value="sexagesimal">Hours / degrees, minutes, seconds</option></select></label><label>Right ascension <span id="ra-unit">degrees</span><input id="ra" value="269.4521" required autocomplete="off" placeholder="269.4521" aria-describedby="ra-error"><small id="ra-error" class="field-error"></small></label><label>Declination <span id="dec-unit">degrees</span><input id="dec" value="4.6934" required autocomplete="off" placeholder="+4.6934" aria-describedby="dec-error"><small id="dec-error" class="field-error"></small></label></fieldset>
           <button id="target-search-submit" class="primary-button" type="submit">Search <span aria-hidden="true">↗</span></button>
         </div>
+        <button id="coordinate-toggle" class="coordinate-toggle" type="button" aria-expanded="false" aria-controls="coordinate-fields">Enter coordinates</button>
         <fieldset id="moving-fields" class="moving-fields" hidden disabled><legend class="sr-only">Moving-object search filters</legend>
           <label>Start date (UTC) <input name="startDate" type="date" required></label>
           <label>End date (UTC) <input name="endDate" type="date" required></label>
@@ -18,7 +19,7 @@ export const searchMarkup = `
           <button type="button" id="moving-example">Try 3I/ATLAS</button>
         </fieldset>
         <div id="search-loading" class="search-loading" role="progressbar" aria-label="Loading" hidden><span></span></div>
-        <p id="lookup-help" class="coordinate-help">Enter a common name or catalog identifier, or choose a quick pick below.</p>
+        <p id="lookup-help" class="coordinate-help">Search by name or catalog identifier. Comets and asteroids use a date range.</p>
         <p id="target-search-status" role="status" aria-live="polite"></p>
         <div id="preset-panel" class="target-quick-picks" role="group" aria-label="Quick picks"><span>Quick picks</span>
           <button type="button" data-target="barnard" aria-pressed="false">Barnard’s Star</button>
@@ -32,6 +33,9 @@ export const searchMarkup = `
         <div id="moving-feedback" hidden><p id="moving-status" role="status" aria-live="polite"></p><button type="button" id="moving-cancel" hidden>Cancel</button><div id="moving-choices"></div></div>
       </form>
 `;
+export function isMovingQuery(query) {
+  return /^(?:\d+\s*[IPDC]\s*\/|[CPADX]\s*\/\s*\d{4}|\(\d+\)|\d{4}\s+[a-z]{1,2}\d*\b|(?:comet|asteroid)\s|(?:\d+\s+)?(?:ceres|pallas|juno|vesta|apophis|bennu|ryugu|eros|itokawa|halley|encke)\b)/i.test(query.trim());
+}
 export function ensureSearchForm() {
   if (!document.getElementById('target-search-form')) document.getElementById('target-picker').innerHTML = searchMarkup;
   if (document.getElementById('target-picker').getAttribute('data-minimal') === 'true') {
@@ -63,11 +67,13 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
     }
     $('lookup-name').value = drafts[mode] || '';
     $('lookup-name').maxLength = moving ? 80 : 200;
-    $('lookup-name').placeholder = moving ? 'e.g. 3I/ATLAS or 4 Vesta' : 'e.g. Sirius or M31';
+    $('lookup-name').placeholder = 'Search a star, galaxy, comet or asteroid';
+    $('coordinate-toggle').textContent = coordinates ? 'Search by name' : 'Enter coordinates';
+    $('coordinate-toggle').setAttribute('aria-expanded', String(coordinates));
     $('lookup-label').textContent = moving ? 'Designation' : 'Object name';
     $('lookup-help').textContent = coordinates ? 'ICRS reference frame · RA 0° to <360° · Dec −90° to +90°'
       : moving ? 'Enter a comet or asteroid designation and a UTC date range.'
-      : 'Enter a common name or catalog identifier, or choose a quick pick below.';
+      : 'Search by name or catalog identifier. Comets and asteroids use a date range.';
     $('preset-panel').hidden = mode !== 'object'; $('lookup-feedback').hidden = mode !== 'object';
     $('moving-feedback').hidden = !moving; $('target-search-status').hidden = moving;
     clearErrors();
@@ -93,11 +99,26 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
   function setEntry(entry) {
     setMode(entry.type); $('lookup-name').value = entry.query || '';
     if (entry.type === 'moving') {
-      form.elements.startDate.value = entry.startDate; form.elements.endDate.value = entry.endDate; form.elements.detector.value = entry.detector;
+      form.elements.startDate.value = entry.startDate || form.elements.startDate.value; form.elements.endDate.value = entry.endDate || form.elements.endDate.value; form.elements.detector.value = entry.detector;
     }
     if (entry.format) setPosition(initialPosition, entry.format);
   }
   function publish(entry) { window.dispatchEvent(new CustomEvent('sky:search-entry', { detail: entry })); }
+  $('coordinate-toggle').addEventListener('click', () => {
+    setMode(mode === 'coordinates' ? 'object' : 'coordinates');
+    (mode === 'coordinates' ? $('ra') : $('lookup-name')).focus();
+  });
+  $('lookup-name').addEventListener('input', () => {
+    if (mode === 'coordinates') return;
+    const query = $('lookup-name').value;
+    const next = isMovingQuery(query) ? 'moving' : 'object';
+    if (next !== mode) { setMode(next); $('lookup-name').value = query; }
+  });
+  // A useful, editable range for newly recognized moving objects.
+  const today = new Date(), from = new Date(today);
+  from.setUTCDate(from.getUTCDate() - 30);
+  form.elements.startDate.value = from.toISOString().slice(0, 10);
+  form.elements.endDate.value = today.toISOString().slice(0, 10);
   $('target-type').addEventListener('change', () => setMode($('target-type').value));
   // Back/Forward may restore native form values after this module mounts.
   // Reconcile the visible fields with that restored dropdown selection.
@@ -123,6 +144,10 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
     if (mode === 'coordinates') {
       const position = readCoordinates($('coordinate-format').value); if (!position) return;
       invalidate(); publish({ type: mode, query: '', format: coordinateFormat }); onCoordinates(position); return;
+    }
+    if (mode === 'object' && isMovingQuery($('lookup-name').value)) {
+      const query = $('lookup-name').value;
+      setMode('moving'); $('lookup-name').value = query;
     }
     if (!form.reportValidity()) return;
     const query = $('lookup-name').value.trim();

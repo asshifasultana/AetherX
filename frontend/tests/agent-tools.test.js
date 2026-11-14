@@ -15,7 +15,7 @@ test('every tool has a well-formed function schema', () => {
     assert.equal(entry.function.parameters.type, 'object');
     for (const key of entry.function.parameters.required) assert.ok(key in entry.function.parameters.properties, `${entry.function.name}.${key}`);
   }
-  // Schemas are resent every round, so keep their token cost low.
+  // Schemas are resent every round under Groq's per-minute token limit.
   assert.ok(JSON.stringify(AGENT_TOOLS).length < 4500);
 });
 

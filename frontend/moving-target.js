@@ -2,6 +2,8 @@ import { ensureSearchForm, setSearchLoading } from './target-search.js';
 ensureSearchForm();
 const $ = id => document.getElementById('moving-' + id);
 const form = document.getElementById('target-search-form'), status = $('status'), canvas = $('canvas'), detector = $('detector');
+// Keep progress and retry choices beside the moving image, even in the focused view.
+document.getElementById('moving-target').append(document.getElementById('moving-feedback'));
 const daySlider = $('day'), minWave = $('min'), maxWave = $('max');
 let search, scan, result, worker, request, timer, busy = false, generation = 0;
 let displayedDays = [], loadedIds = new Set(), timelineScale;
@@ -113,7 +115,7 @@ function listExposures() {
     return label;
   }));
   status.textContent = exposures.length > 80
-    ? `${exposures.length} exposures on D${detector.value}. Open the exposure list and select up to 80.`
+    ? `${exposures.length} exposures on D${detector.value}. Open Settings, then the exposure list, and select up to 80.`
     : `${exposures.length} exposures selected on D${detector.value}.`;
 }
 
@@ -164,6 +166,7 @@ window.addEventListener('sky:moving-search-requested', async () => {
       request = null;
       setBusy(false);
       if (search?.trajectoryError) $('load').disabled = true;
+      else if (search?.exposures?.length && search.exposures.filter(e => e.detector === Number(detector.value)).length <= 80) $('load').click();
     }
   }
 });

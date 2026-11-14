@@ -6,17 +6,20 @@
   <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
   <title>SPHEREx — A sky in motion</title>
   <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:5173/');
-    if (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top) document.documentElement.classList.add('is-embed');</script>
+    if (/[?&]tourPreview=1(&|#|$)/.test(location.search)) document.documentElement.classList.add('is-tour-preview');
+    if (!document.documentElement.classList.contains('is-tour-preview') && (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top)) document.documentElement.classList.add('is-embed');</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="viewer-page">
   <header class="site-header viewer-header">
     <a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a>
-    <button id="sidebar-toggle" class="sidebar-mobile-toggle" type="button" aria-label="Open settings sidebar" aria-controls="sidebar-content" aria-expanded="false">☷ Settings</button>
+    <button id="sidebar-toggle" class="sidebar-mobile-toggle" type="button" aria-label="Open settings sidebar" aria-controls="sidebar-content" aria-expanded="false">Settings</button>
+    <a class="viewer-new-search" href="/">New search</a>
+    <button id="tour-restart" class="viewer-tour-button" type="button">How it works</button>
     <div id="target-picker" class="viewer-search" data-minimal="true" role="search" aria-label="Search the sky"></div>
   </header>
 
-  <main id="workspace" class="workspace" data-sidebar-open="true">
+  <main id="workspace" class="workspace" data-sidebar-open="false">
     <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Close settings sidebar" tabindex="-1" hidden></button>
     <aside id="workspace-sidebar" class="workspace-sidebar" aria-label="Observation settings">
       <button id="sidebar-rail-toggle" class="sidebar-rail-toggle" type="button" aria-label="Expand settings sidebar" aria-controls="sidebar-content" aria-expanded="true" hidden>☷</button>
@@ -196,7 +199,7 @@
         <div class="ai-guide-actions"><button id="ai-guide-stop" class="reset-settings" type="button" hidden>Stop</button><button id="ai-guide-send" class="primary-button" type="submit">Ask</button></div>
       </form>
       <p id="ai-guide-status" class="ai-guide-status" role="status" aria-live="polite"></p>
-      <p class="ai-guide-disclaimer">Answers come from an AI model via OpenRouter and can be wrong. The images and numbers come from the SPHEREx archive.</p>
+      <p class="ai-guide-disclaimer">Answers come from an AI model (via Groq) and can be wrong; the images and numbers come from the SPHEREx archive.</p>
     </section>
     <section id="observations" class="observations-section" aria-labelledby="observations-heading">
       <details id="observation-disclosure"><summary><span id="observations-heading">Observations</span><span id="observation-overview" role="status" aria-live="polite">Waiting for observations.</span></summary>
@@ -262,6 +265,7 @@
   <script type="module" src="timelapse.js"></script>
   <script type="module" src="share-ui.js"></script>
   <script type="module" src="workspace-ui.js"></script>
+  <script type="module" src="onboarding.js"></script>
   <script type="module" src="moving-target.js"></script>
   <script type="module" src="sky-context.js"></script>
   <script type="module" src="star-details.js"></script>

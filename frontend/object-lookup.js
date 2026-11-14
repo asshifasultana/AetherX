@@ -1,7 +1,7 @@
 import { setSearchLoading } from './target-search.js';
 import { suggestNames } from './object-names.js';
 // Reject stale responses before publishing a resolved target.
-export function createLookupController({ fetchImpl = fetch, render, select, autoSelect = false }) {
+export function createLookupController({ fetchImpl = fetch, render, select, autoSelect = false, onNotFound }) {
   let generation = 0, controller, pending;
   function invalidate() { generation++; controller?.abort(); pending = null; render({ state: 'idle' }); }
   async function resolve(name) {
@@ -11,6 +11,7 @@ export function createLookupController({ fetchImpl = fetch, render, select, auto
       const response = await fetchImpl('/api/resolve-object?' + new URLSearchParams({ name }), { signal: controller.signal });
       const data = await response.json();
       if (current !== generation) return;
+      if (response.status === 404 && onNotFound && !suggestNames(name).length) { onNotFound(name); return; }
       if (!response.ok) { render({ state: 'error', invalidName: response.status === 400 || response.status === 404, message: data.error || 'Object lookup failed. Please retry.', suggestions: response.status === 404 && data.code === 'NOT_FOUND' ? suggestNames(name) : [] }); return; }
       if (!Number.isFinite(data.raDeg) || data.raDeg < 0 || data.raDeg >= 360 || !Number.isFinite(data.decDeg) || data.decDeg < -90 || data.decDeg > 90 || data.frame !== 'icrs' || !data.source?.resolver) throw new Error('Invalid resolver response');
       pending = data; render({ state: 'ready', data });
@@ -22,10 +23,10 @@ export function createLookupController({ fetchImpl = fetch, render, select, auto
   function confirm() { if (!pending) return; const data = pending; invalidate(); select(data); }
   return { invalidate, resolve, confirm };
 }
-export function mountObjectLookup(select) {
+export function mountObjectLookup(select, { onNotFound } = {}) {
   const $ = id => document.getElementById(id);
   const input = $('lookup-name');
-  const lookup = createLookupController({ select, autoSelect: true, render({ state, message, invalidName = false, suggestions = [] }) {
+  const lookup = createLookupController({ select, autoSelect: true, onNotFound, render({ state, message, invalidName = false, suggestions = [] }) {
     setSearchLoading('lookup', state === 'loading');
     $('target-search-submit').disabled = state === 'loading';
     $('target-search-submit').textContent = 'Search ↗';

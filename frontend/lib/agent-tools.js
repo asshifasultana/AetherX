@@ -1,4 +1,4 @@
-// Tool definitions for the SphereX AI guide. Pure: shared by the server proxy
+// Tool definitions for the SphereX AI guide. Pure: shared by the Groq proxy
 // (which sends the schemas to the model) and the browser (which validates the
 // model's arguments before touching the viewer), so both always agree.
 
@@ -11,8 +11,8 @@ export const COMPARE_REFERENCES = ['first', 'previous', 'deep-stack', 'frame'];
 export const NOTE_MAX = 200;
 
 const values = key => settingRule(key).values;
-// Keep schemas compact because they are resent on every round.
-// Ranges live in descriptions; the
+// Compact schemas: they are resent on every round and Groq's free tier allows
+// only a few thousand tokens a minute. Ranges live in descriptions; the
 // browser clamps and validates every value anyway.
 const str = (enumValues, description) => ({ type: 'string', ...(enumValues ? { enum: enumValues } : {}), ...(description ? { description } : {}) });
 const int = description => ({ type: 'integer', ...(description ? { description } : {}) });

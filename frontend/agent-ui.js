@@ -1,5 +1,5 @@
 // The AI guide section: a chat that runs a tool-calling loop against
-// /api/agent (an OpenRouter proxy) and executes each tool call on the real viewer.
+// /api/agent (a Groq proxy) and executes each tool call on the real viewer.
 
 import { validateToolCall } from './lib/agent-tools.js';
 import { createViewerController } from './agent-controller.js';
@@ -69,7 +69,8 @@ function showShare(url, note) {
   $('ai-guide-share-note').textContent = note ? `Note for viewers: “${note}”` : '';
 }
 
-// Every round resends the conversation, so shorten older results to limit token use.
+// Every round resends the conversation, and Groq's free tier allows only a few
+// thousand tokens a minute, so results from earlier questions are shortened.
 function trimmedHistory() {
   let start = Math.max(0, history.length - MAX_HISTORY);
   while (start < history.length && history[start].role !== 'user') start++;
@@ -92,11 +93,11 @@ async function ask(signal) {
       signal
     });
     const data = await response.json().catch(() => ({}));
-    // Wait for the upstream rate limit before trying again.
+    // Groq's per-minute token limit: wait as long as it asks, then try again.
     if (response.status === 429 && data.code === 'AGENT_BUSY' && attempt < 3) {
       const seconds = Math.min(60, Math.max(2, Math.ceil(Number(data.retryAfter) || 10)));
       for (let left = seconds; left > 0 && !signal.aborted; left--) {
-        setStatus(`The AI guide is rate limited. Retrying in ${left} s…`);
+        setStatus(`Groq's free tier is rate limited — continuing in ${left} s…`);
         await wait(1000, signal);
       }
       if (signal.aborted) throw new DOMException('Aborted', 'AbortError');

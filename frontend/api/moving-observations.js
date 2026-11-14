@@ -1,6 +1,16 @@
 import { SearchError, scienceUrl, mjdToIso } from '../lib/observations.js';
 import { preferredProducts } from '../observation-products.js';
 import { metadataResources } from '../lib/resources.js';
+import { defaultSearchStore, entryAge } from '../lib/search-store.js';
+import { gzipSync } from 'node:zlib';
+// Search results compress ~16x (Barnard's Star: 408 KB of JSON becomes 25 KB).
+function sendJson(req, res, data) {
+  const body = Buffer.from(JSON.stringify(data));
+  const gzip = body.length > 1024 && /\bgzip\b/.test(String(req.headers?.['accept-encoding'] || ''));
+  res.setHeader('Vary', 'Accept-Encoding');
+  if (gzip) res.setHeader('Content-Encoding', 'gzip');
+  res.end(gzip ? gzipSync(body, { level: 6 }) : body);
+}
 
 const observer = '-163182';
 const day = 86400000;
@@ -95,7 +105,14 @@ export function parseHorizons(text, requested) {
   return { name: target[1], solution: target[2], observer, points: points.map((p, i) => ({ ...p, mjd: requested[i] })) };
 }
 
-export function createMovingSearch({ fetchImpl = fetch, resources = metadataResources } = {}) {
+// The latest date a request covers: its end date, or its latest epoch for position lookups.
+export function movingEndDate(params) {
+  if (params.get('action') !== 'positions') return params.get('endDate') || '';
+  const latest = Math.max(...params.getAll('mjd').map(Number).filter(Number.isFinite));
+  return Number.isFinite(latest) ? new Date((latest - 40587) * day).toISOString().slice(0, 10) : '';
+}
+
+export function createMovingSearch({ fetchImpl = fetch, resources = metadataResources, store = defaultSearchStore() } = {}) {
   async function positions(object, times, signal) {
     const points = [];
     let identity;
@@ -133,8 +150,15 @@ export function createMovingSearch({ fetchImpl = fetch, resources = metadataReso
     const key = JSON.stringify(['moving', object, ...[...params].sort()]);
     const cached = resources.get(key, now);
     if (cached) return cached;
-    const release = resources.gate.acquire();
-    try {
+    const saved = store ? await store.get('moving', key) : null;
+    const age = entryAge(saved, movingEndDate(params), now);
+    const savedAt = saved ? new Date(saved.savedAt).toISOString() : null;
+    if (age === 'fresh') {
+      const result = { ...saved.result, cache: { shared: true, savedAt } };
+      resources.set(key, result, now + 300000, now);
+      return result;
+    }
+    const run = async () => {
       if (action === 'positions') {
         const times = [...new Set(params.getAll('mjd').map(Number))].sort((a, b) => a - b);
         if (!times.length || times.length > 24 || times.some(t => !(t >= 60745 && t <= now / day + 40588))) {
@@ -178,6 +202,16 @@ export function createMovingSearch({ fetchImpl = fetch, resources = metadataReso
         observer: trajectory?.observer, solution: trajectory?.solution, trajectoryError, exposures };
       if (!trajectoryError) resources.set(key, result, now + 300000, now);
       return result;
+    };
+    const release = resources.gate.acquire();
+    try {
+      const result = await run();
+      if (store && !result.trajectoryError) await store.put('moving', key, { query: new URLSearchParams([...params].sort()).toString(), object }, result);
+      return result;
+    } catch (err) {
+      // Horizons or MOST outage: an older saved copy, clearly marked, beats an error.
+      if (age === 'stale' && !requestSignal?.aborted && err instanceof SearchError && err.status === 502) return { ...saved.result, cache: { shared: true, stale: true, savedAt } };
+      throw err;
     } finally { release(); }
   };
 }
@@ -192,7 +226,7 @@ export function createMovingObservationsHandler(search = createMovingSearch()) {
     res.once('close', disconnect);
     try {
       const result = await search(new URL(req.url, 'http://localhost').searchParams, { signal: controller.signal });
-      if (!res.destroyed) res.end(JSON.stringify(result));
+      if (!res.destroyed) sendJson(req, res, result);
     } catch (err) {
       if (!res.destroyed) {
         if (err.retryAfter) res.setHeader('Retry-After', err.retryAfter);

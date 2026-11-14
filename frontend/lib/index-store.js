@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { preferredProducts } from '../observation-products.js';
 import { COLLECTIONS, MAX_RESULTS, TAP_URL, SearchError, createSearchService, validateSearch } from './observations.js';
 import { metadataResources } from './resources.js';
+import { defaultSearchStore } from './search-store.js';
 
 export const INDEX_DIRECTORY = fileURLToPath(new URL('../data/', import.meta.url));
 export const INDEX_MAX_AGE_MS = 48 * 3600000;
@@ -68,7 +69,7 @@ export function indexedResponse(snapshot, entry, manifest, search, { stale = fal
     ]
   };
 }
-export function createIndexedSearch({ store = createIndexStore(), now = () => Date.now(), liveFactory = collections => createSearchService({ collections, resources: metadataResources }) } = {}) {
+export function createIndexedSearch({ store = createIndexStore(), now = () => Date.now(), searchStore = defaultSearchStore(), liveFactory = collections => createSearchService({ collections, resources: metadataResources, store: searchStore }) } = {}) {
   const liveServices = new Map();
   return async (params, options = {}) => {
     const search = validateSearch(params);

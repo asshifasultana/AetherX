@@ -156,6 +156,7 @@ window.addEventListener('sky:moving-search-requested', async () => {
     listExposures();
     if (data.trajectoryError) { status.setAttribute('data-error', 'true'); status.textContent = data.trajectoryError; }
     else status.textContent += ` ${data.name} · Horizons ${data.solution}, viewed from SPHEREx.`;
+    if (data.cache?.stale) status.textContent += ` IRSA or JPL is unavailable; showing results saved ${data.cache.savedAt.slice(0, 10)}.`;
   } catch (err) {
     if (token === generation) { status.setAttribute('data-error', 'true'); status.textContent = err.message; }
   } finally {

@@ -11,3 +11,6 @@ frontend/data/*.tmp
 # Local ingestion intermediates; only approved cultural cards are public assets.
 data/sky-cultures/normalized.json
 data/sky-cultures/hipparcos.tsv
+
+# Local secrets (Supabase keys for the shared search cache)
+.env

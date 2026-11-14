@@ -12,7 +12,30 @@ let position = { raDeg: 269.4521, decDeg: 4.6934, frame: 'icrs' };
 let targetName = 'Barnard’s Star', result = null, page = 0, controller, requestNumber = 0;
 let submittedParams, searchFailed = false, hasTarget = false, filterTimer;
 const qualityCache = new Map();
-const sourceLabel = data => data.source.kind === 'scheduled-index' ? (data.source.fallback ? 'Preset index fallback' : 'Scheduled preset index') : data.cached ? 'Cached IRSA search' : 'Live IRSA search';
+const sourceLabel = data => data.browserCached ? 'Saved search (this browser)' : data.source.stale ? 'Saved search (IRSA unavailable)' : data.source.sharedCache ? 'Shared search cache' : data.source.kind === 'scheduled-index' ? (data.source.fallback ? 'Preset index fallback' : 'Scheduled preset index') : data.cached ? 'Cached IRSA search' : 'Live IRSA search';
+// Observation lists (metadata only, never images) are kept in the browser's Cache
+// Storage so a repeat search, such as Barnard's Star's multi-window proper-motion
+// query, returns instantly. Fallback results are never saved.
+const SEARCH_CACHE = 'spherex-observation-search-v1', SEARCH_CACHE_TTL_MS = 6 * 3600000, SEARCH_CACHE_ENTRIES = 40;
+const searchCacheAvailable = typeof caches !== 'undefined';
+async function readSavedSearch(url) {
+  try {
+    const cache = await caches.open(SEARCH_CACHE), hit = await cache.match(url);
+    if (!hit) return null;
+    if (!(Date.now() - Number(hit.headers.get('x-saved-at')) < SEARCH_CACHE_TTL_MS)) { await cache.delete(url); return null; }
+    const data = await hit.json();
+    return Array.isArray(data.observations) ? { ...data, browserCached: true } : null;
+  } catch { return null; }
+}
+async function saveSearch(url, data) {
+  if (!searchCacheAvailable || data.source?.fallback || data.source?.stale || !Array.isArray(data.observations)) return;
+  try {
+    const cache = await caches.open(SEARCH_CACHE);
+    await cache.put(url, new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json', 'x-saved-at': String(Date.now()) } }));
+    const keys = await cache.keys();
+    for (const key of keys.slice(0, Math.max(0, keys.length - SEARCH_CACHE_ENTRIES))) await cache.delete(key);
+  } catch { /* Storage may be full or blocked; searching still works. */ }
+}
 const emit = (type, detail) => {
   if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent(type, { detail }));
 };
@@ -51,12 +74,17 @@ async function search() {
   setBusy(true); $('search-status').textContent = '';
   const timeout = setTimeout(() => activeController.abort('timeout'), 100000);
   try {
-    const response = await fetch('/api/observations?' + params, { signal: activeController.signal });
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) throw new Error('The observation API is not available. Start the supplied Node server locally, or deploy the API functions with the frontend.');
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.code === 'IRSA_UNAVAILABLE' ? 'IRSA’s observation service is temporarily unavailable. Your target is selected. Retry shortly.' : data.error || 'The archive search failed. Please retry.');
-    if (!Array.isArray(data.observations)) throw new Error('The observation service returned an invalid response. Please retry.');
+    const url = '/api/observations?' + params;
+    let data = searchCacheAvailable ? await readSavedSearch(url) : null;
+    if (!data) {
+      const response = await fetch(url, { signal: activeController.signal });
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) throw new Error('The observation API is not available. Start the supplied Node server locally, or deploy the API functions with the frontend.');
+      data = await response.json();
+      if (!response.ok) throw new Error(data.code === 'IRSA_UNAVAILABLE' ? 'IRSA’s observation service is temporarily unavailable. Your target is selected. Retry shortly.' : data.error || 'The archive search failed. Please retry.');
+      if (!Array.isArray(data.observations)) throw new Error('The observation service returned an invalid response. Please retry.');
+      saveSearch(url, data);
+    }
     if (current !== requestNumber) return;
     result = data;
     $('search-status').textContent = data.count ? `Found ${data.count} ${presetMotion(position) ? 'candidate detector images for' : 'detector images covering'} ${targetName}.` : data.source.fallback
@@ -122,7 +150,7 @@ function renderResults() {
   $('load-more-observations').hidden = !result.nextCursor; $('load-more-observations').disabled = false; $('load-more-observations').textContent = 'Load more observations ↓';
   const indexed = result.source.kind === 'scheduled-index';
   $('archive-mode-label').textContent = sourceLabel(result);
-  $('results-provenance').textContent = `Source: ${result.source.name} · ${indexed ? 'Preset index checked' : 'Retrieved'} ${formatTime(result.source.retrievedAt)}${!indexed && result.cached ? ' · Cached (up to 5 minutes)' : ''} · ${result.duplicatesRemoved} duplicate / older products removed.`;
+  $('results-provenance').textContent = `Source: ${result.source.name} · ${indexed ? 'Preset index checked' : 'Retrieved'} ${formatTime(result.source.retrievedAt)}${result.browserCached ? ' · Saved in this browser (up to 6 hours)' : result.source.stale ? ' · Saved copy shown while IRSA is unavailable' : result.source.sharedCache ? ' · Shared cache, refreshed daily' : !indexed && result.cached ? ' · Cached (up to 5 minutes)' : ''} · ${result.duplicatesRemoved} duplicate / older products removed.`;
   $('detector-summary').replaceChildren();
   const searchedDetector = submittedParams?.get('detector') || 'all';
   for (const band of summarizeDetectorCoverage(result.observations, { searchedDetector })) {
@@ -158,7 +186,7 @@ function renderResults() {
     $('detector-summary').append(card);
   }
   $('results-warnings').replaceChildren();
-  const actionable = (result.warnings || []).filter(text => text.startsWith('More archive products are available'));
+  const actionable = (result.warnings || []).filter(text => text.startsWith('More archive products are available') || text.startsWith('IRSA was unavailable'));
   for (const warning of actionable) $('results-warnings').append(make('p', warning));
   $('results-warnings').hidden = !actionable.length;
   renderRows();
@@ -174,8 +202,13 @@ $('load-more-observations').addEventListener('click', async () => {
   $('search-status').textContent = 'Loading the next batch of archive products…';
   const timer = setTimeout(() => activeController.abort('timeout'), 100000);
   try {
-    const response = await fetch('/api/observations?' + params, { signal: activeController.signal });
-    const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not load more observations.');
+    const url = '/api/observations?' + params;
+    let data = searchCacheAvailable ? await readSavedSearch(url) : null;
+    if (!data) {
+      const response = await fetch(url, { signal: activeController.signal });
+      data = await response.json(); if (!response.ok) throw new Error(data.error || 'Could not load more observations.');
+      saveSearch(url, data);
+    }
     if (current !== requestNumber) return;
     const observations = preferredProducts([...previous.observations, ...data.observations]);
     result = { ...data, observations, count: observations.length, matchedProducts: previous.matchedProducts + data.matchedProducts, duplicatesRemoved: previous.matchedProducts + data.matchedProducts - observations.length };

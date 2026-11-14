@@ -1,5 +1,14 @@
 import { SearchError } from '../lib/observations.js';
 import { createIndexedSearch } from '../lib/index-store.js';
+import { gzipSync } from 'node:zlib';
+// Search results compress ~16x (Barnard's Star: 408 KB of JSON becomes 25 KB).
+function sendJson(req, res, data) {
+  const body = Buffer.from(JSON.stringify(data));
+  const gzip = body.length > 1024 && /\bgzip\b/.test(String(req.headers?.['accept-encoding'] || ''));
+  res.setHeader('Vary', 'Accept-Encoding');
+  if (gzip) res.setHeader('Content-Encoding', 'gzip');
+  res.end(gzip ? gzipSync(body, { level: 6 }) : body);
+}
 
 const searchObservations = createIndexedSearch();
 export function createObservationsHandler(search = searchObservations) {
@@ -15,8 +24,8 @@ export function createObservationsHandler(search = searchObservations) {
       const params = new URL(req.url, 'http://localhost').searchParams;
       const result = await search(params, { signal: controller.signal });
       if (!res.destroyed) {
-        if (!result.source?.fallback) res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=60');
-        res.end(JSON.stringify(result));
+        if (!result.source?.fallback && !result.source?.stale) res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=60');
+        sendJson(req, res, result);
       }
     } catch (error) {
       if (res.destroyed) return;

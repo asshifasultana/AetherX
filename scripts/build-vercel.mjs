@@ -34,7 +34,7 @@ for (const [name, maxDuration] of [['observations', 120], ['moving-observations'
   }
   if (!['cutout', 'crop', 'resolve-object','gaia-sources'].includes(name)) {
     await copyFile(path.join(frontend, 'presets.js'), path.join(directory, 'presets.js'));
-    const libraries = name === 'moving-observations' ? ['observations.js'] : ['observations.js', 'quality.js', 'index-store.js'];
+    const libraries = name === 'moving-observations' ? ['observations.js', 'search-store.js'] : ['observations.js', 'quality.js', 'index-store.js', 'search-store.js'];
     for (const library of libraries) await copyFile(path.join(frontend, 'lib', library), path.join(directory, 'lib', library));
   }
   if (!['moving-observations', 'observation-quality', 'cutout', 'crop', 'resolve-object','gaia-sources'].includes(name)) {

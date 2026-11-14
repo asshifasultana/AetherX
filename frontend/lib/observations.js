@@ -1,6 +1,7 @@
 import { preferredProducts } from '../observation-products.js';
 import { createSearchResources } from './resources.js';
 import { exposureCenter, presetMotion } from '../presets.js';
+import { entryAge } from './search-store.js';
 // IRSA TAP/CAOM metadata adapter. The reference project's tools/build_index.py
 // informed the archive tables and processing-version selection; no code is copied.
 export const TAP_URL = 'https://irsa.ipac.caltech.edu/TAP/sync';
@@ -210,7 +211,8 @@ export async function queryArchive(query, { fetchImpl = fetch, timeoutMs = 90000
   } finally { clearTimeout(timer); }
 }
 
-export function createSearchService({ fetchImpl = fetch, now = () => Date.now(), timeoutMs = 90000, collections = COLLECTIONS, resources = createSearchResources() } = {}) {
+// `store` is the optional shared cache (search-store.js); without it only memory is used.
+export function createSearchService({ fetchImpl = fetch, now = () => Date.now(), timeoutMs = 90000, collections = COLLECTIONS, resources = createSearchResources(), store = null } = {}) {
   const { pending } = resources;
   return async function searchObservations(params, { signal } = {}) {
     signal?.throwIfAborted();
@@ -220,7 +222,24 @@ export function createSearchService({ fetchImpl = fetch, now = () => Date.now(),
     if (pending.has(key)) return joinRequest(pending.get(key), signal);
     const release = resources.gate.acquire();
     const record = { controller: new AbortController(), waiters: 0 };
+    const storeKey = [collections, search];
     const request = (async () => {
+      const saved = store ? await store.get('observations', storeKey) : null;
+      const age = entryAge(saved, search.endDate, now());
+      if (age === 'fresh') {
+        const result = { ...saved.result, source: { ...saved.result.source, sharedCache: true } };
+        resources.set(key, result, now() + 900000, now());
+        return { ...result, cached: true };
+      }
+      try { return await live(); }
+      catch (error) {
+        // Upstream outage: an older saved copy beats an error, and says how old it is.
+        if (age !== 'stale' || record.controller.signal.aborted || ![502, 504].includes(error.status)) throw error;
+        return { ...saved.result, cached: true, source: { ...saved.result.source, sharedCache: true, stale: true },
+          warnings: [...(saved.result.warnings || []), `IRSA was unavailable. Showing results saved ${new Date(saved.savedAt).toISOString().slice(0, 10)}; newer observations may be missing.`] };
+      }
+    })();
+    async function live() {
       const rows = [];
       const queries = observationQueries(search, { collections, now: now() });
       const deadline = AbortSignal.timeout(timeoutMs);
@@ -254,8 +273,12 @@ export function createSearchService({ fetchImpl = fetch, now = () => Date.now(),
         ]
       };
       resources.set(key, result, now() + 900000, now());
+      if (store) {
+        const query = new URLSearchParams(params); query.delete('indexVersion'); query.delete('refresh');
+        await store.put('observations', storeKey, { query: query.toString(), collections }, result);
+      }
       return result;
-    })();
+    }
     record.promise = request.finally(() => { pending.delete(key); release(); });
     pending.set(key, record);
     return joinRequest(record, signal);

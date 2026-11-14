@@ -34,7 +34,32 @@ Every target, including presets, uses backend IRSA metadata queries first. Succe
 
 The daily preset index is backup metadata for the five exact preset positions. It is read only when an initial live search fails upstream, or when continuing a version-pinned fallback search. Results show the index check time and an outage warning, even when no rows match. Index data older than 48 hours is marked stale. Invalid input, busy responses, and successful empty live results do not select fallback data. Live pagination never switches to the preset index; a failed next page leaves loaded rows available for retry. Daily index updates download metadata, not FITS images.
 
-Each process permits one distinct upstream observation query and one cutout transfer at a time. Additional work returns HTTP 503 with `Retry-After: 5`. New upstream work is also declined at 320 MiB process RSS; cached metadata stays available. Railway limits Node's old-generation heap to 192 MiB, which does not limit total process memory. The resource smoke test (`node scripts/check-resource-budget.mjs`) measures a separate server process with near-limit metadata responses, 24 MiB streamed cutouts, and slow clients; it requires peak RSS below 350 MiB. Verify the deployed service's memory and disk use before rollout on a 500 MB instance. Original images remain at IRSA; no Redis, database, or persistent image cache is needed.
+Each process permits one distinct upstream observation query and one cutout transfer at a time. Additional work returns HTTP 503 with `Retry-After: 5`. New upstream work is also declined at 320 MiB process RSS; cached metadata stays available. Railway limits Node's old-generation heap to 192 MiB, which does not limit total process memory. The resource smoke test (`node scripts/check-resource-budget.mjs`) measures a separate server process with near-limit metadata responses, 24 MiB streamed cutouts, and slow clients; it requires peak RSS below 350 MiB. Verify the deployed service's memory and disk use before rollout on a 500 MB instance. Original images remain at IRSA; no Redis or persistent image cache is needed. A shared metadata cache in Supabase is optional (below).
+
+### Shared search cache (optional, Supabase)
+
+Live searches (proper-motion stars such as Barnard's Star, custom positions, comets and asteroids) can be saved in one Supabase table, so a search made once is served instantly to every visitor and survives deploys and cold starts. Only metadata is stored, never images. The browser also keeps its own copy for up to six hours.
+
+1. Create a free Supabase project and run this in its SQL editor:
+
+   ```sql
+   create table public.search_cache (
+     key text primary key,
+     kind text not null check (kind in ('observations','moving')),
+     params jsonb not null,
+     result jsonb not null,
+     saved_at timestamptz not null default now(),
+     checked_at timestamptz not null default now(),
+     last_used_at timestamptz not null default now()
+   );
+   create index on public.search_cache (last_used_at);
+   alter table public.search_cache enable row level security;
+   grant select, insert, update, delete on public.search_cache to service_role;
+   ```
+
+2. Set `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` (the project's secret or `service_role` key) on Railway, on Vercel, and as GitHub Actions secrets. The key stays on the server; with RLS on and no policies, nothing else can read the table.
+
+Saved results are fresh for 36 hours when the search covers the last 30 days (or has no end date), and for 7 days otherwise. If IRSA, MOST or JPL Horizons is down, results up to 7 days past that are served with a warning. The daily update workflow runs `npm run refresh:cache`, which re-runs recent-range searches, re-runs comet searches only when JPL's orbit solution changed, and deletes rows unused for 7 days. Any Supabase failure is treated as a cache miss; without the variables the cache is off.
 
 ## Object-name lookup
 

@@ -19,6 +19,12 @@ export function mountWorkspace() {
   const sizeHeader = () => document.documentElement.style.setProperty('--workspace-header-height', header.getBoundingClientRect().height + 'px');
   sizeHeader();
   new ResizeObserver(sizeHeader).observe(header);
+  const toolbar = document.querySelector('.viewer-toolbar');
+  if (toolbar) {
+    const sizeToolbar = () => document.documentElement.style.setProperty('--viewer-toolbar-height', toolbar.getBoundingClientRect().height + 'px');
+    sizeToolbar();
+    new ResizeObserver(sizeToolbar).observe(toolbar);
+  }
   const mobile = window.matchMedia('(max-width: 900px)');
   const toggles = [$('sidebar-toggle'), $('sidebar-rail-toggle'), $('sidebar-collapse')];
   let open = !mobile.matches, returnFocus = $('sidebar-toggle');

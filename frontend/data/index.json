@@ -7,8 +7,8 @@
     "timeZone": "UTC",
     "description": "Daily, around 10:27 AM Asia/Dhaka (04:27 UTC)"
   },
-  "lastAttemptAt": "2026-11-06T12:20:52.338Z",
-  "lastSuccessfulCheckAt": "2026-11-06T12:21:36.632Z",
+  "lastAttemptAt": "2026-11-07T11:14:20.700Z",
+  "lastSuccessfulCheckAt": "2026-11-07T11:15:14.227Z",
   "lastChangedAt": "2026-11-03T18:41:57.313Z",
   "collections": [
     "spherex_qr2",
@@ -33,7 +33,7 @@
       "hash": "e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a",
       "count": 364,
       "productCount": 364,
-      "checkedAt": "2026-11-06T12:20:56.008Z",
+      "checkedAt": "2026-11-07T11:14:28.100Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -50,7 +50,7 @@
       "hash": "49606f3f91ac2cf3dbcc2bd63d307552184de0b215651424ddaa0a3a4b07f25e",
       "count": 444,
       "productCount": 444,
-      "checkedAt": "2026-11-06T12:21:04.047Z",
+      "checkedAt": "2026-11-07T11:14:32.892Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -67,7 +67,7 @@
       "hash": "90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5",
       "count": 256,
       "productCount": 256,
-      "checkedAt": "2026-11-06T12:21:16.409Z",
+      "checkedAt": "2026-11-07T11:14:47.251Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -84,7 +84,7 @@
       "hash": "f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c",
       "count": 333,
       "productCount": 333,
-      "checkedAt": "2026-11-06T12:21:18.236Z",
+      "checkedAt": "2026-11-07T11:14:55.160Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -101,7 +101,7 @@
       "hash": "dfdceef7581d69ff3d8e0e94148121fe07b2721a56a33601a389fa2ca3628bd7",
       "count": 2479,
       "productCount": 2479,
-      "checkedAt": "2026-11-06T12:21:36.631Z",
+      "checkedAt": "2026-11-07T11:15:14.227Z",
       "changes": {
         "added": 0,
         "revised": 0,

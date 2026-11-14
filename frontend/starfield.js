@@ -7,7 +7,81 @@
 
 import { objectNames } from './object-names.js';
 
-const TINTS = ['220,234,255', '235,240,255', '255,244,228', '200,214,255', '255,230,214'];
+// The sky drifts through the colour wheel (see the `sky-hue` animation in styles.css)
+// and stars take their colour from it. Each star has a tint role, given in HSL as it
+// looks against the unrotated magenta nebula; sky-coloured roles are put through the
+// same hue-rotate() matrix as the nebula every frame, so they stay matched to what
+// the browser actually draws. Neutral roles never rotate.
+const HUE_PERIOD = 45;  // seconds per colour cycle; must match `sky-hue` in styles.css
+const TINT_ROLES = [
+  { h: 220, s: 0.35, l: 0.95, fixed: true }, // near-white, slightly cool
+  { h: 35, s: 0.7, l: 0.93, fixed: true },   // near-white, slightly warm
+  { h: 300, s: 0.55, l: 0.9 },               // pale, sky-coloured
+  { h: 305, s: 0.85, l: 0.8 },               // clearly sky-coloured
+  { h: 255, s: 0.7, l: 0.84 }                // neighbouring hue for variety
+];
+const TINT_WEIGHTS = [0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 4]; // mostly pale, some vivid
+const pickTint = () => TINT_WEIGHTS[Math.floor(Math.random() * TINT_WEIGHTS.length)];
+
+// The colour cycle runs on one clock for the whole browser tab: `sky-epoch` in
+// sessionStorage is the wall-clock second the cycle started (a random point in it on the
+// first visit), so moving from the homepage to the viewer's loader carries on where it
+// was instead of jumping to a new colour. An inline script in each page's <head> sets
+// `--sky-start` from the same key before first paint; this is the fallback.
+const SKY_KEY = 'sky-epoch';
+function readSkyEpoch() {
+  let epoch = NaN;
+  try { epoch = parseFloat(sessionStorage.getItem(SKY_KEY)); } catch { /* storage blocked */ }
+  if (!Number.isFinite(epoch)) {
+    epoch = Date.now() / 1000 - Math.random() * HUE_PERIOD;
+    try { sessionStorage.setItem(SKY_KEY, String(epoch)); } catch { /* storage blocked */ }
+  }
+  return epoch;
+}
+const skyEpoch = readSkyEpoch();
+const skySeconds = () => Date.now() / 1000 - skyEpoch;
+
+const root = document.documentElement;
+if (!root.style.getPropertyValue('--sky-start')) root.style.setProperty('--sky-start', skySeconds().toFixed(2));
+const skyStart = parseFloat(root.style.getPropertyValue('--sky-start')) || 0;
+
+function hslToRgb(h, s, l) {
+  const a = s * Math.min(l, 1 - l);
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    return 255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)));
+  };
+  return [f(0), f(8), f(4)];
+}
+const TINT_RGB = TINT_ROLES.map(role => hslToRgb(role.h, role.s, role.l));
+
+// Current rotation of the sky in degrees, read from the running CSS animation so
+// stars and nebula stay in step.
+function skyRotation(animated) {
+  let progress = skyStart / HUE_PERIOD;
+  if (animated) {
+    const animation = document.getAnimations().find(item => item.animationName === 'sky-hue');
+    const timing = animation && animation.effect.getComputedTiming();
+    progress = timing && timing.progress !== null
+      ? timing.progress
+      : skySeconds() / HUE_PERIOD;
+  }
+  return progress * 360;
+}
+
+// The CSS/SVG hue-rotate() matrix applied to each sky-coloured tint.
+function skyPalette(degrees) {
+  const c = Math.cos(degrees * Math.PI / 180), s = Math.sin(degrees * Math.PI / 180);
+  const m = [
+    0.213 + c * 0.787 - s * 0.213, 0.715 - c * 0.715 - s * 0.715, 0.072 - c * 0.072 + s * 0.928,
+    0.213 - c * 0.213 + s * 0.143, 0.715 + c * 0.285 + s * 0.140, 0.072 - c * 0.072 - s * 0.283,
+    0.213 - c * 0.213 - s * 0.787, 0.715 - c * 0.715 + s * 0.715, 0.072 + c * 0.928 + s * 0.072
+  ];
+  const channel = value => Math.round(clamp(value, 0, 255));
+  return TINT_RGB.map(([r, g, b], i) => TINT_ROLES[i].fixed
+    ? `${channel(r)},${channel(g)},${channel(b)}`
+    : `${channel(m[0] * r + m[1] * g + m[2] * b)},${channel(m[3] * r + m[4] * g + m[5] * b)},${channel(m[6] * r + m[7] * g + m[8] * b)}`);
+}
 const Z_NEAR = 0.05, Z_FAR = 1;
 const SPEED = 0.06;        // depth units per second: a star crosses the field in ~16 s
 const FADE_IN_DEPTH = 0.15; // stars fade in over the farthest part of the field
@@ -17,9 +91,10 @@ const PARALLAX = 14;        // max px shift for the backdrop; flying stars scale
 
 const LABEL = {
   first: 1.5,
-  every: [3.4, 4.6],   // seconds between new names (~15 a minute); names may overlap in time
+  every: [2, 3.2],     // seconds between new names; with a 5 s life, two or three overlap
+  max: 4,              // names on screen at the same time
   retry: 0.4,          // seconds before trying again when no star fits
-  life: 4, fadeIn: 0.4, fadeOut: 1.2, drop: 0.4,
+  life: 5, fadeIn: 0.8, fadeOut: 1.6, drop: 0.5,
   depth: [0.45, 0.97], // farther stars drift slowly enough to read beside
   stay: 0.35,          // fraction of the label's life its star must stay on screen
   edge: 16, pad: 12,   // px kept clear of the screen edge and of `avoid` boxes when a name appears
@@ -88,7 +163,7 @@ export function mountStarfield(canvas, { paused = false, labels = false, avoid =
     flying = Array.from({ length: Math.min(MAX_FLYING, Math.round(area * FLYING_DENSITY)) }, () => spawn({
       r: rand(0.35, 0.95),
       a: rand(0.55, 0.95),
-      tint: TINTS[Math.floor(Math.random() * TINTS.length)],
+      tint: pickTint(),
       phase: Math.random() * Math.PI * 2,
       speed: rand(0.15, 0.7),
       twinkle: Math.random() < 0.18 ? rand(0.3, 0.5) : rand(0.05, 0.15)
@@ -98,7 +173,7 @@ export function mountStarfield(canvas, { paused = false, labels = false, avoid =
       y: Math.random() * height,
       r: rand(0.3, 0.7),
       a: rand(0.18, 0.4),
-      tint: TINTS[Math.floor(Math.random() * TINTS.length)],
+      tint: pickTint(),
       phase: Math.random() * Math.PI * 2,
       speed: rand(0.15, 0.6)
     }));
@@ -226,16 +301,19 @@ export function mountStarfield(canvas, { paused = false, labels = false, avoid =
     return true;
   }
 
+  // `streaks` is true for animated frames; the static reduced-motion frame uses the
+  // visit's fixed starting hue, matching the unanimated nebula.
   function draw(time, streaks) {
     ctx.clearRect(0, 0, width, height);
     const t = time / 1000;
+    const palette = skyPalette(skyRotation(streaks));
 
     for (const s of backdrop) {
       let x = (s.x + pointer.x * 0.3) % width, y = (s.y + pointer.y * 0.3) % height;
       if (x < 0) x += width;
       if (y < 0) y += height;
       const alpha = s.a * (1 - 0.3 * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase)));
-      ctx.fillStyle = `rgba(${s.tint},${alpha.toFixed(3)})`;
+      ctx.fillStyle = `rgba(${palette[s.tint]},${alpha.toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(x, y, s.r, 0, Math.PI * 2);
       ctx.fill();
@@ -259,7 +337,7 @@ export function mountStarfield(canvas, { paused = false, labels = false, avoid =
       if (streaks && s.px !== null) {
         const dx = x - s.px, dy = y - s.py, moved = Math.hypot(dx, dy);
         if (moved > 1.5 && moved < 80) {
-          ctx.strokeStyle = `rgba(${s.tint},${(alpha * 0.35).toFixed(3)})`;
+          ctx.strokeStyle = `rgba(${palette[s.tint]},${(alpha * 0.35).toFixed(3)})`;
           ctx.lineWidth = r * 0.8;
           ctx.beginPath();
           ctx.moveTo(x - dx * 3, y - dy * 3);
@@ -269,12 +347,12 @@ export function mountStarfield(canvas, { paused = false, labels = false, avoid =
       }
       s.px = x; s.py = y;
 
-      ctx.fillStyle = `rgba(${s.tint},${alpha.toFixed(3)})`;
+      ctx.fillStyle = `rgba(${palette[s.tint]},${alpha.toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
       if (r > 1.2) { // soft halo on the nearest stars
-        ctx.fillStyle = `rgba(${s.tint},${(alpha * 0.12).toFixed(3)})`;
+        ctx.fillStyle = `rgba(${palette[s.tint]},${(alpha * 0.12).toFixed(3)})`;
         ctx.beginPath();
         ctx.arc(x, y, r * 3.2, 0, Math.PI * 2);
         ctx.fill();
@@ -295,7 +373,7 @@ export function mountStarfield(canvas, { paused = false, labels = false, avoid =
       if (s.z < Z_NEAR || (s.sx === null && !s.label)) spawn(s, Z_FAR, false); // off-screen stars re-enter far away
     }
     if (labels && elapsed >= nextLabelAt) {
-      const tag = pickLabel();
+      const tag = tags.length < LABEL.max ? pickLabel() : null;
       if (tag) tags.push(tag);
       nextLabelAt = elapsed + (tag ? rand(...LABEL.every) : LABEL.retry);
     }
@@ -336,7 +414,12 @@ export function mountStarfield(canvas, { paused = false, labels = false, avoid =
 const loadingCanvas = document.getElementById('loading-starfield');
 if (loadingCanvas) {
   const loader = document.getElementById('preview-loading');
-  const starfield = mountStarfield(loadingCanvas, { paused: loader.hidden });
-  new MutationObserver(() => starfield.setPaused(loader.hidden))
+  // The loader's nebula animations restart each time it is shown, so stamp the
+  // current point in the shared colour cycle on it just before it renders.
+  const syncSky = () => { if (!loader.hidden) loader.style.setProperty('--sky-start', skySeconds().toFixed(2)); };
+  syncSky();
+  // Star names drift by while a search loads too, kept clear of the ring and its text.
+  const starfield = mountStarfield(loadingCanvas, { paused: loader.hidden, labels: true, avoid: ['.loader-stage'] });
+  new MutationObserver(() => { syncSky(); starfield.setPaused(loader.hidden); })
     .observe(loader, { attributes: true, attributeFilter: ['hidden'] });
 }

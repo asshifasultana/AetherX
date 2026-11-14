@@ -28,6 +28,7 @@ export function mountObjectLookup(select, { onNotFound } = {}) {
   const input = $('lookup-name');
   const lookup = createLookupController({ select, autoSelect: true, onNotFound, render({ state, message, invalidName = false, suggestions = [] }) {
     setSearchLoading('lookup', state === 'loading');
+    if (state === 'error') window.dispatchEvent(new CustomEvent('sky:lookup-failed', { detail: { message } }));
     $('target-search-submit').disabled = state === 'loading';
     $('target-search-submit').textContent = 'Search ↗';
     $('lookup-status').textContent = message || '';

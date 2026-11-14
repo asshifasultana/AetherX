@@ -5,6 +5,8 @@
   <meta name="theme-color" content="#080d18">
   <meta name="description" content="Search stars, moving objects, and sky coordinates in the SPHEREx sky atlas.">
   <title>SPHEREx — Explore the sky</title>
+  <!-- Sky colour clock shared across pages; see SKY_KEY in starfield.js. -->
+  <script>try { var skyNow = Date.now() / 1000, skyEpoch = parseFloat(sessionStorage.getItem('sky-epoch')); if (!isFinite(skyEpoch)) { skyEpoch = skyNow - Math.random() * 45; sessionStorage.setItem('sky-epoch', skyEpoch); } document.documentElement.style.setProperty('--sky-start', (skyNow - skyEpoch).toFixed(2)); } catch (error) {}</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="home-page">

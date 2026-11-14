@@ -5,9 +5,14 @@
   <meta name="theme-color" content="#f5f6f2">
   <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
   <title>SPHEREx — A sky in motion</title>
+  <!-- Sky colour clock shared across pages; see SKY_KEY in starfield.js. -->
+  <script>try { var skyNow = Date.now() / 1000, skyEpoch = parseFloat(sessionStorage.getItem('sky-epoch')); if (!isFinite(skyEpoch)) { skyEpoch = skyNow - Math.random() * 45; sessionStorage.setItem('sky-epoch', skyEpoch); } document.documentElement.style.setProperty('--sky-start', (skyNow - skyEpoch).toFixed(2)); } catch (error) {}</script>
   <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:5173/');
     if (/[?&]tourPreview=1(&|#|$)/.test(location.search)) document.documentElement.classList.add('is-tour-preview');
-    if (!document.documentElement.classList.contains('is-tour-preview') && (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top)) document.documentElement.classList.add('is-embed');</script>
+    if (!document.documentElement.classList.contains('is-tour-preview') && (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top)) document.documentElement.classList.add('is-embed');
+    // A search from the home page arrives mid-transition: keep the viewer hidden until
+    // search-loader.js has the loading screen up, so nothing flashes in between.
+    try { if (sessionStorage.getItem('spherex-arrival') === '1') { sessionStorage.removeItem('spherex-arrival'); if (!document.documentElement.classList.contains('is-embed') && !document.documentElement.classList.contains('is-tour-preview')) document.documentElement.classList.add('is-arriving'); } } catch (error) {}</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="viewer-page">
@@ -298,21 +303,22 @@
     <div id="settings-tooltip" class="settings-tooltip" role="tooltip" hidden></div>
   </main>
 
-  <dialog id="preview-loading" class="preview-loading" aria-labelledby="preview-loading-title" aria-describedby="preview-loading-fact" hidden>
+  <dialog id="preview-loading" class="preview-loading" data-stage="intro" aria-labelledby="preview-loading-title" aria-describedby="preview-loading-status" hidden>
     <canvas id="loading-starfield" class="starfield" aria-hidden="true"></canvas>
-    <div class="hud-loading-content">
-      <p class="preview-loading-eyebrow">SPHEREx <span aria-hidden="true">/</span> SKY ATLAS</p>
+    <div class="loader-stage">
       <h2 id="preview-loading-title" class="sr-only">Loading sky images</h2>
-      <div class="hud-loading-meter" aria-hidden="true">
-        <div class="hud-loading-count"><span id="preview-loading-percent">00</span><small>%</small></div>
-        <div class="hud-loading-outline"><i></i><i></i></div>
-        <div class="preview-loading-track"><span id="preview-loading-progress"></span></div>
-        <div class="hud-loading-endpoints"><i></i><i></i></div>
+      <svg class="loader-ring" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+        <circle class="loader-ring-orbit" cx="100" cy="100" r="99"/>
+        <circle class="loader-ring-track" cx="100" cy="100" r="92"/>
+        <circle id="preview-loading-ring" class="loader-ring-fill" cx="100" cy="100" r="92" pathLength="100"/>
+      </svg>
+      <p class="loader-wordmark" aria-hidden="true">SPHERE<span>x</span></p>
+      <div class="loader-target" aria-hidden="true">
+        <p id="loader-target-name" class="loader-target-name"></p>
+        <p id="loader-target-region" class="loader-target-line"></p>
+        <p id="loader-target-distance" class="loader-target-line"></p>
       </div>
-      <div class="hud-loading-fact">
-        <p class="hud-loading-fact-label">Did you know?</p>
-        <p id="preview-loading-fact" role="status" aria-live="polite" aria-atomic="true">The Milky Way alone contains more than 100 billion stars.</p>
-      </div>
+      <p id="preview-loading-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">Loading SPHEREx observations</p>
     </div>
     <span class="hud-loading-corner hud-loading-corner-top" aria-hidden="true"></span>
     <span class="hud-loading-corner hud-loading-corner-bottom" aria-hidden="true"></span>
@@ -325,6 +331,7 @@
   <script type="module" src="observations-ui.js?v=20261110"></script>
   <script type="module" src="fits-viewer.js"></script>
   <script type="module" src="timelapse.js"></script>
+  <script type="module" src="search-loader.js"></script>
   <script type="module" src="share-ui.js"></script>
   <script type="module" src="workspace-ui.js"></script>
   <script type="module" src="onboarding.js"></script>

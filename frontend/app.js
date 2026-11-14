@@ -46,6 +46,8 @@ function showPosition(data) {
   }));
 }
 const objectLookup = mountObjectLookup(data => {
+  // Distance hints for the loading screen; the resolver already looked them up.
+  window.dispatchEvent(new CustomEvent('sky:target-distance', { detail: { name: data.resolvedName || data.submittedName, parallaxMas: data.parallaxMas, parallaxErrorMas: data.parallaxErrorMas, redshift: data.redshift } }));
   position = { raDeg: data.raDeg, decDeg: data.decDeg, frame: data.frame };
   selected = null; updateSelection();
   showPosition({ name: data.resolvedName || data.submittedName, catalogName: data.resolvedName || data.submittedName, type: 'CATALOG POSITION · ICRS', description: `Resolved through ${data.source.name} / ${data.source.resolver}. Fixed catalog position; no proper-motion correction.` });

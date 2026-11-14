@@ -1,5 +1,6 @@
 import { parseCoordinate, formatSexagesimal } from './coordinates.js';
 import { presets } from './presets.js';
+import { mountObjectLookup } from './object-lookup.js';
 const $ = id => document.getElementById(id);
 let selected = 'barnard';
 let position = { raDeg: presets.barnard.raDeg, decDeg: presets.barnard.decDeg, frame: 'icrs', targetId: 'barnard' };
@@ -23,17 +24,26 @@ function showPosition(data) {
   $('announcement').textContent = `${data.name} selected. The observation search has been updated.`;
   window.dispatchEvent(new CustomEvent('sky:target-selected', { detail: { ...position } }));
 }
+const objectLookup = mountObjectLookup(data => {
+  position = { raDeg: data.raDeg, decDeg: data.decDeg, frame: data.frame };
+  selected = null; updateSelection(); fillInputs(); clearErrors();
+  showPosition({ name: data.resolvedName || data.submittedName, type: 'CATALOG POSITION · ICRS', description: `Resolved through ${data.source.name} / ${data.source.resolver}. Fixed catalog position; no proper-motion correction. Observation availability is checked separately.` });
+});
 document.querySelectorAll('[data-target]').forEach(button => button.addEventListener('click', () => {
+  objectLookup.invalidate();
   selected = button.dataset.target; const target = presets[selected];
   position = { raDeg: target.raDeg, decDeg: target.decDeg, frame: 'icrs', targetId: selected };
   updateSelection(); fillInputs(); clearErrors(); showPosition(target);
 }));
-function entryMode(manual) {
-  $('preset-panel').hidden = manual; $('coordinate-form').hidden = !manual;
-  for (const [id, active] of [['preset-tab', !manual], ['manual-tab', manual]]) { $(id).classList.toggle('selected', active); $(id).setAttribute('aria-pressed', String(active)); }
+function entryMode(mode) {
+  objectLookup.invalidate();
+  for (const [tab, panel, value] of [['preset-tab', 'preset-panel', 'presets'], ['manual-tab', 'coordinate-form', 'coordinates'], ['object-tab', 'object-lookup-form', 'object']]) {
+    const active = mode === value; $(panel).hidden = !active; $(tab).classList.toggle('selected', active); $(tab).setAttribute('aria-pressed', String(active));
+  }
 }
-$('preset-tab').addEventListener('click', () => entryMode(false));
-$('manual-tab').addEventListener('click', () => entryMode(true));
+$('preset-tab').addEventListener('click', () => entryMode('presets'));
+$('manual-tab').addEventListener('click', () => entryMode('coordinates'));
+$('object-tab').addEventListener('click', () => entryMode('object'));
 $('coordinate-format').addEventListener('change', () => { fillInputs(); clearErrors(); });
 for (const axis of ['ra', 'dec']) $(axis).addEventListener('input', () => { selected = null; updateSelection(); $(axis + '-error').textContent = ''; $(axis).removeAttribute('aria-invalid'); });
 $('coordinate-form').addEventListener('submit', event => {
@@ -43,6 +53,7 @@ $('coordinate-form').addEventListener('submit', event => {
     catch (error) { $(axis + '-error').textContent = error.message; $(axis).setAttribute('aria-invalid', 'true'); firstInvalid ??= $(axis); }
   }
   if (firstInvalid) { firstInvalid.focus(); return; }
+  objectLookup.invalidate();
   position = { ...parsed, frame: 'icrs' }; selected = null; updateSelection();
   showPosition({ name: 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Your destination is set. Scroll down to Find your observations and search this position.' });
 });

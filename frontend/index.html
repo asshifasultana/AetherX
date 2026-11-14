@@ -22,7 +22,7 @@
     </section>
 
     <section id="target-picker" class="destination-panel" aria-labelledby="destination-heading">
-      <div class="destination-heading"><span class="step-number">01</span><div><h2 id="destination-heading">Where shall we look?</h2><p>A familiar star. An unfamiliar world.</p></div><div class="input-tabs" role="group" aria-label="Target entry method"><button id="preset-tab" class="selected" aria-pressed="true">Curated targets</button><button id="manual-tab" aria-pressed="false">Coordinates <span>↗</span></button></div></div>
+      <div class="destination-heading"><span class="step-number">01</span><div><h2 id="destination-heading">Where shall we look?</h2><p>A familiar star. An unfamiliar world.</p></div><div class="input-tabs" role="group" aria-label="Target entry method"><button id="preset-tab" class="selected" aria-pressed="true">Curated targets</button><button id="object-tab" aria-pressed="false">Object name</button><button id="manual-tab" aria-pressed="false">Coordinates <span>↗</span></button></div></div>
       <div id="preset-panel" class="target-grid">
         <button class="target-card active" data-target="barnard" aria-pressed="true"><span class="target-icon icon-1">✦</span><span><strong>Barnard’s Star</strong><small>Our fast-moving neighbor</small></span><span class="target-arrow">↗</span></button>
         <button class="target-card" data-target="epsilon" aria-pressed="false"><span class="target-icon icon-2">◉</span><span><strong>Epsilon Indi B</strong><small>A brown-dwarf duo</small></span><span class="target-arrow">↗</span></button>
@@ -30,6 +30,13 @@
         <button class="target-card" data-target="aurigae" aria-pressed="false"><span class="target-icon icon-4">✺</span><span><strong>RW Aurigae</strong><small>A young, restless system</small></span><span class="target-arrow">↗</span></button>
         <button class="target-card" data-target="draconis" aria-pressed="false"><span class="target-icon icon-5">✹</span><span><strong>R Draconis</strong><small>A star with a rhythm</small></span><span class="target-arrow">↗</span></button>
       </div>
+      <form id="object-lookup-form" hidden aria-busy="false">
+        <div class="lookup-fields"><label for="lookup-name">Object name<input id="lookup-name" name="name" maxlength="200" required autocomplete="off" placeholder="e.g. Sirius or M31" aria-describedby="lookup-help lookup-status"></label><button id="resolve-object" class="primary-button" type="submit">Resolve</button></div>
+        <p id="lookup-help" class="coordinate-help">Enter one common name or catalog identifier. You can also choose Curated targets or Coordinates above.</p>
+        <p id="lookup-status" role="status" aria-live="polite"></p>
+        <div id="lookup-suggestions" class="lookup-suggestions"></div>
+        <div id="lookup-confirmation" class="lookup-confirmation" hidden><h3 id="resolved-name"></h3><p id="resolved-coordinates"></p><p id="resolved-source"></p><button id="use-resolved-target" class="primary-button" type="button">Use this target</button></div>
+      </form>
       <form id="coordinate-form" hidden novalidate>
         <div class="coordinate-fields"><label>Coordinate format<select id="coordinate-format"><option value="degrees">Decimal degrees</option><option value="sexagesimal">Hours / degrees, minutes, seconds</option></select></label><label>Right ascension <span id="ra-unit">degrees</span><input id="ra" value="269.4521" autocomplete="off" aria-describedby="ra-error"><small id="ra-error" class="field-error"></small></label><label>Declination <span id="dec-unit">degrees</span><input id="dec" value="4.6934" autocomplete="off" aria-describedby="dec-error"><small id="dec-error" class="field-error"></small></label><button class="primary-button" type="submit">View sky <span>↗</span></button></div>
         <p class="coordinate-help">ICRS reference frame · RA 0° to &lt;360° · Dec −90° to +90°</p>

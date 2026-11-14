@@ -28,7 +28,7 @@ function mount({ fetchImpl = async () => json(resolved), initial = {}, page = 'v
     const listeners = new Map();
     return {
       value: attributes.value || '', hidden: 'hidden' in attributes, disabled: 'disabled' in attributes,
-      textContent: '', children: [], dataset: {}, classList: { toggle() {}, add() {} },
+      textContent: '', children: [], dataset: {}, classList: { toggle() {}, add() {}, remove() {} },
       setAttribute(key, value) { attributes[key] = value; }, removeAttribute(key) { delete attributes[key]; },
       getAttribute(key) { return attributes[key]; },
       focus() { focused = this; }, append(...items) { this.children.push(...items); },

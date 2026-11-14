@@ -26,6 +26,36 @@ Exposures load through a shared four-job pool using S3 byte ranges, with seriali
 
 This is a fixed-sky stack. SphereX does not yet propagate a moving target's ephemeris or re-center each date on an object's predicted position, so the current deep stack does not make a moving object accumulate while background stars disappear.
 
+## Moving-target pipeline
+
+The browser viewer uses the fixed-sky stack above. The moving-target pipeline runs separately from the command line:
+
+```powershell
+node scripts/benchmark-moving-stack.mjs --manifest manifest.json stack-products.json
+node scripts/benchmark-moving-stack.mjs --compare path/to/spherex-timelapse stack-products.json
+```
+
+The manifest contains an `ephemeris` array of spacecraft-relative `{mjd, ra, dec}` points in chronological order and a `cases` array. Each case has a `name` and `exposures` for one epoch and wavelength bin. Supply each exposure's IRSA Level 2 `url`, start `mjd`, and `detector`. Include `endMjd` or `exposureSeconds` when the archive header lacks duration. A case can supply `referenceExposures` explicitly, with `cometFree: true` on independent sky exposures. Otherwise the pipeline builds references from the other exposures in the case, masking their comet positions and checking the reference wavelength at the science position.
+
+The three stages report a tracked UTC-day median, the same median after stationary sky subtraction, and a clipped inverse-variance coadd of the cleaned exposures. Reference subtraction requires two usable reference samples per pixel. The benchmark injects compact, diffuse and elongated profiles into detector pixels before projecting both science exposures and reused references. It reports flux recovery by radial zone and aperture contrast against offset apertures. Its output JSON includes the exposure manifest, image arrays, contributor counts, and the weighted stack's nominal variance. Correlated noise from reprojection and shared references is not represented by that variance, so the benchmark measures scatter empirically.
+
+The native-pixel benchmark reads the same manifest or the JSON output of the stack benchmark.
+
+```powershell
+node scripts/benchmark-comet-fit.mjs stack-products.json
+node scripts/benchmark-comet-fit.mjs --official-co2
+```
+
+The fit uses the published SPHEREx ePSFs, excludes masked detector pixels, and fits a compact source and an extended coma with a separate background plane and field-source amplitudes per exposure. The benchmark uses bright field peaks as candidate stars. The spectral mode fits the August and December campaigns separately, using five nearby D5 exposures per campaign, calibrated detector-pixel `CWAVE` and `CBAND`, and published D5 transmission curves. The CO₂ template uses a Gaussian centered at 4.26 µm and a locally flat continuum. It reports template amplitudes and empirical offset-track contrast. The outputs are benchmark measurements, with no conversion to integrated physical flux or production rate.
+
+### Current choice and follow-up
+
+Keep the **star-subtracted median for viewing** and the **native-pixel fit for measuring**. On the six-exposure August D1 benchmark, the star-subtracted median gave the highest aperture contrast (19.97), while the native fit recovered 99.5% of the injected diffuse core and 100.2% of the injected outer coma. That recovery applies to the tested profile. Variance weighting remains experimental.
+
+- [ ] **Validate integrated CO₂ flux first.** Inject line profiles with different widths and the same integrated flux. Measure recovered flux bias and uncertainty for each campaign separately.
+- [ ] **Test sensitivity to coma shape and visit selection.** Inject asymmetric tails, flat-topped cores, and different radial slopes. Measure aperture and radial-profile recovery with the same offset-track controls, then repeat with one visit held out at a time.
+- [ ] **Test independent comet-free sky references.** Match their wavelength response and PSF to the science exposures, then compare contrast and outer-coma recovery against the current reference subtraction. Widening the reference mask in the D1 benchmark improved outer-coma recovery from 58% to 79% while lowering aperture contrast from 19.97 to 12.73.
+
 ## Contribution record and exports
 
 Open **Frame contribution record** under the timeline metadata. It lists the UTC period, source observation IDs, combination method, how many exposures loaded, total exposure time, valid input-pixel contributions, and output pixels with data. A contributor can be marked as a fetch failure. The image caption summarizes the stack; **Export frame contributions CSV** writes one row per source exposure with its observation/product IDs, release and processing version, start time, exposure seconds, stack status, and valid output pixels. **PNG** includes a caption, stack summary, and the contributing observation IDs.

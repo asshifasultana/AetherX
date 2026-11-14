@@ -98,17 +98,24 @@ export function matrixFor(header) {
   return { a, b, c, d, determinant };
 }
 
-function bilinear(image, x, y, settings) {
+function bilinear(image, x, y, settings, variance, outputIndex) {
   const x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0;
-  let sum = 0, weight = 0;
+  let sum = 0, weight = 0, varianceSum = 0;
   for (let dy = 0; dy <= 1; dy++) for (let dx = 0; dx <= 1; dx++) {
     const px = x0 + dx, py = y0 + dy;
     if (px < 0 || py < 0 || px >= image.width || py >= image.height) continue;
     const w = (dx ? fx : 1 - fx) * (dy ? fy : 1 - fy), value = image.values[py * image.width + px];
     const index = py * image.width + px;
     const flagged = (settings.hideBadPixels && image.flags && (image.flags[index] & BAD_PIXEL_MASK) !== 0) || image.derivedTransientPixels?.has(index);
-    if (Number.isFinite(value) && !flagged) { sum += w * value; weight += w; }
+    if (w > 0 && Number.isFinite(value) && !flagged) {
+      sum += w * value; weight += w;
+      if (variance) {
+        const v = image.variance[index];
+        varianceSum += Number.isFinite(v) && v > 0 ? w * w * v : NaN;
+      }
+    }
   }
+  if (variance && weight > 0) variance[outputIndex] = varianceSum / (weight * weight);
   return weight > 0 ? sum / weight : Number.NaN;
 }
 
@@ -177,13 +184,15 @@ export function sourceBounds(image, grid) {
 export function cropImage(image, bounds) {
   const { x0, x1, y0, y1 } = bounds, width = x1 - x0 + 1, height = y1 - y0 + 1;
   const values = new Float32Array(width * height), flags = image.flags ? new Uint32Array(width * height) : null;
+  const variance = image.variance ? new Float32Array(values.length) : undefined;
   for (let y = 0; y < height; y++) {
     const start = (y + y0) * image.width + x0;
     values.set(image.values.subarray(start, start + width), y * width);
     if (flags) flags.set(image.flags.subarray(start, start + width), y * width);
+    if (variance) variance.set(image.variance.subarray(start, start + width), y * width);
   }
   const header = { ...image.header, NAXIS1: width, NAXIS2: height, CRPIX1: Number(image.header.CRPIX1) - x0, CRPIX2: Number(image.header.CRPIX2) - y0 };
-  return { values, flags, width, height, header, matrix: matrixFor(header), sourceX: (image.sourceX || 0) + x0, sourceY: (image.sourceY || 0) + y0 };
+  return { values, flags, variance, width, height, header, matrix: matrixFor(header), sourceX: (image.sourceX || 0) + x0, sourceY: (image.sourceY || 0) + y0 };
 }
 
 export function projectImage(image, target, settings, grid = skyGrid(target, settings.fovArcmin)) {
@@ -196,18 +205,19 @@ export function projectImage(image, target, settings, grid = skyGrid(target, set
   const background = estimateBackground(good).level;
   const values = new Float32Array(grid.width ** 2), flags = new Uint32Array(values.length), covered = new Uint8Array(values.length);
   values.fill(NaN);
+  const variance = image.variance ? new Float32Array(values.length).fill(NaN) : undefined;
   let coveredPixels = 0;
   for (let i = 0; i < values.length; i++) {
     const p = projectSkyToPixel(image, grid.coordinates[2 * i], grid.coordinates[2 * i + 1]);
     if (!p) continue;
     const [x, y] = p;
     if (x >= 0 && y >= 0 && x < image.width && y < image.height) { covered[i] = 1; coveredPixels++; }
-    const sample = bilinear(image, x, y, settings);
+    const sample = bilinear(image, x, y, settings, variance, i);
     if (Number.isFinite(sample)) values[i] = sample - background;
     const ix = Math.round(x), iy = Math.round(y);
     if (ix >= 0 && iy >= 0 && ix < image.width && iy < image.height) flags[i] = image.flags?.[iy * image.width + ix] || 0;
   }
-  return { values, flags, covered, background, coverage: coveredPixels / values.length, width: grid.width };
+  return { values, flags, variance, covered, background, coverage: coveredPixels / values.length, width: grid.width };
 }
 
 export function prepareImage(image, target, settings) {

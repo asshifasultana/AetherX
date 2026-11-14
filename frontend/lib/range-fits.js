@@ -116,19 +116,21 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
     }
     throw new Error('FITS header exceeds the supported size.');
   }
-  async function metadata(url, signal, identity) {
+  async function metadata(url, signal, identity, includeVariance) {
     if (headers.has(identity)) return headers.get(identity);
     const spans = [];
-    let offset = 0, image, flags;
+    let offset = 0, image, flags, variance;
     for (let hdu = 0; hdu < 16; hdu++) {
       const info = await headerAt(url, offset, signal, spans);
       if (info.header.EXTNAME === 'IMAGE') image = info;
-      if (info.header.EXTNAME === 'FLAGS') { flags = info; break; }
+      if (info.header.EXTNAME === 'FLAGS') flags = info;
+      if (info.header.EXTNAME === 'VARIANCE') variance = info;
+      if (image && flags && (!includeVariance || variance)) break;
       offset = info.dataOffset + dataLength(info.header);
     }
     if (!image || !flags) throw new Error('Required IMAGE or FLAGS extension is unavailable.');
     const bytes = spans.reduce((total, span) => total + span.bytes.byteLength, 0);
-    const result = { image, flags, spans, bytes };
+    const result = { image, flags, variance, spans, bytes };
     while (headers.size && (headers.size >= 64 || headerBytes + bytes > 8 * 1024 * 1024)) {
       const oldest = headers.keys().next().value;
       headerBytes -= headers.get(oldest).bytes; headers.delete(oldest);
@@ -139,8 +141,8 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
   return async function load(accessUrl, target, settings, signal, revision = '') {
     const url = cloudUrl(accessUrl);
     // Revision is part of metadata identity; S3 requests retain their canonical URL.
-    const identity = `${url}|${revision}`;
-    const info = await metadata(url, signal, identity);
+    const identity = `${url}|${revision}|${Boolean(settings.includeVariance)}`;
+    const info = await metadata(url, signal, identity, settings.includeVariance);
     const cachedRead = async (start, end) => {
       const span = info.spans.find(s => s.start <= start && s.start + s.bytes.length > end);
       return span ? span.bytes.subarray(start - span.start, end - span.start + 1) : read(url, start, end, signal);
@@ -153,7 +155,7 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
     const { y0, y1 } = bounds, rows = y1 - y0 + 1;
     const scienceStart = info.image.dataOffset + y0 * width * stride;
     const f = info.flags.header;
-    const [science, flags] = await Promise.all([
+    const [science, flags, variance] = await Promise.all([
       read(url, scienceStart, scienceStart + rows * width * stride - 1, signal),
       (async () => {
         if (f.XTENSION === 'IMAGE' && f.BITPIX === 32 && f.NAXIS1 === width && f.NAXIS2 === height) {
@@ -181,11 +183,20 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
           result.set(decodeRice32(heap.subarray(start, start + length), new Int32Array(width), block), r * width);
         }
         return result;
+      })(),
+      (async () => {
+        if (!settings.includeVariance) return undefined;
+        const v = info.variance?.header;
+        if (v?.BITPIX !== -32 || v.NAXIS1 !== width || v.NAXIS2 !== height) throw new Error('Unsupported VARIANCE layout.');
+        const start = info.variance.dataOffset + y0 * width * 4;
+        const bytes = await read(url, start, start + rows * width * 4 - 1, signal);
+        const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        return Float32Array.from({ length: rows * width }, (_, i) => view.getFloat32(i * 4) * Number(v.BSCALE ?? 1) + Number(v.BZERO ?? 0));
       })()
     ]);
     const view = new DataView(science.buffer, science.byteOffset, science.byteLength), values = new Float32Array(rows * width);
     for (let i = 0; i < values.length; i++) values[i] = (bitpix === -32 ? view.getFloat32(i * stride, false) : view.getFloat64(i * stride, false)) * Number(h.BSCALE ?? 1) + Number(h.BZERO ?? 0);
     const shifted = { ...h, CRPIX2: Number(h.CRPIX2) - y0, NAXIS2: rows };
-    return cropImage({ values, flags, width, height: rows, header: shifted, sourceY: y0 }, { ...bounds, y0: 0, y1: rows - 1 });
+    return cropImage({ values, flags, variance, width, height: rows, header: shifted, sourceY: y0 }, { ...bounds, y0: 0, y1: rows - 1 });
   };
 }

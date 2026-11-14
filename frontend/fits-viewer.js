@@ -1,5 +1,5 @@
 import { canvasToSky, skyToCanvas } from './sky-projection.js';
-import { createSpotList, MAX_SPOTS } from './lib/spots.js';
+import { createSpotList, MAX_SPOTS, spotRadius, MIN_SPOT_RADIUS_ARCSEC } from './lib/spots.js';
 import { displayGrid } from './display-grid.js';
 import { initialViewState } from './share.js';
 import { QUALITY_FLAGS, FLAG_CATEGORIES, maskBitsFor } from './lib/pixel-quality.js';
@@ -328,14 +328,32 @@ function publishSpots() {
   const list = spots.list();
   window.dispatchEvent(new CustomEvent('sky:spots-changed', { detail: { spots: list } }));
   const first = list.find(spot => spot.origin === 'user') || list[0];
-  window.dispatchEvent(new CustomEvent('sky:source-marked', { detail: first ? { raDeg: first.raDeg, decDeg: first.decDeg } : {} }));
+  window.dispatchEvent(new CustomEvent('sky:source-marked', { detail: first ? { raDeg: first.raDeg, decDeg: first.decDeg, radiusArcsec: first.radiusArcsec } : {} }));
 }
 
 const formatSpot = spot => `${spot.raDeg.toFixed(4)}°, ${spot.decDeg >= 0 ? '+' : ''}${spot.decDeg.toFixed(4)}°`;
+const formatRadius = arcsec => arcsec < 60 ? `${Math.round(arcsec)}″` : `${(arcsec / 60).toFixed(arcsec < 600 ? 1 : 0)}′`;
+
+// An area spot's ring diameter as a percentage of the image width. The spot
+// layer is a size container, so `cqw` lets the ring scale with the canvas.
+function sizeArea(mark, radiusArcsec, size) {
+  const fraction = (2 * radiusArcsec / PIXEL_ARCSEC) / size;
+  mark.classList.add('is-area');
+  mark.classList.toggle('is-large', fraction > 0.45);
+  mark.style.setProperty('--spot-d', String(fraction * 100));
+}
+
+// Canvas pixel under a pointer event (unclamped, so drags can leave the image).
+function canvasPoint(event) {
+  const rect = canvas.getBoundingClientRect(), size = canvas.width;
+  if (!rect.width || !rect.height || !size) return null;
+  return { x: ((event.clientX - rect.left) / rect.width) * size, y: ((event.clientY - rect.top) / rect.height) * size, scale: size / rect.width };
+}
 
 // Place one numbered DOM marker per spot over the stretched canvas. Percentages
 // of the element box map one-to-one onto canvas pixels, so marks stay put at
-// every field of view even though the canvas has a fluid CSS size.
+// every field of view even though the canvas has a fluid CSS size. Area spots
+// draw a ring to scale; the handle on its edge resizes any spot.
 function positionMark() {
   if (!spotLayer) return;
   const size = canvas.width, list = spots.list();
@@ -347,28 +365,165 @@ function positionMark() {
     const clamp = value => Math.max(0, Math.min(size - 1, value));
     const x = clamp(point.x), y = clamp(point.y), offscreen = x !== point.x || y !== point.y;
     const mark = document.createElement('div');
-    mark.className = `source-mark spot-mark is-${spot.origin}${offscreen ? ' is-offscreen' : ''}`;
+    mark.className = `source-mark spot-mark is-${spot.origin}${spot.found ? ' is-found' : ''}${offscreen ? ' is-offscreen' : ''}`;
     mark.style.left = `${((x + 0.5) / size) * 100}%`;
     mark.style.top = `${((y + 0.5) / size) * 100}%`;
     mark.dataset.spot = String(spot.n);
+    if (spot.radiusArcsec && !offscreen) sizeArea(mark, spot.radiusArcsec, size);
+    const area = `${spot.radiusArcsec ? ` · radius ${formatRadius(spot.radiusArcsec)}` : ''}${spot.found ? ' · identified as a known object' : ''}`;
     const ring = document.createElement('span'); ring.className = 'source-mark-ring';
     const label = document.createElement('button');
     label.type = 'button'; label.className = 'source-mark-label spot-label';
     label.textContent = `${spot.n}${offscreen ? ' · outside field' : ''}`;
-    label.title = `Spot ${spot.n}${spot.label ? ` (${spot.label})` : ''} · ${formatSpot(spot)}${offscreen ? ' · outside this field of view' : ''}. Click to ask the AI guide about it.`;
-    label.setAttribute('aria-label', `Spot ${spot.n} at ${formatSpot(spot)}. Ask the AI guide about it.`);
+    label.title = `Spot ${spot.n}${spot.label ? ` (${spot.label})` : ''} · ${formatSpot(spot)}${area}${offscreen ? ' · outside this field of view' : ''}. Click to ask the AI guide about it.`;
+    label.setAttribute('aria-label', `Spot ${spot.n} at ${formatSpot(spot)}${area}. Ask the AI guide about it.`);
     label.addEventListener('click', event => { event.stopPropagation(); window.dispatchEvent(new CustomEvent('sky:spot-selected', { detail: { ...spot } })); });
     const remove = document.createElement('button');
     remove.type = 'button'; remove.className = 'spot-remove'; remove.textContent = '×';
     remove.setAttribute('aria-label', `Remove spot ${spot.n}`);
     remove.addEventListener('click', event => { event.stopPropagation(); spots.remove(spot.n); publishSpots(); });
     mark.append(ring, label, remove);
+    if (!offscreen) mark.append(resizeHandle(spot, mark, point, size));
     return mark;
   }).filter(Boolean);
   spotLayer.replaceChildren(...elements);
 }
 
+// Drag the handle (or use arrow keys on it) to grow a spot into an area or
+// change its radius. The ring follows live; the list updates on release.
+function resizeHandle(spot, mark, center, size) {
+  const handle = document.createElement('button');
+  handle.type = 'button'; handle.className = 'spot-resize';
+  handle.setAttribute('aria-label', `Resize spot ${spot.n}${spot.radiusArcsec ? `, radius ${formatRadius(spot.radiusArcsec)}` : ''}. Drag, or use the arrow keys.`);
+  handle.title = 'Drag to resize this spot';
+  let radius = spot.radiusArcsec || 0, dragging = false;
+  const commit = () => { spots.resize(spot.n, radius); publishSpots(); };
+  handle.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    event.preventDefault(); event.stopPropagation();
+    dragging = true; try { handle.setPointerCapture(event.pointerId); } catch { /* keep tracking without capture */ } mark.classList.add('is-resizing');
+  });
+  handle.addEventListener('pointermove', event => {
+    if (!dragging) return;
+    const at = canvasPoint(event);
+    if (!at) return;
+    radius = spotRadius(Math.hypot(at.x - center.x, at.y - center.y) * PIXEL_ARCSEC) || MIN_SPOT_RADIUS_ARCSEC;
+    sizeArea(mark, radius, size);
+    handle.dataset.radius = formatRadius(radius);
+  });
+  const finish = () => { if (!dragging) return; dragging = false; mark.classList.remove('is-resizing'); commit(); };
+  handle.addEventListener('pointerup', finish);
+  handle.addEventListener('pointercancel', finish);
+  handle.addEventListener('click', event => event.stopPropagation());
+  handle.addEventListener('keydown', event => {
+    const grow = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[event.key];
+    if (!grow) return;
+    event.preventDefault();
+    const step = Math.max(PIXEL_ARCSEC, (radius || PIXEL_ARCSEC * 2) * 0.15);
+    radius = spotRadius((radius || PIXEL_ARCSEC * 2) + grow * step) || MIN_SPOT_RADIUS_ARCSEC;
+    commit();
+    spotLayer.querySelector(`[data-spot="${spot.n}"] .spot-resize`)?.focus();
+  });
+  return handle;
+}
+
+// Click marks a point; press and drag outward marks a circular area whose
+// centre is where the drag began. Pressing on a spot's ring (its outer edge)
+// and dragging moves that spot instead.
+const DRAG_THRESHOLD_PX = 6;
+const EDGE_GRAB_PX = 7;
+let drawing = null, suppressClick = false;
+
+// The spot whose ring edge is under the pointer (nearest edge wins), or null.
+function ringUnder(event) {
+  const rect = canvas.getBoundingClientRect(), size = canvas.width;
+  if (!rect.width || !size || spotLayer?.hidden) return null;
+  const at = canvasPoint(event), cssPerPixel = rect.width / size;
+  let best = null;
+  for (const spot of spots.list()) {
+    const center = skyToCanvas({ raDeg: spot.raDeg, decDeg: spot.decDeg, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
+    if (!center || center.x < 0 || center.y < 0 || center.x > size - 1 || center.y > size - 1) continue;
+    // Matches the drawn ring: a 20px minimum diameter, else drawn to scale.
+    const ringCss = Math.max(10, spot.radiusArcsec ? spot.radiusArcsec / PIXEL_ARCSEC * cssPerPixel : 0);
+    const fromCenterCss = Math.hypot(at.x - center.x - 0.5, at.y - center.y - 0.5) * cssPerPixel;
+    const gap = Math.abs(fromCenterCss - ringCss);
+    if (gap <= EDGE_GRAB_PX && (!best || gap < best.gap)) best = { spot, center, gap };
+  }
+  return best;
+}
+
+canvas.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || settings.inspectPixels || !activeObservation?.image) return;
+  const start = canvasPoint(event);
+  if (!start) return;
+  const grab = ringUnder(event);
+  drawing = { start, clientX: event.clientX, clientY: event.clientY, pointerId: event.pointerId, draft: null,
+    ...(grab ? { move: grab.spot, offset: { x: start.x - grab.center.x, y: start.y - grab.center.y } } : {}) };
+});
+canvas.addEventListener('pointermove', event => {
+  if (!drawing) { canvas.classList.toggle('sky-canvas-grab', !settings.inspectPixels && Boolean(activeObservation?.image && ringUnder(event))); return; }
+  if (event.pointerId !== drawing.pointerId) return;
+  if (!drawing.draft) {
+    if (Math.hypot(event.clientX - drawing.clientX, event.clientY - drawing.clientY) < DRAG_THRESHOLD_PX) return;
+    try { canvas.setPointerCapture(event.pointerId); } catch { /* keep tracking without capture */ }
+    if (drawing.move) {
+      drawing.draft = spotLayer.querySelector(`[data-spot="${drawing.move.n}"]`);
+      if (!drawing.draft) { drawing = null; return; }
+      drawing.draft.classList.add('is-moving');
+    } else {
+      const size = canvas.width, draft = document.createElement('div');
+      draft.className = 'source-mark spot-mark is-user is-draft';
+      draft.style.left = `${((drawing.start.x + 0.5) / size) * 100}%`;
+      draft.style.top = `${((drawing.start.y + 0.5) / size) * 100}%`;
+      const ring = document.createElement('span'); ring.className = 'source-mark-ring';
+      const readout = document.createElement('span'); readout.className = 'source-mark-label spot-label';
+      draft.append(ring, readout);
+      spotLayer.hidden = false; spotLayer.append(draft);
+      drawing.draft = draft;
+    }
+  }
+  const at = canvasPoint(event);
+  if (!at) return;
+  const size = canvas.width;
+  if (drawing.move) {
+    // Keep the grabbed point of the ring under the pointer, centre within the image.
+    const clamp = value => Math.max(0, Math.min(size - 1, value));
+    drawing.to = { x: clamp(at.x - drawing.offset.x), y: clamp(at.y - drawing.offset.y) };
+    drawing.draft.style.left = `${((drawing.to.x + 0.5) / size) * 100}%`;
+    drawing.draft.style.top = `${((drawing.to.y + 0.5) / size) * 100}%`;
+    return;
+  }
+  drawing.radius = spotRadius(Math.hypot(at.x - drawing.start.x, at.y - drawing.start.y) * PIXEL_ARCSEC) || MIN_SPOT_RADIUS_ARCSEC;
+  sizeArea(drawing.draft, drawing.radius, size);
+  drawing.draft.lastChild.textContent = `r ${formatRadius(drawing.radius)}`;
+});
+function endDrawing(event, cancelled) {
+  if (!drawing || event.pointerId !== drawing.pointerId) return;
+  const { start, draft, radius, move, to } = drawing;
+  drawing = null;
+  // A press on a ring edge without a drag does nothing (no spot on a spot);
+  // any other plain click is left to the click handler, which marks a point.
+  if (!draft) { if (move) { suppressClick = true; setTimeout(() => { suppressClick = false; }, 0); } return; }
+  suppressClick = true; setTimeout(() => { suppressClick = false; }, 0);
+  const toSky = point => canvasToSky({ x: point.x, y: point.y, size: canvas.width, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
+  if (move) {
+    const sky = !cancelled && to && toSky(to);
+    if (sky) spots.move(move.n, sky);
+    publishSpots();
+    return;
+  }
+  draft.remove();
+  if (cancelled) { positionMark(); return; }
+  const sky = toSky(start);
+  if (sky && spots.add({ ...sky, radiusArcsec: radius }, { origin: 'user' })) publishSpots();
+  else { positionMark(); if (sky) cards(`Up to ${MAX_SPOTS} spots can be marked. Remove one first.`); }
+}
+canvas.addEventListener('pointerup', event => endDrawing(event, false));
+canvas.addEventListener('pointercancel', event => endDrawing(event, true));
+canvas.addEventListener('pointerleave', () => { if (!drawing) canvas.classList.remove('sky-canvas-grab'); });
+
 canvas.addEventListener('click', event => {
+  if (suppressClick) { suppressClick = false; return; }
   if (!activeObservation?.image) return;
   const rect = canvas.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
@@ -549,9 +704,11 @@ window.addEventListener('sky:agent-spots', event => {
   const detail = event.detail || {};
   if (detail.clear) spots.clear(detail.clear === 'all' ? null : detail.clear);
   for (const n of detail.remove || []) spots.remove(n);
-  const added = (detail.add || []).map(spot => spots.add(spot, { origin: spot.origin || 'agent', label: spot.label })).filter(Boolean);
+  const added = (detail.add || []).map(spot => spots.add(spot, { origin: spot.origin || 'agent', label: spot.label, radiusArcsec: spot.radiusArcsec })).filter(Boolean);
+  const resized = (detail.resize || []).map(({ n, radiusArcsec }) => spots.resize(n, radiusArcsec)).filter(Boolean);
+  for (const { n, found } of detail.found || []) spots.setFound(n, found);
   publishSpots();
-  detail.respond?.({ added, spots: spots.list() });
+  detail.respond?.({ added, resized, spots: spots.list() });
 });
 window.addEventListener('sky:spots-requested', event => event.detail?.respond?.(spots.list()));
 
@@ -589,7 +746,7 @@ window.addEventListener('sky:stamps-requested', event => {
 
 // A picture of exactly what is on screen (image, overlays and numbered spots)
 // for the AI guide to show in the chat. JPEG data URL, nearest-neighbour enlarged.
-const SPOT_COLOURS = { user: '#ffd479', agent: '#8fd3ff', predicted: '#c9a7ff' };
+const SPOT_COLOURS = { user: '#5aa9ff', agent: '#ff6b6b', predicted: '#c9a7ff', found: '#7ee08a' };
 window.addEventListener('sky:snapshot-requested', event => {
   const { size: wanted = 560, respond } = event.detail || {};
   if (!respond) return;
@@ -608,9 +765,10 @@ window.addEventListener('sky:snapshot-requested', event => {
   for (const spot of spots.list()) {
     const point = skyToCanvas({ raDeg: spot.raDeg, decDeg: spot.decDeg, size: canvas.width, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
     if (!point || point.x < 0 || point.y < 0 || point.x >= canvas.width || point.y >= canvas.height) continue;
-    const x = (point.x + 0.5) * scale, y = (point.y + 0.5) * scale, radius = Math.max(8, size / 50);
+    const x = (point.x + 0.5) * scale, y = (point.y + 0.5) * scale;
+    const radius = Math.max(8, size / 50, spot.radiusArcsec ? spot.radiusArcsec / PIXEL_ARCSEC * scale : 0);
     context.lineWidth = Math.max(2, size / 280);
-    context.strokeStyle = SPOT_COLOURS[spot.origin] || SPOT_COLOURS.user;
+    context.strokeStyle = spot.found ? SPOT_COLOURS.found : SPOT_COLOURS[spot.origin] || SPOT_COLOURS.user;
     context.setLineDash(spot.origin === 'predicted' ? [4, 3] : []);
     context.beginPath(); context.arc(x, y, radius, 0, Math.PI * 2); context.stroke();
     context.setLineDash([]);
@@ -1409,7 +1567,7 @@ document.getElementById('lock-scale')?.addEventListener('click', () => {
 
 // Restore a marked source carried by a shared link before any image is loaded.
 if (Number.isFinite(initialViewState.markRaDeg) && Number.isFinite(initialViewState.markDecDeg)) {
-  spots.add({ raDeg: initialViewState.markRaDeg, decDeg: initialViewState.markDecDeg }, { origin: 'user' });
+  spots.add({ raDeg: initialViewState.markRaDeg, decDeg: initialViewState.markDecDeg, radiusArcsec: initialViewState.markRadiusArcsec }, { origin: 'user' });
 }
 for (const spot of initialViewState.extraSpots || []) spots.add(spot, { origin: 'user' });
 if (spots.list().length) publishSpots();

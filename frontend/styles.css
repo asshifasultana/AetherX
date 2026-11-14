@@ -1197,3 +1197,45 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .ai-guide-jobs[hidden], .agent-jobs-badge[hidden] { display:none; }
 .agent-jobs-badge { position:absolute; top:-5px; right:-5px; z-index:2; min-width:18px; height:18px; padding:0 5px; display:inline-grid; place-items:center; border-radius:999px; background:#ffd479; color:#1a1406; font-size:11px; font-weight:700; line-height:1; box-shadow:0 0 0 2px #0b0c0a; pointer-events:none; font-variant-numeric:tabular-nums; }
 .is-embed .agent-jobs-badge { display:none!important; }
+
+/* Area spots: a ring drawn to scale. The spot layer is a size container so the
+   ring diameter (--spot-d, % of the image width) tracks the canvas size. */
+.spot-layer { container-type:size; }
+.spot-mark.is-area .source-mark-ring { width:max(20px, calc(var(--spot-d) * 1cqw)); height:max(20px, calc(var(--spot-d) * 1cqw)); }
+.spot-mark.is-area.is-user .source-mark-ring { background:#ffd4790f; }
+.spot-mark.is-area.is-agent .source-mark-ring { background:#8fd3ff0f; }
+.spot-mark.is-area.is-predicted .source-mark-ring { background:#c9a7ff0f; }
+.spot-mark.is-large .source-mark-label { top:50%; transform:translate(-50%,-50%); }
+.spot-mark.is-large .source-mark-label:is(:hover,:active,:focus) { transform:translate(-50%,-50%); }
+.spot-mark.is-large .spot-remove { top:calc(50% - 28px); }
+.spot-mark.is-draft .source-mark-ring { border-style:dashed; }
+.spot-mark.is-draft .spot-label { pointer-events:none; }
+.spot-resize { position:absolute; left:calc(50% + 0.7071 * max(10px, calc(var(--spot-d, 0) * 0.5cqw))); top:calc(50% + 0.7071 * max(10px, calc(var(--spot-d, 0) * 0.5cqw))); transform:translate(-50%,-50%); pointer-events:auto; touch-action:none; cursor:nwse-resize; width:12px; height:12px; padding:0; border:2px solid #101b20; border-radius:50%; background:#ffd479; }
+.spot-mark.is-agent .spot-resize { background:#8fd3ff; }
+.spot-mark.is-predicted .spot-resize { background:#c9a7ff; }
+.spot-resize:focus-visible { outline:2px solid #e8efdf; outline-offset:2px; }
+.spot-mark.is-resizing .source-mark-ring { border-style:dashed; }
+@media (hover:none) { .spot-resize { width:16px; height:16px; } }
+.spot-mark.is-moving .source-mark-ring { border-style:dashed; }
+.sky-canvas-grab { cursor:move !important; }
+.case-verdict.is-area { background:#1f2d33; color:#a9dcef; }
+.case-suspects .is-finding .case-icon { color:#a9dcef; }
+
+/* Spot colours: yours blue, the AI guide's red, predicted purple (dashed),
+   and green once the guide's checks identify a known object. The yellow
+   .source-mark defaults above stay for the target marker. */
+.spot-mark.is-user .source-mark-ring { border-color:#5aa9ff; box-shadow:0 0 0 1px #101b2099,0 0 12px #5aa9ff66; }
+.spot-mark.is-user .spot-label { color:#5aa9ff; border-color:#5aa9ff66; }
+.spot-mark.is-user .spot-resize { background:#5aa9ff; }
+.spot-mark.is-area.is-user .source-mark-ring { background:#5aa9ff12; }
+.ai-guide-chip.is-user { border-color:#5aa9ff66; background:#14202f; color:#7dbcff; }
+.spot-mark.is-agent .source-mark-ring { border-color:#ff6b6b; box-shadow:0 0 0 1px #101b2099,0 0 12px #ff6b6b66; }
+.spot-mark.is-agent .spot-label { color:#ff8a8a; border-color:#ff6b6b66; }
+.spot-mark.is-agent .spot-resize { background:#ff6b6b; }
+.spot-mark.is-area.is-agent .source-mark-ring { background:#ff6b6b12; }
+.ai-guide-chip.is-agent { border-color:#ff6b6b66; background:#2c1717; color:#ff8a8a; }
+.spot-mark.is-found .source-mark-ring { border-color:#7ee08a; box-shadow:0 0 0 1px #101b2099,0 0 12px #7ee08a66; }
+.spot-mark.is-found .spot-label { color:#7ee08a; border-color:#7ee08a66; }
+.spot-mark.is-found .spot-resize { background:#7ee08a; }
+.spot-mark.is-area.is-found .source-mark-ring { background:#7ee08a12; }
+.ai-guide-chip.is-found { border-color:#7ee08a66; background:#16271a; color:#7ee08a; }

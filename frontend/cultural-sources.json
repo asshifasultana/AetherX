@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+  "sources": [
+    {
+      "id": "arabic_al-sufi",
+      "tradition": "arabic-al-sufi",
+      "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+      "retrievedAt": "2026-11-07",
+      "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/arabic_al-sufi",
+      "author": "This sky culture was compiled and added to Stellarium by Khalid Al-Ajaji: turath.alfalak@gmail.com",
+      "community": "arabic-al-sufi",
+      "license": "CC BY-ND 4.0",
+      "adaptationAllowed": false,
+      "attribution": "This sky culture was compiled and added to Stellarium by Khalid Al-Ajaji: turath.alfalak@gmail.com",
+      "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+      "sha256": {
+        "index": "f414bde8214d7277af27f9b3ee9f0eab9f2e8ea315af7ab627f16dbeb72eeab0",
+        "description": "4477917767b7a3323be014aabfea40961ba61bb442bda59550c275c2d2a2777e"
+      }
+    },
+    {
+      "id": "hawaiian_starlines",
+      "tradition": "hawaiian",
+      "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+      "retrievedAt": "2026-11-07",
+      "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/hawaiian_starlines",
+      "author": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+      "community": "hawaiian",
+      "license": "CC BY-SA 4.0",
+      "adaptationAllowed": true,
+      "attribution": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+      "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+      "sha256": {
+        "index": "a8eca92b95045238fc3cdf2a74f2defec963385e986e9d6da38a6da443c5086c",
+        "description": "8f8db5a56ae08f853ede4d1916194617d0293a1a895eaf0ea397e6682e05c601"
+      }
+    },
+    {
+      "id": "kamilaroi",
+      "tradition": "kamilaroi",
+      "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+      "retrievedAt": "2026-11-07",
+      "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/kamilaroi",
+      "author": "Robert S. Fuller and Ghillar Michael Anderson",
+      "community": "Kamilaroi and Euahlayi",
+      "license": "CC BY-NC-ND 4.0",
+      "adaptationAllowed": false,
+      "attribution": "Robert S. Fuller and Ghillar Michael Anderson",
+      "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+      "sha256": {
+        "index": "b5461a6b37d38a75f18f2c227a89679dfbd7aca7903216d3932a0aac35348dd5",
+        "description": "886a449127a02e35f7ac6d89ba6e8546ddb5f3416d78b0cec66ed56f118bdc8c"
+      }
+    },
+    {
+      "id": "indian",
+      "tradition": "vedic",
+      "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+      "retrievedAt": "2026-11-07",
+      "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/indian",
+      "author": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+      "community": "vedic",
+      "license": "CC BY-SA 4.0",
+      "adaptationAllowed": true,
+      "attribution": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+      "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+      "sha256": {
+        "index": "315064d1c41bb5cb20db27e0101bf86e64e6c20277101d102777ee8d2b4d3878",
+        "description": "4b8b9461edf78f2359b15e01b2c7490ac5e986d4356f6854207a513a43e814ce"
+      }
+    }
+  ],
+  "coordinateSources": [
+    "https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=I/239/hip_main",
+    "SIMBAD/CDS catalog positions, rounded ICRS J2000 anchors for cultural navigation; not precision astrometry"
+  ],
+  "coverage": [
+    {
+      "group": "arabic-al-sufi",
+      "published": 0,
+      "target": 3,
+      "reason": "Adaptation permission pending (CC BY-ND 4.0)"
+    },
+    {
+      "group": "hawaiian",
+      "published": 3,
+      "target": 3,
+      "reason": null
+    },
+    {
+      "group": "kamilaroi",
+      "published": 0,
+      "target": 3,
+      "reason": "Adaptation permission pending (CC BY-NC-ND 4.0)"
+    },
+    {
+      "group": "vedic-bengali",
+      "published": 4,
+      "target": 3,
+      "reason": null
+    },
+    {
+      "group": "lakota",
+      "published": 3,
+      "target": 3,
+      "reason": null
+    }
+  ],
+  "complete": false
+}

@@ -1,0 +1,11 @@
+{
+  "source": "SIMBAD/CDS catalog positions, rounded ICRS J2000 anchors for cultural navigation; not precision astrometry",
+  "anchors": {
+    "M44": {"raDeg":130.1,"decDeg":19.6667,"frame":"icrs","epoch":2000},
+    "M45": {"raDeg":56.75,"decDeg":24.1167,"frame":"icrs","epoch":2000},
+    "Mel111": {"raDeg":186.0,"decDeg":26.0,"frame":"icrs","epoch":2000},
+    "NGC5139": {"raDeg":201.697,"decDeg":-47.479,"frame":"icrs","epoch":2000},
+    "NGC869": {"raDeg":34.75,"decDeg":57.1333,"frame":"icrs","epoch":2000},
+    "NGC884": {"raDeg":35.6,"decDeg":57.15,"frame":"icrs","epoch":2000}
+  }
+}

@@ -57,6 +57,12 @@ function isoDate(value) {
 }
 
 if (typeof window !== 'undefined') {
+  window.addEventListener('sky:context-settings-changed', event => {
+    const patch={};
+    if(typeof event.detail?.culture==='string')patch.culture=event.detail.culture;
+    if(typeof event.detail?.gaia==='boolean')patch.gaia=event.detail.gaia;
+    update(patch);
+  });
   window.addEventListener('sky:search-entry', event => {
     entry = { ...event.detail, resolved: false };
     scheduleWrite();

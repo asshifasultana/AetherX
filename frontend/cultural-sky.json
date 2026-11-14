@@ -1,0 +1,1723 @@
+{
+  "schemaVersion": 1,
+  "records": [
+    {
+      "id": "hawaiian-bailer",
+      "tradition": "hawaiian",
+      "kind": "constellation",
+      "names": [
+        {
+          "english": "The Canoe Bailer of Makali`i",
+          "native": "Ke Ka o Makali`i"
+        }
+      ],
+      "identifiers": [
+        {
+          "catalog": "HIP",
+          "id": "32349"
+        },
+        {
+          "catalog": "HIP",
+          "id": "37279"
+        },
+        {
+          "catalog": "HIP",
+          "id": "37826"
+        },
+        {
+          "catalog": "HIP",
+          "id": "36850"
+        },
+        {
+          "catalog": "HIP",
+          "id": "28360"
+        },
+        {
+          "catalog": "HIP",
+          "id": "28380"
+        },
+        {
+          "catalog": "HIP",
+          "id": "25428"
+        },
+        {
+          "catalog": "HIP",
+          "id": "23015"
+        },
+        {
+          "catalog": "HIP",
+          "id": "24608"
+        },
+        {
+          "catalog": "HIP",
+          "id": "28360"
+        },
+        {
+          "catalog": "HIP",
+          "id": "32349"
+        },
+        {
+          "catalog": "HIP",
+          "id": "30324"
+        },
+        {
+          "catalog": "HIP",
+          "id": "30438"
+        }
+      ],
+      "geometry": {
+        "points": [],
+        "polylines": [
+          [
+            {
+              "raDeg": 101.28854105,
+              "decDeg": -16.71314306,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "32349"
+              }
+            },
+            {
+              "raDeg": 114.82724194,
+              "decDeg": 5.22750767,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "37279"
+              }
+            },
+            {
+              "raDeg": 116.33068263,
+              "decDeg": 28.02631031,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "37826"
+              }
+            },
+            {
+              "raDeg": 113.65001898,
+              "decDeg": 31.88863645,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "36850"
+              }
+            },
+            {
+              "raDeg": 89.88237261,
+              "decDeg": 44.94743492,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "28360"
+              }
+            },
+            {
+              "raDeg": 89.93015897,
+              "decDeg": 37.21276409,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "28380"
+              }
+            },
+            {
+              "raDeg": 81.57290804,
+              "decDeg": 28.60787346,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "25428"
+              }
+            },
+            {
+              "raDeg": 74.24840098,
+              "decDeg": 33.16613537,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "23015"
+              }
+            },
+            {
+              "raDeg": 79.17206517,
+              "decDeg": 45.99902927,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "24608"
+              }
+            },
+            {
+              "raDeg": 89.88237261,
+              "decDeg": 44.94743492,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "28360"
+              }
+            }
+          ],
+          [
+            {
+              "raDeg": 101.28854105,
+              "decDeg": -16.71314306,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "32349"
+              }
+            },
+            {
+              "raDeg": 95.6749475,
+              "decDeg": -17.95591658,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "30324"
+              }
+            },
+            {
+              "raDeg": 95.98787763,
+              "decDeg": -52.69571799,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "30438"
+              }
+            }
+          ]
+        ],
+        "regions": []
+      },
+      "labelPosition": {
+        "raDeg": 96.49718579909683,
+        "decDeg": 16.76074405414349
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 96.49718579909683,
+          "decDeg": 16.76074405414349
+        },
+        "radiusDeg": 69.45786583605036
+      },
+      "descriptions": {
+        "inline": null,
+        "section": null
+      },
+      "references": [],
+      "sourceMetadata": {
+        "id": "CON hawaiian_starlines KOM",
+        "lines": [
+          [
+            32349,
+            37279,
+            37826,
+            36850,
+            28360,
+            28380,
+            25428,
+            23015,
+            24608,
+            28360
+          ],
+          [
+            32349,
+            30324,
+            30438
+          ]
+        ],
+        "image": {
+          "file": "illustrations/kekaa1d.png",
+          "size": [
+            512,
+            512
+          ],
+          "anchors": [
+            {
+              "pos": [
+                36,
+                303
+              ],
+              "hip": 31832
+            },
+            {
+              "pos": [
+                368,
+                316
+              ],
+              "hip": 37279
+            },
+            {
+              "pos": [
+                399,
+                115
+              ],
+              "hip": 30324
+            }
+          ]
+        },
+        "common_name": {
+          "english": "The Canoe Bailer of Makali`i",
+          "native": "Ke Ka o Makali`i"
+        }
+      },
+      "sourceId": "hawaiian_starlines",
+      "publication": {
+        "status": "published",
+        "review": "Source-checked against the pinned CC BY-SA Stellarium description, Star Lines and Ke Ka o Makali‘i sections; editorial review, not community endorsement."
+      },
+      "recordId": "CON hawaiian_starlines KOM",
+      "nameNative": "Ke Ka o Makali‘i",
+      "translation": "The Canoe Bailer of Makali‘i",
+      "summary": "This Hawaiian navigation starline organizes bright stars from Capella toward Sirius and Canopus. Nainoa Thompson developed the starline system as a way to remember the sky for ocean navigation.",
+      "navigationAnchor": {
+        "raDeg": 101.28854105,
+        "decDeg": -16.71314306,
+        "frame": "icrs",
+        "epoch": 1991.25,
+        "identifier": {
+          "catalog": "HIP",
+          "id": "32349"
+        }
+      },
+      "sources": [
+        {
+          "id": "hawaiian_starlines",
+          "tradition": "hawaiian",
+          "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+          "retrievedAt": "2026-11-07",
+          "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/hawaiian_starlines",
+          "author": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+          "community": "hawaiian",
+          "license": "CC BY-SA 4.0",
+          "adaptationAllowed": true,
+          "attribution": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+          "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+          "sha256": {
+            "index": "a8eca92b95045238fc3cdf2a74f2defec963385e986e9d6da38a6da443c5086c",
+            "description": "8f8db5a56ae08f853ede4d1916194617d0293a1a895eaf0ea397e6682e05c601"
+          }
+        }
+      ],
+      "credits": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "hawaiian-backbone",
+      "tradition": "hawaiian",
+      "kind": "constellation",
+      "names": [
+        {
+          "english": "The Backbone",
+          "native": "Ka Iwikuamo`o"
+        }
+      ],
+      "identifiers": [
+        {
+          "catalog": "HIP",
+          "id": "11767"
+        },
+        {
+          "catalog": "HIP",
+          "id": "54061"
+        },
+        {
+          "catalog": "HIP",
+          "id": "67301"
+        },
+        {
+          "catalog": "HIP",
+          "id": "69673"
+        },
+        {
+          "catalog": "HIP",
+          "id": "65474"
+        },
+        {
+          "catalog": "HIP",
+          "id": "60965"
+        },
+        {
+          "catalog": "HIP",
+          "id": "65474"
+        },
+        {
+          "catalog": "HIP",
+          "id": "60221"
+        },
+        {
+          "catalog": "HIP",
+          "id": "61084"
+        }
+      ],
+      "geometry": {
+        "points": [],
+        "polylines": [
+          [
+            {
+              "raDeg": 37.94614689,
+              "decDeg": 89.26413805,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "11767"
+              }
+            },
+            {
+              "raDeg": 165.93265365,
+              "decDeg": 61.75111888,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "54061"
+              }
+            }
+          ],
+          [
+            {
+              "raDeg": 206.8856088,
+              "decDeg": 49.31330288,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "67301"
+              }
+            },
+            {
+              "raDeg": 213.91811403,
+              "decDeg": 19.18726997,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "69673"
+              }
+            },
+            {
+              "raDeg": 201.2983523,
+              "decDeg": -11.16124491,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "65474"
+              }
+            }
+          ],
+          [
+            {
+              "raDeg": 187.4665965,
+              "decDeg": -16.51509397,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "60965"
+              }
+            },
+            {
+              "raDeg": 201.2983523,
+              "decDeg": -11.16124491,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "65474"
+              }
+            }
+          ],
+          [
+            {
+              "raDeg": 185.23214915,
+              "decDeg": -13.56574902,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "60221"
+              }
+            },
+            {
+              "raDeg": 187.79137202,
+              "decDeg": -57.11256922,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "61084"
+              }
+            }
+          ]
+        ],
+        "regions": []
+      },
+      "labelPosition": {
+        "raDeg": 195.5613498817349,
+        "decDeg": 10.925148235070733
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 195.5613498817349,
+          "decDeg": 10.925148235070733
+        },
+        "radiusDeg": 79.75539467384782
+      },
+      "descriptions": {
+        "inline": null,
+        "section": null
+      },
+      "references": [],
+      "sourceMetadata": {
+        "id": "CON hawaiian_starlines IWI",
+        "lines": [
+          [
+            11767,
+            54061
+          ],
+          [
+            67301,
+            69673,
+            65474
+          ],
+          [
+            60965,
+            65474
+          ],
+          [
+            60221,
+            61084
+          ]
+        ],
+        "image": {
+          "file": "illustrations/kuamoobig.png",
+          "size": [
+            512,
+            512
+          ],
+          "anchors": [
+            {
+              "pos": [
+                91,
+                52
+              ],
+              "hip": 53910
+            },
+            {
+              "pos": [
+                503,
+                76
+              ],
+              "hip": 59199
+            },
+            {
+              "pos": [
+                235,
+                260
+              ],
+              "hip": 69673
+            }
+          ]
+        },
+        "common_name": {
+          "english": "The Backbone",
+          "native": "Ka Iwikuamo`o"
+        }
+      },
+      "sourceId": "hawaiian_starlines",
+      "publication": {
+        "status": "published",
+        "review": "Source-checked against the pinned CC BY-SA description, Ka Iwikuamo‘o section; not community endorsement."
+      },
+      "recordId": "CON hawaiian_starlines IWI",
+      "nameNative": "Ka Iwikuamo‘o",
+      "translation": "The Backbone",
+      "summary": "This starline connects the northern sky near Polaris and the Big Dipper with Arcturus, Spica, and southern navigation figures. It belongs to the Hawaiian starline system described by navigators and educators in the source.",
+      "navigationAnchor": {
+        "raDeg": 37.94614689,
+        "decDeg": 89.26413805,
+        "frame": "icrs",
+        "epoch": 1991.25,
+        "identifier": {
+          "catalog": "HIP",
+          "id": "11767"
+        }
+      },
+      "sources": [
+        {
+          "id": "hawaiian_starlines",
+          "tradition": "hawaiian",
+          "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+          "retrievedAt": "2026-11-07",
+          "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/hawaiian_starlines",
+          "author": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+          "community": "hawaiian",
+          "license": "CC BY-SA 4.0",
+          "adaptationAllowed": true,
+          "attribution": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+          "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+          "sha256": {
+            "index": "a8eca92b95045238fc3cdf2a74f2defec963385e986e9d6da38a6da443c5086c",
+            "description": "8f8db5a56ae08f853ede4d1916194617d0293a1a895eaf0ea397e6682e05c601"
+          }
+        }
+      ],
+      "credits": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "hawaiian-kite",
+      "tradition": "hawaiian",
+      "kind": "constellation",
+      "names": [
+        {
+          "english": "Kite of Kawelo",
+          "native": "Ka Lupe o Kawelo"
+        }
+      ],
+      "identifiers": [
+        {
+          "catalog": "HIP",
+          "id": "677"
+        },
+        {
+          "catalog": "HIP",
+          "id": "113881"
+        },
+        {
+          "catalog": "HIP",
+          "id": "113963"
+        },
+        {
+          "catalog": "HIP",
+          "id": "1067"
+        },
+        {
+          "catalog": "HIP",
+          "id": "677"
+        },
+        {
+          "catalog": "HIP",
+          "id": "113368"
+        },
+        {
+          "catalog": "HIP",
+          "id": "113963"
+        },
+        {
+          "catalog": "HIP",
+          "id": "746"
+        },
+        {
+          "catalog": "HIP",
+          "id": "677"
+        },
+        {
+          "catalog": "HIP",
+          "id": "3419"
+        },
+        {
+          "catalog": "HIP",
+          "id": "2081"
+        },
+        {
+          "catalog": "HIP",
+          "id": "1067"
+        },
+        {
+          "catalog": "HIP",
+          "id": "3419"
+        },
+        {
+          "catalog": "HIP",
+          "id": "113881"
+        },
+        {
+          "catalog": "HIP",
+          "id": "112731"
+        }
+      ],
+      "geometry": {
+        "points": [],
+        "polylines": [
+          [
+            {
+              "raDeg": 2.09653333,
+              "decDeg": 29.09082805,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "677"
+              }
+            },
+            {
+              "raDeg": 345.94305575,
+              "decDeg": 28.08245462,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "113881"
+              }
+            },
+            {
+              "raDeg": 346.1900702,
+              "decDeg": 15.20536786,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "113963"
+              }
+            },
+            {
+              "raDeg": 3.30895828,
+              "decDeg": 15.18361593,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "1067"
+              }
+            },
+            {
+              "raDeg": 2.09653333,
+              "decDeg": 29.09082805,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "677"
+              }
+            }
+          ],
+          [
+            {
+              "raDeg": 344.41177323,
+              "decDeg": -29.62183701,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "113368"
+              }
+            },
+            {
+              "raDeg": 346.1900702,
+              "decDeg": 15.20536786,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "113963"
+              }
+            }
+          ],
+          [
+            {
+              "raDeg": 2.29204036,
+              "decDeg": 59.15021814,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "746"
+              }
+            },
+            {
+              "raDeg": 2.09653333,
+              "decDeg": 29.09082805,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "677"
+              }
+            }
+          ],
+          [
+            {
+              "raDeg": 10.89678452,
+              "decDeg": -17.9866841,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "3419"
+              }
+            },
+            {
+              "raDeg": 6.57028075,
+              "decDeg": -42.30512197,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "2081"
+              }
+            }
+          ],
+          [
+            {
+              "raDeg": 3.30895828,
+              "decDeg": 15.18361593,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "1067"
+              }
+            },
+            {
+              "raDeg": 10.89678452,
+              "decDeg": -17.9866841,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "3419"
+              }
+            }
+          ],
+          [
+            {
+              "raDeg": 345.94305575,
+              "decDeg": 28.08245462,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "113881"
+              }
+            },
+            {
+              "raDeg": 342.44261913,
+              "decDeg": 55.90268437,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "112731"
+              }
+            }
+          ]
+        ],
+        "regions": []
+      },
+      "labelPosition": {
+        "raDeg": 357.187593892102,
+        "decDeg": 14.850306021472058
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 357.187593892102,
+          "decDeg": 14.850306021472058
+        },
+        "radiusDeg": 57.80529693824844
+      },
+      "descriptions": {
+        "inline": null,
+        "section": null
+      },
+      "references": [],
+      "sourceMetadata": {
+        "id": "CON hawaiian_starlines LUP",
+        "lines": [
+          [
+            677,
+            113881,
+            113963,
+            1067,
+            677
+          ],
+          [
+            113368,
+            113963
+          ],
+          [
+            746,
+            677
+          ],
+          [
+            3419,
+            2081
+          ],
+          [
+            1067,
+            3419
+          ],
+          [
+            113881,
+            112731
+          ]
+        ],
+        "image": {
+          "file": "illustrations/lu1d.png",
+          "size": [
+            512,
+            512
+          ],
+          "anchors": [
+            {
+              "pos": [
+                115,
+                185
+              ],
+              "hip": 677
+            },
+            {
+              "pos": [
+                174,
+                83
+              ],
+              "hip": 113881
+            },
+            {
+              "pos": [
+                276,
+                138
+              ],
+              "hip": 113963
+            }
+          ]
+        },
+        "common_name": {
+          "english": "Kite of Kawelo",
+          "native": "Ka Lupe o Kawelo"
+        }
+      },
+      "sourceId": "hawaiian_starlines",
+      "publication": {
+        "status": "published",
+        "review": "Source-checked against the pinned CC BY-SA description, Ka Lupe o Kawelo section; not community endorsement."
+      },
+      "recordId": "CON hawaiian_starlines LUP",
+      "nameNative": "Ka Lupe o Kawelo",
+      "translation": "The Kite of Kawelo",
+      "summary": "The Great Square of Pegasus forms the central kite in this Hawaiian navigation starline. Its named stars recall chiefs in the account recorded by the source contributors.",
+      "navigationAnchor": {
+        "raDeg": 2.09653333,
+        "decDeg": 29.09082805,
+        "frame": "icrs",
+        "epoch": 1991.25,
+        "identifier": {
+          "catalog": "HIP",
+          "id": "677"
+        }
+      },
+      "sources": [
+        {
+          "id": "hawaiian_starlines",
+          "tradition": "hawaiian",
+          "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+          "retrievedAt": "2026-11-07",
+          "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/hawaiian_starlines",
+          "author": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+          "community": "hawaiian",
+          "license": "CC BY-SA 4.0",
+          "adaptationAllowed": true,
+          "attribution": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+          "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+          "sha256": {
+            "index": "a8eca92b95045238fc3cdf2a74f2defec963385e986e9d6da38a6da443c5086c",
+            "description": "8f8db5a56ae08f853ede4d1916194617d0293a1a895eaf0ea397e6682e05c601"
+          }
+        }
+      ],
+      "credits": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "vedic-dhruva",
+      "tradition": "vedic",
+      "kind": "named-object",
+      "names": [
+        {
+          "native": "ध्रुवः",
+          "pronounce": "Dhruva",
+          "english": "Steadfast"
+        }
+      ],
+      "identifiers": [
+        {
+          "catalog": "HIP",
+          "id": "11767"
+        }
+      ],
+      "geometry": {
+        "points": [
+          {
+            "raDeg": 37.94614689,
+            "decDeg": 89.26413805,
+            "frame": "icrs",
+            "epoch": 1991.25,
+            "identifier": {
+              "catalog": "HIP",
+              "id": "11767"
+            }
+          }
+        ],
+        "polylines": [],
+        "regions": []
+      },
+      "labelPosition": {
+        "raDeg": 37.94614689000002,
+        "decDeg": 89.26413805
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 37.94614689000002,
+          "decDeg": 89.26413805
+        },
+        "radiusDeg": 0.000001000000000281141
+      },
+      "descriptions": {
+        "inline": null,
+        "section": null
+      },
+      "references": [],
+      "sourceMetadata": {
+        "id": "indian:HIP 11767",
+        "references": []
+      },
+      "sourceId": "indian",
+      "publication": {
+        "status": "published",
+        "review": "Source-checked against the pinned Indian common_names entry HIP 11767."
+      },
+      "recordId": "indian:HIP 11767",
+      "nameNative": "ध्रुवः",
+      "translation": "Steadfast · Dhruva",
+      "summary": "The Indian Vedic dataset gives the name Dhruva to Polaris. This card records that named-star identification; it does not treat Bengali and Sanskrit terminology as interchangeable.",
+      "navigationAnchor": {
+        "raDeg": 37.94614689,
+        "decDeg": 89.26413805,
+        "frame": "icrs",
+        "epoch": 1991.25,
+        "identifier": {
+          "catalog": "HIP",
+          "id": "11767"
+        }
+      },
+      "sources": [
+        {
+          "id": "indian",
+          "tradition": "vedic",
+          "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+          "retrievedAt": "2026-11-07",
+          "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/indian",
+          "author": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+          "community": "vedic",
+          "license": "CC BY-SA 4.0",
+          "adaptationAllowed": true,
+          "attribution": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+          "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+          "sha256": {
+            "index": "315064d1c41bb5cb20db27e0101bf86e64e6c20277101d102777ee8d2b4d3878",
+            "description": "4b8b9461edf78f2359b15e01b2c7490ac5e986d4356f6854207a513a43e814ce"
+          }
+        }
+      ],
+      "credits": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "vedic-rohini",
+      "tradition": "vedic",
+      "kind": "constellation",
+      "names": [
+        {
+          "english": "Red",
+          "native": "रोहिणी",
+          "pronounce": "Rohiṇī"
+        }
+      ],
+      "identifiers": [
+        {
+          "catalog": "HIP",
+          "id": "21421"
+        },
+        {
+          "catalog": "HIP",
+          "id": "21421"
+        }
+      ],
+      "geometry": {
+        "points": [],
+        "polylines": [
+          [
+            {
+              "raDeg": 68.98000195,
+              "decDeg": 16.50976164,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "21421"
+              }
+            },
+            {
+              "raDeg": 68.98000195,
+              "decDeg": 16.50976164,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "21421"
+              }
+            }
+          ]
+        ],
+        "regions": []
+      },
+      "labelPosition": {
+        "raDeg": 68.98000194999997,
+        "decDeg": 16.509761639999997
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 68.98000194999997,
+          "decDeg": 16.509761639999997
+        },
+        "radiusDeg": 0.000001000000020115594
+      },
+      "descriptions": {
+        "inline": null,
+        "section": null
+      },
+      "references": [],
+      "sourceMetadata": {
+        "id": "CON indian Roh",
+        "lines": [
+          [
+            21421,
+            21421
+          ]
+        ],
+        "common_name": {
+          "english": "Red",
+          "native": "रोहिणी",
+          "pronounce": "Rohiṇī"
+        }
+      },
+      "sourceId": "indian",
+      "publication": {
+        "status": "published",
+        "review": "Source-checked against Indian index.json Roh and HIP 21421 and description Nakṣatra section."
+      },
+      "recordId": "CON indian Roh",
+      "nameNative": "रोहिणी",
+      "translation": "Red · Rohiṇī",
+      "summary": "Rohiṇī is anchored to Aldebaran in this Vedic sky dataset. The same source distinguishes the visible star figure from the equal divisions used in lunar-mansion systems.",
+      "navigationAnchor": {
+        "raDeg": 68.98000195,
+        "decDeg": 16.50976164,
+        "frame": "icrs",
+        "epoch": 1991.25,
+        "identifier": {
+          "catalog": "HIP",
+          "id": "21421"
+        }
+      },
+      "sources": [
+        {
+          "id": "indian",
+          "tradition": "vedic",
+          "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+          "retrievedAt": "2026-11-07",
+          "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/indian",
+          "author": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+          "community": "vedic",
+          "license": "CC BY-SA 4.0",
+          "adaptationAllowed": true,
+          "attribution": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+          "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+          "sha256": {
+            "index": "315064d1c41bb5cb20db27e0101bf86e64e6c20277101d102777ee8d2b4d3878",
+            "description": "4b8b9461edf78f2359b15e01b2c7490ac5e986d4356f6854207a513a43e814ce"
+          }
+        }
+      ],
+      "credits": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "vedic-krittika",
+      "tradition": "vedic",
+      "kind": "constellation",
+      "names": [
+        {
+          "english": "Cutter",
+          "native": "कृत्तिकाः",
+          "pronounce": "Kṛttikā"
+        }
+      ],
+      "identifiers": [
+        {
+          "catalog": "HIP",
+          "id": "17851"
+        },
+        {
+          "catalog": "HIP",
+          "id": "17847"
+        },
+        {
+          "catalog": "HIP",
+          "id": "17702"
+        },
+        {
+          "catalog": "HIP",
+          "id": "17608"
+        },
+        {
+          "catalog": "HIP",
+          "id": "17499"
+        },
+        {
+          "catalog": "HIP",
+          "id": "17531"
+        },
+        {
+          "catalog": "HIP",
+          "id": "17573"
+        },
+        {
+          "catalog": "HIP",
+          "id": "17579"
+        }
+      ],
+      "geometry": {
+        "points": [],
+        "polylines": [
+          [
+            {
+              "raDeg": 57.29668368,
+              "decDeg": 24.13682565,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "17851"
+              }
+            },
+            {
+              "raDeg": 57.29054669,
+              "decDeg": 24.05352412,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "17847"
+              }
+            },
+            {
+              "raDeg": 56.87110065,
+              "decDeg": 24.10524193,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "17702"
+              }
+            },
+            {
+              "raDeg": 56.58150135,
+              "decDeg": 23.94846207,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "17608"
+              }
+            },
+            {
+              "raDeg": 56.21884811,
+              "decDeg": 24.1134484,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "17499"
+              }
+            },
+            {
+              "raDeg": 56.30200876,
+              "decDeg": 24.46737879,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "17531"
+              }
+            },
+            {
+              "raDeg": 56.45663804,
+              "decDeg": 24.36785796,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "17573"
+              }
+            },
+            {
+              "raDeg": 56.47693278,
+              "decDeg": 24.55462128,
+              "frame": "icrs",
+              "epoch": 1991.25,
+              "identifier": {
+                "catalog": "HIP",
+                "id": "17579"
+              }
+            }
+          ]
+        ],
+        "regions": []
+      },
+      "labelPosition": {
+        "raDeg": 56.6870695029628,
+        "decDeg": 24.218928354733066
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 56.6870695029628,
+          "decDeg": 24.218928354733066
+        },
+        "radiusDeg": 0.5750217207785705
+      },
+      "descriptions": {
+        "inline": null,
+        "section": null
+      },
+      "references": [],
+      "sourceMetadata": {
+        "id": "CON indian Kṛt",
+        "lines": [
+          [
+            17851,
+            17847,
+            17702,
+            17608,
+            17499,
+            17531,
+            17573,
+            17579
+          ]
+        ],
+        "common_name": {
+          "english": "Cutter",
+          "native": "कृत्तिकाः",
+          "pronounce": "Kṛttikā"
+        }
+      },
+      "sourceId": "indian",
+      "publication": {
+        "status": "published",
+        "review": "Source-checked against the Indian Kṛt constellation entry."
+      },
+      "recordId": "CON indian Kṛt",
+      "nameNative": "कृत्तिकाः",
+      "translation": "Cutter · Kṛttikā",
+      "summary": "This Vedic figure joins stars of the Pleiades. Its name and translation are those supplied by the pinned dataset; cultural figures and modern constellation boundaries describe different ways of organizing the sky.",
+      "navigationAnchor": {
+        "raDeg": 57.29668368,
+        "decDeg": 24.13682565,
+        "frame": "icrs",
+        "epoch": 1991.25,
+        "identifier": {
+          "catalog": "HIP",
+          "id": "17851"
+        }
+      },
+      "sources": [
+        {
+          "id": "indian",
+          "tradition": "vedic",
+          "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+          "retrievedAt": "2026-11-07",
+          "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/indian",
+          "author": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+          "community": "vedic",
+          "license": "CC BY-SA 4.0",
+          "adaptationAllowed": true,
+          "attribution": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+          "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+          "sha256": {
+            "index": "315064d1c41bb5cb20db27e0101bf86e64e6c20277101d102777ee8d2b4d3878",
+            "description": "4b8b9461edf78f2359b15e01b2c7490ac5e986d4356f6854207a513a43e814ce"
+          }
+        }
+      ],
+      "credits": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "id": "bengali-saptarshi",
+      "tradition": "bengali",
+      "nameNative": "সপ্তর্ষিমণ্ডল",
+      "translation": "Saptarshi Mandal · seven sages",
+      "anchorIds": [
+        "HIP 54061",
+        "HIP 53910",
+        "HIP 58001",
+        "HIP 59774",
+        "HIP 62956",
+        "HIP 65378",
+        "HIP 67301"
+      ],
+      "summary": "A Bengali educational account identifies Saptarshi Mandal with the seven-star Big Dipper pattern within Ursa Major. This is a named pattern rather than the whole modern constellation.",
+      "sources": [
+        {
+          "url": "https://teachers.gov.bd/content/details/1680160",
+          "author": "Ishrat Jahan, Teachers’ Portal Bangladesh",
+          "license": "Source text not reproduced",
+          "retrievedAt": "2026-11-07"
+        }
+      ],
+      "credits": "Ishrat Jahan, Teachers’ Portal Bangladesh; independent factual note by SphereX, no source prose or images reused.",
+      "license": "Original factual note; source remains all rights reserved",
+      "publication": {
+        "status": "published",
+        "review": "Verified the identification and distinction against the cited Bengali educator’s account; no translation of its narrative reproduced."
+      },
+      "geometry": {
+        "points": [
+          {
+            "raDeg": 165.93265365,
+            "decDeg": 61.75111888,
+            "frame": "icrs",
+            "epoch": 1991.25
+          },
+          {
+            "raDeg": 165.4599615,
+            "decDeg": 56.38234478,
+            "frame": "icrs",
+            "epoch": 1991.25
+          },
+          {
+            "raDeg": 178.45725536,
+            "decDeg": 53.69473296,
+            "frame": "icrs",
+            "epoch": 1991.25
+          },
+          {
+            "raDeg": 183.85603795,
+            "decDeg": 57.03259792,
+            "frame": "icrs",
+            "epoch": 1991.25
+          },
+          {
+            "raDeg": 193.5068041,
+            "decDeg": 55.95984301,
+            "frame": "icrs",
+            "epoch": 1991.25
+          },
+          {
+            "raDeg": 200.98091604,
+            "decDeg": 54.92541525,
+            "frame": "icrs",
+            "epoch": 1991.25
+          },
+          {
+            "raDeg": 206.8856088,
+            "decDeg": 49.31330288,
+            "frame": "icrs",
+            "epoch": 1991.25
+          }
+        ],
+        "polylines": [],
+        "regions": []
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 185.99028086216282,
+          "decDeg": 56.51426767040971
+        },
+        "radiusDeg": 14.42894437607672
+      },
+      "navigationAnchor": {
+        "raDeg": 165.93265365,
+        "decDeg": 61.75111888,
+        "frame": "icrs",
+        "epoch": 1991.25
+      }
+    },
+    {
+      "id": "lakota-polaris",
+      "tradition": "lakota",
+      "nameNative": "Wazia Wichaghpi",
+      "translation": "North Star identification",
+      "anchorIds": [
+        "HIP 11767"
+      ],
+      "summary": "The CAIRNS Lakota Ethnoastronomy teaching resource identifies Wazia Wichaghpi as the North Star. Follow the source for the account and its educational context.",
+      "sources": [
+        {
+          "url": "https://www.nativecairns.org/resources/digital/lessonplans/ewExternalFiles/Lakota%20Ethnoastronomy.pdf",
+          "author": "Center for American Indian Research and Native Studies",
+          "license": "Linked reference; source narrative not reproduced",
+          "retrievedAt": "2026-11-07"
+        }
+      ],
+      "credits": "CAIRNS, Lakota Ethnoastronomy, p. 2; independent identification note by SphereX. No community endorsement claimed.",
+      "license": "Original factual identification note; no source narrative or artwork reused",
+      "publication": {
+        "status": "published",
+        "review": "Checked the named North Star identification on page 2 of the publicly shared CAIRNS teaching resource; retain source spelling."
+      },
+      "geometry": {
+        "points": [
+          {
+            "raDeg": 37.94614689,
+            "decDeg": 89.26413805,
+            "frame": "icrs",
+            "epoch": 1991.25
+          }
+        ],
+        "polylines": [],
+        "regions": []
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 37.94614689000002,
+          "decDeg": 89.26413805
+        },
+        "radiusDeg": 0.000001000000000281141
+      },
+      "navigationAnchor": {
+        "raDeg": 37.94614689,
+        "decDeg": 89.26413805,
+        "frame": "icrs",
+        "epoch": 1991.25
+      }
+    },
+    {
+      "id": "lakota-sirius",
+      "tradition": "lakota",
+      "nameNative": "Thayámni Siŋté",
+      "translation": "Animal tail",
+      "anchorIds": [
+        "HIP 32349"
+      ],
+      "summary": "Mark Hollabaugh’s published research identifies Sirius with this Lakota name. This card provides the identification and a link to the publisher’s account.",
+      "sources": [
+        {
+          "url": "https://unpblog.com/2017/06/22/excerpt-the-spirit-and-the-sky/",
+          "author": "Mark Hollabaugh / University of Nebraska Press",
+          "license": "Linked reference; source prose not reproduced",
+          "retrievedAt": "2026-11-07"
+        }
+      ],
+      "credits": "Mark Hollabaugh, The Spirit and the Sky (2017), publisher’s excerpt; independent identification note by SphereX. No community endorsement claimed.",
+      "license": "Original factual identification note; no source narrative or artwork reused",
+      "publication": {
+        "status": "published",
+        "review": "Checked the Sirius name and gloss in the publisher’s excerpt; limited to factual identification, not a retelling."
+      },
+      "geometry": {
+        "points": [
+          {
+            "raDeg": 101.28854105,
+            "decDeg": -16.71314306,
+            "frame": "icrs",
+            "epoch": 1991.25
+          }
+        ],
+        "polylines": [],
+        "regions": []
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 101.28854104999999,
+          "decDeg": -16.71314306
+        },
+        "radiusDeg": 0.0000010000000132158171
+      },
+      "navigationAnchor": {
+        "raDeg": 101.28854105,
+        "decDeg": -16.71314306,
+        "frame": "icrs",
+        "epoch": 1991.25
+      }
+    },
+    {
+      "id": "lakota-pleiades",
+      "tradition": "lakota",
+      "nameNative": "Thayámni Phá",
+      "translation": "Animal head",
+      "anchorIds": [
+        "M45"
+      ],
+      "summary": "Mark Hollabaugh’s published research associates this Lakota name with the Pleiades. The linked source discusses the wider account and differences between cultural naming traditions.",
+      "sources": [
+        {
+          "url": "https://unpblog.com/2017/06/22/excerpt-the-spirit-and-the-sky/",
+          "author": "Mark Hollabaugh / University of Nebraska Press",
+          "license": "Linked reference; source prose not reproduced",
+          "retrievedAt": "2026-11-07"
+        }
+      ],
+      "credits": "Mark Hollabaugh, The Spirit and the Sky (2017), publisher’s excerpt; independent identification note by SphereX. No community endorsement claimed.",
+      "license": "Original factual identification note; no source narrative or artwork reused",
+      "publication": {
+        "status": "published",
+        "review": "Checked the Pleiades name and gloss in the publisher’s excerpt; limited to factual identification."
+      },
+      "geometry": {
+        "points": [
+          {
+            "raDeg": 56.75,
+            "decDeg": 24.1167,
+            "frame": "icrs",
+            "epoch": 2000
+          }
+        ],
+        "polylines": [],
+        "regions": []
+      },
+      "bounds": {
+        "center": {
+          "raDeg": 56.75,
+          "decDeg": 24.116700000000005
+        },
+        "radiusDeg": 0.0000010000000035559681
+      },
+      "navigationAnchor": {
+        "raDeg": 56.75,
+        "decDeg": 24.1167,
+        "frame": "icrs",
+        "epoch": 2000
+      }
+    }
+  ],
+  "manifest": {
+    "schemaVersion": 1,
+    "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+    "sources": [
+      {
+        "id": "arabic_al-sufi",
+        "tradition": "arabic-al-sufi",
+        "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+        "retrievedAt": "2026-11-07",
+        "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/arabic_al-sufi",
+        "author": "This sky culture was compiled and added to Stellarium by Khalid Al-Ajaji: turath.alfalak@gmail.com",
+        "community": "arabic-al-sufi",
+        "license": "CC BY-ND 4.0",
+        "adaptationAllowed": false,
+        "attribution": "This sky culture was compiled and added to Stellarium by Khalid Al-Ajaji: turath.alfalak@gmail.com",
+        "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+        "sha256": {
+          "index": "f414bde8214d7277af27f9b3ee9f0eab9f2e8ea315af7ab627f16dbeb72eeab0",
+          "description": "4477917767b7a3323be014aabfea40961ba61bb442bda59550c275c2d2a2777e"
+        }
+      },
+      {
+        "id": "hawaiian_starlines",
+        "tradition": "hawaiian",
+        "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+        "retrievedAt": "2026-11-07",
+        "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/hawaiian_starlines",
+        "author": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+        "community": "hawaiian",
+        "license": "CC BY-SA 4.0",
+        "adaptationAllowed": true,
+        "attribution": "The *master navigator* behind this sky culture was Mau Piailug of Satawal, who taught the Polynesian art of celestial navigation to Nainoa Thompson, who developed this version of the sky culture that was used from 2013-17 by Hawaiians to sail around the world during the Malama Honua Voyage of Hokule’a, the Polynesian voyaging canoe. Stellarium has been used as a tool by the navigators of Hokule’a and this sky culture serves as a tool for practicing Polynesian navigation.\n\nThe technical implementation of the sky culture included here was contributed in 2017 by teachers Darren Kamalu and Christopher Blake, Students Jonah Apo, Nicholas Koanui, Brenden Aila and the Celestial Navigation class at Kamehameha Schools Kapalama, Honolulu, Hawai’i. Artwork by Kealoha Kaneakua.",
+        "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+        "sha256": {
+          "index": "a8eca92b95045238fc3cdf2a74f2defec963385e986e9d6da38a6da443c5086c",
+          "description": "8f8db5a56ae08f853ede4d1916194617d0293a1a895eaf0ea397e6682e05c601"
+        }
+      },
+      {
+        "id": "kamilaroi",
+        "tradition": "kamilaroi",
+        "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+        "retrievedAt": "2026-11-07",
+        "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/kamilaroi",
+        "author": "Robert S. Fuller and Ghillar Michael Anderson",
+        "community": "Kamilaroi and Euahlayi",
+        "license": "CC BY-NC-ND 4.0",
+        "adaptationAllowed": false,
+        "attribution": "Robert S. Fuller and Ghillar Michael Anderson",
+        "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+        "sha256": {
+          "index": "b5461a6b37d38a75f18f2c227a89679dfbd7aca7903216d3932a0aac35348dd5",
+          "description": "886a449127a02e35f7ac6d89ba6e8546ddb5f3416d78b0cec66ed56f118bdc8c"
+        }
+      },
+      {
+        "id": "indian",
+        "tradition": "vedic",
+        "revision": "3c4a720f313ada6124b86fef24131fa65900133f",
+        "retrievedAt": "2026-11-07",
+        "url": "https://github.com/Stellarium/stellarium/tree/3c4a720f313ada6124b86fef24131fa65900133f/skycultures/indian",
+        "author": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+        "community": "vedic",
+        "license": "CC BY-SA 4.0",
+        "adaptationAllowed": true,
+        "attribution": "- Tanmoy Saha\n - Contributors from the [sanskrit-coders community](https://github.com/sanskrit-coders) (esp [Vishvas Vasuki](https://github.com/vvasuki/)).",
+        "modifications": "Normalized identifiers and geometry; selected narrative cards are separately edited.",
+        "sha256": {
+          "index": "315064d1c41bb5cb20db27e0101bf86e64e6c20277101d102777ee8d2b4d3878",
+          "description": "4b8b9461edf78f2359b15e01b2c7490ac5e986d4356f6854207a513a43e814ce"
+        }
+      }
+    ],
+    "coordinateSources": [
+      "https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=I/239/hip_main",
+      "SIMBAD/CDS catalog positions, rounded ICRS J2000 anchors for cultural navigation; not precision astrometry"
+    ],
+    "coverage": [
+      {
+        "group": "arabic-al-sufi",
+        "published": 0,
+        "target": 3,
+        "reason": "Adaptation permission pending (CC BY-ND 4.0)"
+      },
+      {
+        "group": "hawaiian",
+        "published": 3,
+        "target": 3,
+        "reason": null
+      },
+      {
+        "group": "kamilaroi",
+        "published": 0,
+        "target": 3,
+        "reason": "Adaptation permission pending (CC BY-NC-ND 4.0)"
+      },
+      {
+        "group": "vedic-bengali",
+        "published": 4,
+        "target": 3,
+        "reason": null
+      },
+      {
+        "group": "lakota",
+        "published": 3,
+        "target": 3,
+        "reason": null
+      }
+    ],
+    "complete": false
+  }
+}

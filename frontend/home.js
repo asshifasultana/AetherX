@@ -1,5 +1,9 @@
 import { mountTargetSearch } from './target-search.js';
 import { legacyViewerDestination, viewerUrl } from './search-route.js';
+import { mountStarfield } from './starfield.js';
+
+const starfield = document.getElementById('starfield');
+if (starfield) mountStarfield(starfield);
 
 const destination = legacyViewerDestination(location, window.self !== window.top);
 if (destination) location.replace(destination);

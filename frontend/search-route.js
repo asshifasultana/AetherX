@@ -1,7 +1,7 @@
 import { decodeViewState, encodeViewState } from './url-state.js';
 import { presets } from './presets.js';
 
-const viewKeys = ['ra', 'dec', 'fov', 'band', 'from', 'to', 'at', 'mra', 'mdec', 'target', 'embed'];
+const viewKeys = ['ra', 'dec', 'fov', 'band', 'from', 'to', 'at', 'mra', 'mdec', 'target', 'embed','culture','gaia'];
 const searchTypes = ['object', 'moving', 'coordinates'];
 const paramsFor = input => input instanceof URLSearchParams ? input : new URLSearchParams(String(input).replace(/^\?/, ''));
 

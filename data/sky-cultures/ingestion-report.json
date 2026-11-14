@@ -1,0 +1,5882 @@
+{
+  "unresolved": [
+    {
+      "owner": "CON arabic_al-sufi UMa",
+      "identifier": {
+        "catalog": "HIP",
+        "id": "55203"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "AST arabic_al-sufi Qfz1",
+      "identifier": {
+        "catalog": "HIP",
+        "id": "55203"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "AST arabic_al-sufi Qfzt",
+      "identifier": {
+        "catalog": "HIP",
+        "id": "55203"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "AST arabic_al-sufi Thlb",
+      "identifier": {
+        "catalog": "HIP",
+        "id": "55203"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "AST arabic_al-sufi Qrai",
+      "identifier": {
+        "catalog": "HIP",
+        "id": "55203"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "arabic_al-sufi:HIP 55203",
+      "identifier": {
+        "catalog": "HIP",
+        "id": "55203"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "arabic_al-sufi:HIP 78727",
+      "identifier": {
+        "catalog": "HIP",
+        "id": "78727"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "indian:NAME Jupiter",
+      "identifier": {
+        "catalog": "other",
+        "id": "NAME Jupiter"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "indian:NAME Mars",
+      "identifier": {
+        "catalog": "other",
+        "id": "NAME Mars"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "indian:NAME Mercury",
+      "identifier": {
+        "catalog": "other",
+        "id": "NAME Mercury"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "indian:NAME Moon",
+      "identifier": {
+        "catalog": "other",
+        "id": "NAME Moon"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "indian:NAME Saturn",
+      "identifier": {
+        "catalog": "other",
+        "id": "NAME Saturn"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "indian:NAME Sun",
+      "identifier": {
+        "catalog": "other",
+        "id": "NAME Sun"
+      },
+      "reason": "No cached coordinate"
+    },
+    {
+      "owner": "indian:NAME Venus",
+      "identifier": {
+        "catalog": "other",
+        "id": "NAME Venus"
+      },
+      "reason": "No cached coordinate"
+    }
+  ],
+  "coverage": [
+    {
+      "group": "arabic-al-sufi",
+      "published": 0,
+      "target": 3,
+      "reason": "Adaptation permission pending (CC BY-ND 4.0)"
+    },
+    {
+      "group": "hawaiian",
+      "published": 3,
+      "target": 3,
+      "reason": null
+    },
+    {
+      "group": "kamilaroi",
+      "published": 0,
+      "target": 3,
+      "reason": "Adaptation permission pending (CC BY-NC-ND 4.0)"
+    },
+    {
+      "group": "vedic-bengali",
+      "published": 4,
+      "target": 3,
+      "reason": null
+    },
+    {
+      "group": "lakota",
+      "published": 3,
+      "target": 3,
+      "reason": null
+    }
+  ],
+  "unpublished": [
+    {
+      "id": "CON arabic_al-sufi UMi",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi UMa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Dra",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Cep",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Boo",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi CrB",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Her",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Lyr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Cyg",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Cas",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Per",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Aur",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Oph",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Ser",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Sge",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Aql",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Del",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Equ",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Peg",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi And",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Tri",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Ari",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Tau",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Gem",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Can",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Leo",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Vir",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Lib",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Sco",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Sgr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Cap",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Aqr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Psc",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Cet",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Ori",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Eri",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Lep",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi CMa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi CMi",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Arg",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Hya",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Crt",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Crv",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Cen",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Lup",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi Ara",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi CrA",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi PsA",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi SHr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi SFA",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON arabic_al-sufi SFB",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Frqd",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Raha",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi BNaS",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi BNaK",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SBNa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Ziba",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Hawd",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qfz1",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qfz2",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qfz3",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qfzt",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Thlb",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qrai",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Thib",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Hurr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Awhq",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi ThCl",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Awth",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Ath1",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Ath2",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qidr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Farq",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Shaa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Rumh",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi ARu1",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Slah",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi ARu2",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Dhib",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Fakk",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi QMas",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi NNas",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Tama",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi NasW",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi AzfN",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Fwrs",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Naqa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi KafK",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Said",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Adud",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Mnkb",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi YThM",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi NTnt",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Twab",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Alam",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Jdyn",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Rawd",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SNas",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi NasT",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi ZlmS",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qaud",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Dalw",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Mqdm",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Mkhr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Krab",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Naam",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SBhm",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SHmm",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SBar",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SMtr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi BTha",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Hoot",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Aybs",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Sha1",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Sha2",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Ash1",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Ash2",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Btyn",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Thur",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qils",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi DDog",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Mabs",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Azfa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Han1",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Han2",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Tah1",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Tah2",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi QaJa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Nath",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi FAsd",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Tarf",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi NAsh",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SAsh",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Jabh",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Zubr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Awwa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Ghfr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Zban",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi IklS",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi IklA",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Niat",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Fiqr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Shwl",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Ibra",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi NaaW",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi NaaS",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Zlmn",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Wasl",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Audh",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qlda",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Blda",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Surd",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SDab",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SNsh",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SMLK",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SSud",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SBul",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SAkh",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Ribq",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi KafJ",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Nmat",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Haqa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi FqJa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi NtJa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Nazm",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi SfJb",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi laat",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi ThJa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi TjJa",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi KJMq",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi UdN1",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi BdQd",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi BdQd",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Rial",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Nhal",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi KJMr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Athr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Aghb",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qrud",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Maqb",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Shrs",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Khyl",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Malf",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi 43Crv01",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi ASmA",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Ajml",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi AAsd",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Shmr",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Mlfn",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi Qbba",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "AST arabic_al-sufi UdN2",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 145",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 154",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 301",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 443",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 677",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 746",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 910",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 1067",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 1170",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 1366",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 1473",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 1562",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 1645",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 1686",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 2548",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 2599",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 2912",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 2920",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3031",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3092",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3179",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3419",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3436",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3455",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3693",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3786",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3821",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3849",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3881",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3885",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 3909",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 4366",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 4427",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 4436",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 4463",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 4510",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 4906",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5131",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5310",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5346",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5364",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5434",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5447",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5454",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5542",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5544",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5571",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5586",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5737",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 5742",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 6061",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 6193",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 6242",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 6537",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 6686",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 6706",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 6999",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 7007",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 7097",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 7513",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 7535",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 7607",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 7719",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 7818",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 7884",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 8068",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 8102",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 8198",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 8645",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 8796",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 8832",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 8833",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 8886",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 8903",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 9110",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 9347",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 9487",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 9640",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 9884",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 10064",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 10306",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 10324",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 10644",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 10670",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 10732",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 11345",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 11484",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 11569",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 11767",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 11783",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12332",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12387",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12390",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12444",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12489",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12706",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12719",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12770",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12777",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12828",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12832",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 12843",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13061",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13209",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13254",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13268",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13288",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13327",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13531",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13701",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13702",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13847",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13879",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13914",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 13954",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14135",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14146",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14293",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14328",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14354",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14576",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14632",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14668",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14817",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 14838",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 15110",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 15197",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 15474",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 15737",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 15863",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 15900",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 16083",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 16322",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 16335",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 16369",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 16537",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 16611",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 16826",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 16852",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17351",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17358",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17378",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17448",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17499",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17529",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17573",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17593",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17651",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17702",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17717",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17771",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17797",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17847",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 17874",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 18216",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 18246",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 18532",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 18543",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 18614",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 18673",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 18724",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 18907",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19038",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19167",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19205",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19343",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19513",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19587",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19811",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19812",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19849",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19860",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19949",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 19990",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20042",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20070",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20205",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20250",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20354",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20430",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20455",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20507",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20535",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20635",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20711",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20885",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 20889",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 21248",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 21393",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 21402",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 21421",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 21444",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 21476",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 21589",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 21881",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 22109",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 22449",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 22509",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 22549",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 22565",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 22701",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 22797",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 22845",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 22957",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23015",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23123",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23364",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23416",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23453",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23497",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23607",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23685",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23767",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23835",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23871",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23875",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 23972",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24010",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24244",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24305",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24327",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24436",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24608",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24674",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24822",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24845",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 24873",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25142",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25247",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25281",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25336",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25428",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25473",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25539",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25541",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25606",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25813",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25859",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25923",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25930",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25945",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25950",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25984",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 25985",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26126",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26207",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26221",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26237",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26241",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26248",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26311",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26451",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26563",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26594",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26634",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26640",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 26727",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27072",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27204",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27288",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27366",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27468",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27628",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27654",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27673",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27810",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27830",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27913",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27949",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 27989",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28103",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28199",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28237",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28328",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28358",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28360",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28380",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28614",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28716",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 28734",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 29034",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 29038",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 29426",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 29434",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 29655",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 29696",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 29704",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 29800",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 29807",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 30122",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 30277",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 30324",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 30343",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 30438",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 30788",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 30883",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 31125",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 31416",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 31592",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 31681",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 31685",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 31700",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 32246",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 32349",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 32362",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 32759",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 32768",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 32921",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 33018",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 33152",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 33160",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 33302",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 33345",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 33347",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 33579",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 33977",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 34045",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 34088",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 34444",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 34693",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 34769",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 35264",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 35350",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 35550",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 35846",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 35904",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 36046",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 36188",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 36238",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 36377",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 36514",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 36850",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 36917",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 36962",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37096",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37173",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37229",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37279",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37297",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37300",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37648",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37677",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37740",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37819",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37826",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 37908",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 38070",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 38164",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 38170",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 38414",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 38455",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 38722",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 38827",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 38835",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 38901",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 39360",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 39429",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 39757",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 39780",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 39953",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 40091",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 40167",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 40326",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 40526",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 41075",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 41307",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 41704",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 41822",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 41909",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42080",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42312",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42313",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42402",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42515",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42527",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42570",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42799",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42806",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42828",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42884",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42911",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 42913",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 43023",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 43103",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 43109",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 43409",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 43531",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 43813",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 43825",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44066",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44127",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44191",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44248",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44390",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44405",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44471",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44659",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44700",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44798",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44816",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44901",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 44946",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 45038",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 45075",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 45336",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 45410",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 45493",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 45556",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 45688",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 45860",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 45941",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46146",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46390",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46404",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46509",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46651",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46701",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46733",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46750",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46771",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46776",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46853",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 46977",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 47431",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 47508",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 47723",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 47908",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 48319",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 48356",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 48402",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 48455",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 48774",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 48883",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 49029",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 49402",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 49583",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 49637",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 49641",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 49669",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 49841",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 50335",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 50372",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 50583",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 50801",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 51069",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 51585",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 51624",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 52085",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 52457",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 52689",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 52911",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 52943",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 53417",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 53740",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 53807",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 53824",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 53910",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 53954",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 54061",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 54182",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 54204",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 54539",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 54682",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 54872",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 54879",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 55084",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 55203",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 55219",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 55282",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 55434",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 55642",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 55687",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 55705",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 55765",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 56211",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 56343",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 56633",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 56647",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 56922",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 57283",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 57328",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 57380",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 57632",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 57757",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 57936",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 58001",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 58188",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 58590",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 58948",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 59196",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 59199",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 59316",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 59449",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 59747",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 59774",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 59803",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 59847",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 60129",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 60189",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 60718",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 60742",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 60823",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 60965",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61084",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61174",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61281",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61317",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61359",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61394",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61622",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61740",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61932",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61941",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 61960",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 62267",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 62434",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 62956",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 62985",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 63003",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 63090",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 63125",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 63494",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 63608",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 64004",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 64078",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 64238",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 64407",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 64924",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 64962",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 65109",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 65378",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 65474",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 65477",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 65936",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 66006",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 66098",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 66247",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 66249",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 66657",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 66803",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 66821",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67153",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67172",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67234",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67275",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67301",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67457",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67459",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67464",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67472",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67494",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67627",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67669",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67786",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67927",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 67929",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 68002",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 68245",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 68282",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 68523",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 68702",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 68756",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 68862",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 68895",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 68933",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 69427",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 69483",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 69673",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 69701",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 69713",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 69732",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 69974",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 69996",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 70090",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 70104",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 70300",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 70497",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 70574",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 70692",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 70755",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 71053",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 71075",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 71284",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 71352",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 71683",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 71795",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 71860",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 71865",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 71957",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 72010",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 72105",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 72489",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 72607",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 72622",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73273",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73334",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73473",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73555",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73568",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73714",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73745",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73807",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73945",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 73996",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74087",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74117",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74376",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74392",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74395",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74604",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74666",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74785",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74857",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 74911",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 75049",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 75097",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 75141",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 75264",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 75312",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 75411",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 75458",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 75695",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 75973",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76127",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76219",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76267",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76276",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76297",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76333",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76470",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76600",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76852",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76880",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 76952",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77048",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77055",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77060",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77070",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77233",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77257",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77450",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77512",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77516",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77622",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77634",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77661",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77760",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77811",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 77853",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78072",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78104",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78105",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78159",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78207",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78265",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78384",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78401",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78493",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78527",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78554",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78592",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78727",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78820",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78918",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 78933",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 79043",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 79101",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 79374",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 79404",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 79593",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 79822",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 79881",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 79882",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 79992",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80112",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80170",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80331",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80343",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80463",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80473",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80569",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80628",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80763",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80816",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80883",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80894",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 80975",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 81126",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 81266",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 81377",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 81660",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 81693",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 81833",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 82080",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 82396",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 82514",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 82671",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 82673",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 82729",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 82860",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 83000",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 83081",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 83153",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 83207",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 83313",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 83608",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 83838",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 83895",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84012",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84143",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84345",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84379",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84380",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84405",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84606",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84835",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84880",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84893",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 84970",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85112",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85258",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85267",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85340",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85423",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85670",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85693",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85696",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85755",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85792",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85805",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85819",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85822",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 85927",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86032",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86092",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86182",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86201",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86228",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86263",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86284",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86414",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86565",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86614",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86670",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86736",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86742",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86782",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 86974",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87072",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87073",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87108",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87212",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87261",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87585",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87808",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87833",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87933",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 87998",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88048",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88149",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88175",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88192",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88290",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88404",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88601",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88635",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88714",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88771",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 88794",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 89341",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 89642",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 89908",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 89931",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 89937",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 89962",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 90156",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 90185",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 90422",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 90496",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 90887",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 90905",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 90982",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 91262",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 91755",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 91875",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 91919",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 91971",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92041",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92308",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92405",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92420",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92512",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92761",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92782",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92791",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92855",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92946",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92953",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 92989",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93085",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93174",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93194",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93279",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93506",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93542",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93683",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93747",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93805",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93825",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 93864",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94005",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94114",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94141",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94160",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94376",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94481",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94643",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94648",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94713",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94779",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 94820",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 95081",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 95168",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 95176",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 95241",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 95347",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 95477",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 95501",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 95853",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 95947",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96100",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96229",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96441",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96465",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96468",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96483",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96665",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96683",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96757",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96837",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 96950",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 97165",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 97278",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 97290",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 97365",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 97433",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 97496",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 97649",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 97804",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 97938",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98032",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98036",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98066",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98103",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98110",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98162",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98258",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98337",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98353",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98412",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98688",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98702",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 98823",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 99255",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 99473",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 99572",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 99675",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 99848",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 100027",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 100195",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 100310",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 100345",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 100453",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 100881",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101027",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101093",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101123",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101138",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101421",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101483",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101589",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101769",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101800",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101882",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101916",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101923",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101958",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 101984",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 102098",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 102281",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 102422",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 102485",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 102488",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 102532",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 102589",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 102618",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 102978",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 103045",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 103401",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 103413",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104019",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104060",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104139",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104234",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104365",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104521",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104732",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104858",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104887",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104963",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 104987",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 105102",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 105199",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 105515",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 105570",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 105881",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 106032",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 106039",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 106278",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 106723",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 106786",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 106944",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 106985",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107095",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107188",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107259",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107315",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107354",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107380",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107382",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107517",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107556",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 107608",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 108036",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 108085",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 108661",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 108874",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 108917",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109068",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109074",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109139",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109176",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109285",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109410",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109427",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109472",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109492",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109556",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109789",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 109857",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 110003",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 110273",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 110395",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 110672",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 110778",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 110960",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 110991",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 111045",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 111056",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 111123",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 111188",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 111497",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 111954",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112029",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112051",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112158",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112211",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112440",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112447",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112529",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112716",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112724",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112748",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112935",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112948",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 112961",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 113136",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 113186",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 113246",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 113368",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 113726",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 113881",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 113889",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 113963",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 113996",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 114119",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 114341",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 114375",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 114724",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 114855",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 114939",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 114971",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115033",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115115",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115227",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115250",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115404",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115438",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115623",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115669",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115738",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 115830",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116247",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116584",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116631",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116727",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116758",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116771",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116805",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116901",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116928",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 116971",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 117089",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 117629",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 117863",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 118209",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 118243",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:HIP 118268",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:M 44",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:M 45",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:Mel 111",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:NGC 5139",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:NGC 869",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic_al-sufi:NGC 884",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON hawaiian_starlines KOM",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines KHK",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines MAK",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines MEE",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines NAH",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines IWI",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines MAN",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines NAV",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines LUP",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines IWA",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines HAN",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines NAK",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON hawaiian_starlines KAO",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 677",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 746",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 1067",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 2081",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 3179",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 3419",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 4427",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 6686",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 8886",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 11767",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 21421",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 23015",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 24436",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 24608",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 25336",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 25428",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 25930",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 26311",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 26727",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 27366",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 27989",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 28360",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 28380",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 30324",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 30438",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 32349",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 36850",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 37279",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 37826",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 53910",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 54061",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 58001",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 59774",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 60718",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 61084",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 62956",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 65378",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 65474",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 65477",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 67301",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 68702",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 69673",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 71683",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 72607",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 78265",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 78401",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 78820",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 80112",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 80763",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 81266",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 82396",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 82514",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 82729",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 84143",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 85927",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 86228",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 86670",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 87073",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 91262",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 95947",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 97165",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 97649",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 100453",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 102098",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 102488",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 113368",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 113881",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:HIP 113963",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "hawaiian_starlines:M 45",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON kamilaroi Emu1",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Emu2",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Bir",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Loo",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Yar",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi SMC",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Ald",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Wam",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Miy",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Wad",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Ban",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi Mur",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON kamilaroi War",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "CON indian Aśv",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Bhar",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Kṛt",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Roh",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Mṛg",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian MṛVy",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Inv",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Śara",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Ārd",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian PVas",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Puṣ",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Aśl",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Magh",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian PPhā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian UPhā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Hasta",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Chitr",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Svā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Viś",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Anur",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Jyeṣ",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Mūl",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian PAṣ",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian UAṣ",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian PBhā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian UBhā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Abh",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Śra",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Dhani",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Śata",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Rev",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Meṣa",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Vṛṣa",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Mith",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Kark",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Simh",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Kany",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Tulā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Vṛśc",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Dhan",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Makr",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Kumbh",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Mīna",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Shim",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian R̥kṣa",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Sapt",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Sāra",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Tri",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "CON indian Yam",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Aśv",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Bhar",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Kṛt",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Roh",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Mṛg",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Ārd",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian PVas",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Puṣ",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Aśl",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Magh",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian PPhā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian UPhā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Hasta",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Chitr",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Svā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Viś",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Anur",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Jyeṣ",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Mūl",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian PAṣ",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian UAṣ",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Abh",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Śra",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Dhani",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Śata",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian PBhā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian UBhā",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "AST indian Rev",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 746",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 5737",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 11767",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 21421",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 24436",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 24608",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 25336",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 25428",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 25930",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 26311",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 26727",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 27366",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 27989",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 30438",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 31681",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 32349",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 36850",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 37826",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 49669",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 53910",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 54061",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 58001",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 59774",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 62956",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 65378",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 65474",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 65477",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 67301",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 69673",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 80763",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 91262",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 97649",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:HIP 110395",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:NAME Jupiter",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:NAME Mars",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:NAME Mercury",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:NAME Moon",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:NAME Saturn",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:NAME Sun",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "indian:NAME Venus",
+      "reason": "Awaiting editorial selection"
+    },
+    {
+      "id": "arabic-small-bear",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic-great-bear",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "arabic-dragon",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "kamilaroi-emu",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "kamilaroi-seven-sisters",
+      "reason": "Source does not grant adaptation permission"
+    },
+    {
+      "id": "kamilaroi-old-dthillar",
+      "reason": "Source does not grant adaptation permission"
+    }
+  ]
+}

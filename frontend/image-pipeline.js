@@ -1,6 +1,6 @@
 import { loadCutout } from './cutout-loader.js';
-import { readFits, prepareImage, projectImage } from './lib/fits-engine.js';
-import { medianStack } from './lib/stack.js';
+import { readFits, prepareImage, projectImage, projectionKey } from './lib/fits-engine.js';
+import { combineStack } from './lib/stack.js';
 import { ImageScheduler, abortError } from './lib/image-scheduler.js';
 
 export class ImagePipeline {
@@ -46,7 +46,7 @@ export class ImagePipeline {
     });
   }
   load(url, accessUrl, target, settings, { signal, priority = 1 } = {}) {
-    return this.scheduler.run(`load|${url}|${Boolean(settings.hideBadPixels)}`, async jobSignal => {
+    return this.scheduler.run(`load|${url}|${projectionKey(target, settings)}`, async jobSignal => {
       const payload = { accessUrl, target, settings, revision: new URL(url, 'http://localhost').searchParams.get('revision') || '' };
       let forceLegacy = false;
       try { forceLegacy = typeof localStorage !== 'undefined' && localStorage.getItem('spherex-image-loader') === 'legacy'; } catch { /* Storage can be disabled independently of workers. */ }
@@ -64,9 +64,10 @@ export class ImagePipeline {
     if (await this.start()) return this.request('project', { image, target, settings }, signal);
     return projectImage(image, target, settings);
   }
-  async median(images, signal) {
-    if (await this.start()) return this.request('median', { images }, signal);
-    return medianStack(images);
+  async combine(images, options = {}, signal) {
+    if (await this.start()) return this.request('combine', { images, options }, signal);
+    return combineStack(images, options);
   }
+  median(images, signal) { return this.combine(images, { statistic: 'median' }, signal); }
 }
 export const imagePipeline = new ImagePipeline();

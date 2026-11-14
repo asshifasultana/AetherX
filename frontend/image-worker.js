@@ -1,6 +1,6 @@
 import { createFitsRangeLoader } from './lib/range-fits.js';
 import { prepareImage, projectImage, projectionKey, readFits } from './lib/fits-engine.js';
-import { medianStack } from './lib/stack.js';
+import { combineStack, medianStack } from './lib/stack.js';
 
 const load = createFitsRangeLoader();
 const controllers = new Map();
@@ -26,6 +26,7 @@ self.onmessage = async ({ data }) => {
     } else if (type === 'project') {
       result = projectImage(payload.image, payload.target, payload.settings);
     } else if (type === 'median') result = medianStack(payload.images);
+    else if (type === 'combine') result = combineStack(payload.images, payload.options);
     else throw new Error('Unknown image worker operation.');
     controller.signal.throwIfAborted();
     self.postMessage({ id, result }, transfers(result));

@@ -8,6 +8,7 @@
 
 export const FOV_OPTIONS = Array.from({ length: 30 }, (_, index) => index + 1);
 export const BAND_OPTIONS = [1, 2, 3, 4, 5, 6];
+export const CULTURE_OPTIONS = ['all','arabic-al-sufi','hawaiian','kamilaroi','vedic','bengali','lakota'];
 // Precision of the shared position. Six decimal places is 0.0036 arcsec, far
 // finer than a SPHEREx pixel (6.15 arcsec), so a shared link lands on the same
 // patch of sky that the sender was looking at.
@@ -24,7 +25,9 @@ export const DEFAULT_VIEW_STATE = Object.freeze({
   markRaDeg: null,
   markDecDeg: null,
   targetId: null,
-  embed: false
+  embed: false,
+  culture: 'all',
+  gaia: false
 });
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -77,6 +80,8 @@ export function encodeViewState(state = {}) {
   }
   if (merged.targetId) params.set('target', merged.targetId);
   if (merged.embed) params.set('embed', '1');
+  if (CULTURE_OPTIONS.includes(merged.culture) && merged.culture !== 'all') params.set('culture',merged.culture);
+  if (merged.gaia) params.set('gaia','1');
   return params.toString();
 }
 
@@ -168,6 +173,14 @@ export function decodeViewState(input) {
   }
 
   state.embed = params.get('embed') === '1' || params.get('embed') === 'true';
+  if(params.has('culture')) {
+    if(params.getAll('culture').length===1&&CULTURE_OPTIONS.includes(params.get('culture')))state.culture=params.get('culture');
+    else issues.push('The cultural tradition in this link is invalid. Showing all traditions.');
+  }
+  if(params.has('gaia')) {
+    if(params.getAll('gaia').length===1&&['0','1'].includes(params.get('gaia')))state.gaia=params.get('gaia')==='1';
+    else issues.push('The Gaia option in this link is invalid. Markers are off.');
+  }
   return { state, issues };
 }
 
@@ -180,7 +193,7 @@ export function viewStateSignature(state = {}) {
   return [
     merged.raDeg, merged.decDeg, merged.fovArcmin, merged.band,
     merged.startDate, merged.endDate, merged.frameDate,
-    merged.markRaDeg ?? '', merged.markDecDeg ?? '', merged.targetId ?? '', merged.embed ? 1 : 0
+    merged.markRaDeg ?? '', merged.markDecDeg ?? '', merged.targetId ?? '', merged.embed ? 1 : 0, merged.culture, merged.gaia ? 1 : 0
   ].join('|');
 }
 

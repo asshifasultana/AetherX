@@ -6,6 +6,8 @@
     "node": "24.x"
   },
   "scripts": {
+    "build:cultures": "node scripts/ingest-sky-cultures.mjs",
+    "cache:culture-anchors": "node scripts/cache-sky-anchors.mjs",
     "update:index": "node scripts/update-observation-index.mjs",
     "build": "node scripts/build-vercel.mjs",
     "dev": "node frontend/server.mjs",

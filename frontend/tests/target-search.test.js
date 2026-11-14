@@ -9,6 +9,7 @@ import { DEFAULT_VIEW_STATE, decodeViewState, encodeViewState } from '../url-sta
 
 import { searchMarkup } from '../target-search.js';
 import { readSearchEntry, viewerUrl, legacyViewerDestination } from '../search-route.js';
+import * as viewerSettings from '../viewer-settings.js';
 const [viewerHtml, homeHtml, app, lookup, moving, searchController, home] = await Promise.all(['viewer.html', 'index.html', 'app.js', 'object-lookup.js', 'moving-target.js', 'target-search.js', 'home.js'].map(file => readFile(new URL('../' + file, import.meta.url), 'utf8')));
 const withoutImports = source => source.replace(/^import .*\r?\n/gm, '').replace(/^export /gm, '');
 const flush = async () => { for (let i = 0; i < 4; i++) await new Promise(resolve => setImmediate(resolve)); };
@@ -62,7 +63,7 @@ function mount({ fetchImpl = async () => json(resolved), initial = {}, page = 'v
   window.self = window.top = window;
   const document = { getElementById: id => elements.get(id) || null, createElement: () => element(), documentElement: element(), querySelectorAll: selector => selector === '[data-target]' ? targets : [] };
   const context = {
-    document, window, location, readSearchEntry, viewerUrl, legacyViewerDestination, parseCoordinate, formatSexagesimal, presets, suggestNames, encodeViewState,
+    ...viewerSettings, mountStarfield: () => {}, document, window, location, readSearchEntry, viewerUrl, legacyViewerDestination, parseCoordinate, formatSexagesimal, presets, suggestNames, encodeViewState,
     initialViewState: { ...decodeViewState(search).state, ...initial }, isEmbedded: false, initialViewIssues: [],
     AbortController, URLSearchParams, URL, clearInterval, setInterval, setTimeout, clearTimeout, Event,
     Worker: class { postMessage(message) { workerMessages.push(message); } terminate() {} },

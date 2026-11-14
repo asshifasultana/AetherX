@@ -7,3 +7,7 @@ frontend/data/*.tmp
 
 # Generated documentation (build with scripts/build-docs.py)
 *.docx
+
+# Local ingestion intermediates; only approved cultural cards are public assets.
+data/sky-cultures/normalized.json
+data/sky-cultures/hipparcos.tsv

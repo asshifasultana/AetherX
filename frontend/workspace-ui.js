@@ -55,28 +55,30 @@ export function mountWorkspace() {
     show(item) {
       if (active && active !== item) {
         active.querySelector('.setting-help').setAttribute('aria-expanded', 'false');
-        active.querySelector('input').removeAttribute('aria-describedby');
+        active.querySelector('input, select')?.removeAttribute('aria-describedby');
       }
       active = item;
       tooltip.textContent = item.dataset.tooltip;
       tooltip.hidden = false;
       item.querySelector('.setting-help').setAttribute('aria-expanded', 'true');
-      item.querySelector('input').setAttribute('aria-describedby', 'settings-tooltip');
+      item.querySelector('input, select')?.setAttribute('aria-describedby', 'settings-tooltip');
       const rect = item.getBoundingClientRect(), width = Math.min(280, window.innerWidth - 24);
       tooltip.style.width = width + 'px';
-      tooltip.style.left = Math.max(12, Math.min(rect.right + 12, window.innerWidth - width - 12)) + 'px';
+      const fitsRight = rect.right + 12 + width <= window.innerWidth - 12;
+      tooltip.style.left = Math.max(12, fitsRight ? rect.right + 12 : rect.left - width - 12) + 'px';
       tooltip.style.top = Math.max(12, Math.min(rect.top, window.innerHeight - tooltip.offsetHeight - 12)) + 'px';
     },
     hide() {
       tooltip.hidden = true;
       if (active) {
         active.querySelector('.setting-help').setAttribute('aria-expanded', 'false');
-        active.querySelector('input').removeAttribute('aria-describedby');
+        active.querySelector('input, select')?.removeAttribute('aria-describedby');
       }
       active = null;
     }
   });
-  for (const item of document.querySelectorAll('.setting-check')) {
+  for (const item of document.querySelectorAll('[data-tooltip]')) {
+    if (!item.querySelector('.setting-help')) continue;
     item.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') help.hover(item); });
     item.addEventListener('pointerleave', help.dismiss);
     item.addEventListener('focusin', () => help.focus(item));
@@ -84,6 +86,7 @@ export function mountWorkspace() {
     item.querySelector('.setting-help').addEventListener('click', () => help.focus(item));
   }
   sidebar.addEventListener('scroll', help.dismiss);
+  window.addEventListener('scroll', help.dismiss, { passive: true });
   document.addEventListener('pointerdown', event => { if (active && !active.contains(event.target)) help.dismiss(); });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape') {

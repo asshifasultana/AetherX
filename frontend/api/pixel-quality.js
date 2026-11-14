@@ -1,4 +1,4 @@
-import { assessPixelQuality, detectSingleExposureGlitches, MASKED_FLAG_BITS, QUALITY_FLAGS, summarizeExposureSamples } from '../lib/pixel-quality.js';
+import { assessPixelQuality, DEFAULT_MASK_BITS, detectSingleExposureGlitches, isValidMaskBits, MASKED_FLAG_BITS, QUALITY_FLAGS, summarizeExposureSamples } from '../lib/pixel-quality.js';
 
 const reply = (res, status, body) => {
   res.statusCode = status;
@@ -35,14 +35,19 @@ export function createPixelQualityHandler() {
         reply(res, 400, { error: 'Exposure counts require up to 256 valid pixel samples with coverage and FITS flags.' });
         return;
       }
+      if (input.maskBits !== undefined && !isValidMaskBits(input.maskBits)) {
+        reply(res, 400, { error: 'maskBits must be a 32-bit integer made of known SPHEREx flag bits.' });
+        return;
+      }
+      const maskBits = input.maskBits ?? DEFAULT_MASK_BITS;
       const glitchIndices = input.detectGlitches ? detectSingleExposureGlitches(input.samples) : [];
-      const quality = assessPixelQuality(input);
+      const quality = assessPixelQuality({ ...input, maskBits });
       if (glitchIndices.includes(input.activeSampleIndex) && quality.state === 'valid') {
         quality.state = 'suspected_transient';
         quality.label = 'Possible one-exposure transient; excluded from valid contributions';
         quality.excluded = true;
       }
-      reply(res, 200, { ...quality, glitchIndices, exposureCounts: summarizeExposureSamples(input.samples, input.maskEnabled, new Set(glitchIndices)) });
+      reply(res, 200, { ...quality, glitchIndices, exposureCounts: summarizeExposureSamples(input.samples, input.maskEnabled, new Set(glitchIndices), maskBits) });
     } catch {
       reply(res, 400, { error: 'Could not read the pixel inspection request.' });
     }

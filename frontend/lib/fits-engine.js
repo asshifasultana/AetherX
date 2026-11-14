@@ -2,6 +2,8 @@ import { decodeRice32 } from './rice.js';
 import { estimateBackground } from './background.js';
 import { MASKED_FLAG_BITS } from './pixel-quality.js';
 const BAD_PIXEL_MASK = MASKED_FLAG_BITS.reduce((mask, bit) => mask | (1 << bit), 0) >>> 0;
+// Category-selectable mask; falls back to the published default policy.
+const maskOf = settings => Number.isInteger(settings?.maskBits) ? settings.maskBits >>> 0 : BAD_PIXEL_MASK;
 export function parseHeader(bytes, offset) {
   const values = {};
   let cursor = offset, ended = false;
@@ -106,7 +108,7 @@ function bilinear(image, x, y, settings, variance, outputIndex) {
     if (px < 0 || py < 0 || px >= image.width || py >= image.height) continue;
     const w = (dx ? fx : 1 - fx) * (dy ? fy : 1 - fy), value = image.values[py * image.width + px];
     const index = py * image.width + px;
-    const flagged = (settings.hideBadPixels && image.flags && (image.flags[index] & BAD_PIXEL_MASK) !== 0) || image.derivedTransientPixels?.has(index);
+    const flagged = (settings.hideBadPixels && image.flags && (image.flags[index] & maskOf(settings)) !== 0) || image.derivedTransientPixels?.has(index);
     if (w > 0 && Number.isFinite(value) && !flagged) {
       sum += w * value; weight += w;
       if (variance) {
@@ -137,7 +139,7 @@ function lanczos3(image, x, y, settings, variance, outputIndex) {
   for (let dy = 0; dy < 6; dy++) for (let dx = 0; dx < 6; dx++) {
     const index = (y0 + dy) * image.width + x0 + dx;
     const value = image.values[index];
-    if (!Number.isFinite(value) || (settings.hideBadPixels && (image.flags?.[index] & BAD_PIXEL_MASK))
+    if (!Number.isFinite(value) || (settings.hideBadPixels && (image.flags?.[index] & maskOf(settings)))
       || image.derivedTransientPixels?.has(index)) return NaN;
     const w = wx[dx] * wy[dy];
     sum += w * value;
@@ -229,12 +231,14 @@ export function cropImage(image, bounds) {
 
 export function projectImage(image, target, settings, grid = skyGrid(target, settings.fovArcmin)) {
   image.matrix ||= matrixFor(image.header);
-  const good = [];
+  const good = [], mask = maskOf(settings);
   for (let i = 0; i < image.values.length; i++) {
-    if (Number.isFinite(image.values[i]) && !(settings.hideBadPixels && image.flags && (image.flags[i] & BAD_PIXEL_MASK)) && !image.derivedTransientPixels?.has(i)) good.push(image.values[i]);
+    if (Number.isFinite(image.values[i]) && !(settings.hideBadPixels && image.flags && (image.flags[i] & mask)) && !image.derivedTransientPixels?.has(i)) good.push(image.values[i]);
   }
   if (!good.length) throw new Error('No valid pixels remain after applying the quality mask.');
-  const background = estimateBackground(good).level;
+  // Background subtraction is on by default so frames compare on a common sky
+  // level; researchers can turn it off to see the calibrated pedestal.
+  const background = settings.subtractBackground === false ? 0 : estimateBackground(good).level;
   const values = new Float32Array(grid.width ** 2), flags = new Uint32Array(values.length), covered = new Uint8Array(values.length);
   values.fill(NaN);
   const variance = image.variance ? new Float32Array(values.length).fill(NaN) : undefined;
@@ -264,6 +268,9 @@ export function prepareImage(image, target, settings) {
   return image;
 }
 export function projectionKey(target, settings) {
-  const key = [target.raDeg, target.decDeg, settings.fovArcmin, Boolean(settings.hideBadPixels)].join('|');
-  return settings.resampling === 'lanczos3' ? key + '|lanczos3' : key;
+  let key = [target.raDeg, target.decDeg, settings.fovArcmin, Boolean(settings.hideBadPixels)].join('|');
+  if (settings.resampling === 'lanczos3') key += '|lanczos3';
+  if (settings.hideBadPixels && maskOf(settings) !== BAD_PIXEL_MASK) key += `|mask${maskOf(settings)}`;
+  if (settings.subtractBackground === false) key += '|raw';
+  return key;
 }

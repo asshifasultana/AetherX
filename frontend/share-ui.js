@@ -27,6 +27,8 @@ function summaryText() {
   else if (state.startDate) parts.push(`from ${state.startDate}`);
   else if (state.endDate) parts.push(`through ${state.endDate}`);
   if (state.frameDate) parts.push(`frame ${state.frameDate}`);
+  if(state.culture!=='all')parts.push(`culture: ${state.culture}`);
+  if(state.gaia)parts.push('Gaia markers');
   if (Number.isFinite(state.markRaDeg) && Number.isFinite(state.markDecDeg)) {
     parts.push(`marked source ${state.markRaDeg.toFixed(4)}°, ${signed(state.markDecDeg)}°`);
   }
@@ -102,7 +104,7 @@ function mount() {
   });
 
   for (const type of ['sky:target-selected', 'sky:viewer-settings-changed', 'sky:search-filters-changed',
-    'sky:source-marked', 'sky:frame-shown']) {
+    'sky:source-marked', 'sky:frame-shown', 'sky:context-settings-changed']) {
     window.addEventListener(type, refresh);
   }
 }

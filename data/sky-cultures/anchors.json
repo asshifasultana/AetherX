@@ -1,0 +1,7228 @@
+{
+  "schemaVersion": 1,
+  "retrievedAt": "2026-11-07T14:07:42.405Z",
+  "source": "https://vizier.cds.unistra.fr/viz-bin/VizieR?-source=I/239/hip_main",
+  "retrievalMethod": "Offline import of VizieR ASU TSV (Harvard mirror)",
+  "rightsUrl": "https://cds.unistra.fr/vizier-org/licences_vizier.html",
+  "attribution": "ESA, The Hipparcos and Tycho Catalogues (1997), CDS/VizieR I/239",
+  "anchors": {
+    "HIP 145": {
+      "raDeg": 0.45598912,
+      "decDeg": -3.02747891,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 154": {
+      "raDeg": 0.48996506,
+      "decDeg": -6.01397169,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 301": {
+      "raDeg": 0.93488487,
+      "decDeg": -17.33597002,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 443": {
+      "raDeg": 1.33394073,
+      "decDeg": -5.70783255,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 667": {
+      "raDeg": 2.05695057,
+      "decDeg": 29.73233165,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 677": {
+      "raDeg": 2.09653333,
+      "decDeg": 29.09082805,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 746": {
+      "raDeg": 2.29204036,
+      "decDeg": 59.15021814,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 841": {
+      "raDeg": 2.58017518,
+      "decDeg": 46.07227117,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 910": {
+      "raDeg": 2.81628415,
+      "decDeg": -15.46732287,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 1067": {
+      "raDeg": 3.30895828,
+      "decDeg": 15.18361593,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 1170": {
+      "raDeg": 3.66013628,
+      "decDeg": -18.93268628,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 1366": {
+      "raDeg": 4.27306518,
+      "decDeg": 38.68167915,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 1473": {
+      "raDeg": 4.58210555,
+      "decDeg": 36.7853273,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 1562": {
+      "raDeg": 4.85701265,
+      "decDeg": -8.82382948,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 1645": {
+      "raDeg": 5.14943435,
+      "decDeg": 8.19024803,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 1686": {
+      "raDeg": 5.28010785,
+      "decDeg": 37.96869954,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2081": {
+      "raDeg": 6.57028075,
+      "decDeg": -42.30512197,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2219": {
+      "raDeg": 7.01185234,
+      "decDeg": 17.89307501,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2224": {
+      "raDeg": 7.05288647,
+      "decDeg": 16.44510093,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2225": {
+      "raDeg": 7.05660466,
+      "decDeg": 44.39448925,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2548": {
+      "raDeg": 8.09897908,
+      "decDeg": 6.95545461,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2568": {
+      "raDeg": 8.14750345,
+      "decDeg": 20.29443334,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2599": {
+      "raDeg": 8.24994391,
+      "decDeg": 62.93178781,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2900": {
+      "raDeg": 9.1936292,
+      "decDeg": 44.48850971,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2903": {
+      "raDeg": 9.19713232,
+      "decDeg": 15.23175994,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2912": {
+      "raDeg": 9.22016239,
+      "decDeg": 33.71935227,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 2920": {
+      "raDeg": 9.24277921,
+      "decDeg": 53.89693161,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3031": {
+      "raDeg": 9.63958024,
+      "decDeg": 29.312369,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3092": {
+      "raDeg": 9.83165567,
+      "decDeg": 30.86122579,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3138": {
+      "raDeg": 9.98147468,
+      "decDeg": 21.4385644,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3179": {
+      "raDeg": 10.12661349,
+      "decDeg": 56.53740928,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3231": {
+      "raDeg": 10.27998074,
+      "decDeg": 39.45867141,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3300": {
+      "raDeg": 10.51618425,
+      "decDeg": 50.51254151,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3414": {
+      "raDeg": 10.8670447,
+      "decDeg": 47.02463657,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3419": {
+      "raDeg": 10.89678452,
+      "decDeg": -17.9866841,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3436": {
+      "raDeg": 10.9587023,
+      "decDeg": -12.01130744,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3455": {
+      "raDeg": 11.04752272,
+      "decDeg": -10.60927365,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3504": {
+      "raDeg": 11.18125882,
+      "decDeg": 48.28438262,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3632": {
+      "raDeg": 11.63740001,
+      "decDeg": 15.47561194,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3685": {
+      "raDeg": 11.80650093,
+      "decDeg": 19.57868622,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3693": {
+      "raDeg": 11.83495908,
+      "decDeg": 24.26737703,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3721": {
+      "raDeg": 11.94174879,
+      "decDeg": 74.84758739,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3760": {
+      "raDeg": 12.07226858,
+      "decDeg": 7.29991977,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3786": {
+      "raDeg": 12.17039736,
+      "decDeg": 7.58520186,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3810": {
+      "raDeg": 12.2446238,
+      "decDeg": 16.9411337,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3821": {
+      "raDeg": 12.27125262,
+      "decDeg": 57.8165477,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3849": {
+      "raDeg": 12.35647376,
+      "decDeg": -13.56101709,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3881": {
+      "raDeg": 12.45345723,
+      "decDeg": 41.07895474,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3885": {
+      "raDeg": 12.47128657,
+      "decDeg": 27.71031105,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 3909": {
+      "raDeg": 12.53218487,
+      "decDeg": -10.64377045,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 4366": {
+      "raDeg": 13.99384283,
+      "decDeg": 27.20935396,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 4427": {
+      "raDeg": 14.17708808,
+      "decDeg": 60.71674966,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 4436": {
+      "raDeg": 14.18790699,
+      "decDeg": 38.49925513,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 4463": {
+      "raDeg": 14.30178237,
+      "decDeg": 23.41775997,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 4510": {
+      "raDeg": 14.4589515,
+      "decDeg": 28.9922356,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 4889": {
+      "raDeg": 15.70452742,
+      "decDeg": 31.80433674,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 4906": {
+      "raDeg": 15.73606615,
+      "decDeg": 7.89007256,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5131": {
+      "raDeg": 16.42053152,
+      "decDeg": 21.4732162,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5132": {
+      "raDeg": 16.42365838,
+      "decDeg": 21.46547318,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5310": {
+      "raDeg": 16.98795829,
+      "decDeg": 20.73932115,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5346": {
+      "raDeg": 17.09309979,
+      "decDeg": 5.6502213,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5364": {
+      "raDeg": 17.14693197,
+      "decDeg": -10.181928,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5372": {
+      "raDeg": 17.18399735,
+      "decDeg": 86.25711803,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5434": {
+      "raDeg": 17.37550908,
+      "decDeg": 47.2418241,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5447": {
+      "raDeg": 17.43248991,
+      "decDeg": 35.62083048,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5454": {
+      "raDeg": 17.45502008,
+      "decDeg": 19.6583854,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5542": {
+      "raDeg": 17.77471116,
+      "decDeg": 55.14994765,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5544": {
+      "raDeg": 17.7782219,
+      "decDeg": 31.42476555,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5571": {
+      "raDeg": 17.86330901,
+      "decDeg": 21.03467568,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5586": {
+      "raDeg": 17.91494471,
+      "decDeg": 30.08972962,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5626": {
+      "raDeg": 18.06878934,
+      "decDeg": 79.67397492,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5737": {
+      "raDeg": 18.43250986,
+      "decDeg": 7.57548895,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 5742": {
+      "raDeg": 18.43723014,
+      "decDeg": 24.58376482,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 6061": {
+      "raDeg": 19.4499337,
+      "decDeg": 3.61452038,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 6193": {
+      "raDeg": 19.86657455,
+      "decDeg": 27.26408682,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 6242": {
+      "raDeg": 20.02049027,
+      "decDeg": 58.2316161,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 6537": {
+      "raDeg": 21.00604671,
+      "decDeg": -8.18275372,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 6686": {
+      "raDeg": 21.45251267,
+      "decDeg": 60.23540347,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 6706": {
+      "raDeg": 21.56366085,
+      "decDeg": 19.17232096,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 6999": {
+      "raDeg": 22.52542506,
+      "decDeg": 47.00737711,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 7007": {
+      "raDeg": 22.54559597,
+      "decDeg": 6.14393314,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 7097": {
+      "raDeg": 22.87080776,
+      "decDeg": 15.34583101,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 7513": {
+      "raDeg": 24.19990413,
+      "decDeg": 41.40638491,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 7535": {
+      "raDeg": 24.27483902,
+      "decDeg": 12.14151058,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 7588": {
+      "raDeg": 24.42813204,
+      "decDeg": -57.23666007,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 7607": {
+      "raDeg": 24.49792651,
+      "decDeg": 48.62848641,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 7719": {
+      "raDeg": 24.83757938,
+      "decDeg": 44.38612827,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 7818": {
+      "raDeg": 25.14501739,
+      "decDeg": 40.57710624,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 7884": {
+      "raDeg": 25.35794814,
+      "decDeg": 5.48760445,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8068": {
+      "raDeg": 25.9150637,
+      "decDeg": 50.6887655,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8102": {
+      "raDeg": 26.02136441,
+      "decDeg": -15.93955597,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8198": {
+      "raDeg": 26.34828629,
+      "decDeg": 9.15764102,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8645": {
+      "raDeg": 27.86504416,
+      "decDeg": -10.33494526,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8796": {
+      "raDeg": 28.27041595,
+      "decDeg": 29.57939727,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8814": {
+      "raDeg": 28.32229965,
+      "decDeg": 40.72979974,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8832": {
+      "raDeg": 28.38235506,
+      "decDeg": 19.29409264,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8833": {
+      "raDeg": 28.38890233,
+      "decDeg": 3.18747844,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8886": {
+      "raDeg": 28.59868107,
+      "decDeg": 63.67014686,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 8903": {
+      "raDeg": 28.65978771,
+      "decDeg": 20.80829949,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 9007": {
+      "raDeg": 28.98680207,
+      "decDeg": -51.60958673,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 9110": {
+      "raDeg": 29.33763922,
+      "decDeg": 17.8175894,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 9153": {
+      "raDeg": 29.48239763,
+      "decDeg": 23.5960961,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 9347": {
+      "raDeg": 30.0009367,
+      "decDeg": -21.07777193,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 9487": {
+      "raDeg": 30.51166929,
+      "decDeg": 2.76376048,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 9505": {
+      "raDeg": 30.57530917,
+      "decDeg": 54.48754946,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 9640": {
+      "raDeg": 30.97466283,
+      "decDeg": 42.32984832,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 9884": {
+      "raDeg": 31.79285757,
+      "decDeg": 23.46277743,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 10064": {
+      "raDeg": 32.38550383,
+      "decDeg": 34.98739204,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 10306": {
+      "raDeg": 33.19993262,
+      "decDeg": 21.21098318,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 10324": {
+      "raDeg": 33.25004577,
+      "decDeg": 8.8467523,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 10328": {
+      "raDeg": 33.26352181,
+      "decDeg": 15.27991044,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 10340": {
+      "raDeg": 33.30558667,
+      "decDeg": 44.23168903,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 10602": {
+      "raDeg": 34.12708452,
+      "decDeg": -51.51211145,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 10644": {
+      "raDeg": 34.26007346,
+      "decDeg": 34.22482985,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 10670": {
+      "raDeg": 34.32848216,
+      "decDeg": 33.84732099,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 10732": {
+      "raDeg": 34.53144339,
+      "decDeg": 19.90116135,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11020": {
+      "raDeg": 35.48098509,
+      "decDeg": 57.2429201,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11060": {
+      "raDeg": 35.58930899,
+      "decDeg": 55.84565637,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11279": {
+      "raDeg": 36.31678817,
+      "decDeg": 56.60982421,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11313": {
+      "raDeg": 36.40583743,
+      "decDeg": 50.27866588,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11345": {
+      "raDeg": 36.48755111,
+      "decDeg": -12.290452,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11407": {
+      "raDeg": 36.74627081,
+      "decDeg": -47.70382692,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11484": {
+      "raDeg": 37.03965786,
+      "decDeg": 8.4600887,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11569": {
+      "raDeg": 37.26661741,
+      "decDeg": 67.40238385,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11767": {
+      "raDeg": 37.94614689,
+      "decDeg": 89.26413805,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 11783": {
+      "raDeg": 38.02198846,
+      "decDeg": -15.2443199,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12332": {
+      "raDeg": 39.70416245,
+      "decDeg": 21.96144509,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12387": {
+      "raDeg": 39.87061789,
+      "decDeg": 0.3285168,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12390": {
+      "raDeg": 39.89054885,
+      "decDeg": -11.87158159,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12413": {
+      "raDeg": 39.94966387,
+      "decDeg": -42.89163328,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12444": {
+      "raDeg": 40.05209879,
+      "decDeg": -9.45268375,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12486": {
+      "raDeg": 40.16638213,
+      "decDeg": -39.85530905,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12489": {
+      "raDeg": 40.17097186,
+      "decDeg": 27.06100903,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12686": {
+      "raDeg": 40.74778071,
+      "decDeg": 53.5261822,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12706": {
+      "raDeg": 40.82551897,
+      "decDeg": 3.23617162,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12719": {
+      "raDeg": 40.86296031,
+      "decDeg": 27.70717078,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12770": {
+      "raDeg": 41.03064356,
+      "decDeg": -13.85867594,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12777": {
+      "raDeg": 41.04869991,
+      "decDeg": 49.22866639,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12828": {
+      "raDeg": 41.23488901,
+      "decDeg": 10.11421979,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12832": {
+      "raDeg": 41.23961417,
+      "decDeg": 12.44596709,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 12843": {
+      "raDeg": 41.27492276,
+      "decDeg": -18.57265077,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13061": {
+      "raDeg": 41.97683942,
+      "decDeg": 29.24742385,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13147": {
+      "raDeg": 42.27233113,
+      "decDeg": -32.40628403,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13209": {
+      "raDeg": 42.49578911,
+      "decDeg": 27.26079044,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13254": {
+      "raDeg": 42.64547584,
+      "decDeg": 38.31890838,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13268": {
+      "raDeg": 42.67413655,
+      "decDeg": 55.89552955,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13288": {
+      "raDeg": 42.75977464,
+      "decDeg": -21.0039789,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13327": {
+      "raDeg": 42.87319979,
+      "decDeg": 15.08212726,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13531": {
+      "raDeg": 43.564427,
+      "decDeg": 52.76248991,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13701": {
+      "raDeg": 44.10668245,
+      "decDeg": -8.89760976,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13702": {
+      "raDeg": 44.10825985,
+      "decDeg": 18.02365076,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13847": {
+      "raDeg": 44.5654818,
+      "decDeg": -40.30473491,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13879": {
+      "raDeg": 44.69021034,
+      "decDeg": 39.66282739,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13914": {
+      "raDeg": 44.80305773,
+      "decDeg": 21.34044477,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 13954": {
+      "raDeg": 44.92873469,
+      "decDeg": 8.90740111,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14135": {
+      "raDeg": 45.56991279,
+      "decDeg": 4.08992539,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14146": {
+      "raDeg": 45.59830468,
+      "decDeg": -23.62433613,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14284": {
+      "raDeg": 46.03439411,
+      "decDeg": -47.85678799,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14293": {
+      "raDeg": 46.06865515,
+      "decDeg": -7.60089934,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14328": {
+      "raDeg": 46.19912598,
+      "decDeg": 53.50645031,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14354": {
+      "raDeg": 46.29373754,
+      "decDeg": 38.84053298,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14576": {
+      "raDeg": 47.04220716,
+      "decDeg": 40.9556512,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14632": {
+      "raDeg": 47.26201363,
+      "decDeg": 49.61350009,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14668": {
+      "raDeg": 47.37345463,
+      "decDeg": 44.85788896,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14817": {
+      "raDeg": 47.82250605,
+      "decDeg": 39.61157075,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14838": {
+      "raDeg": 47.90695691,
+      "decDeg": 19.72669777,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 14862": {
+      "raDeg": 47.98432711,
+      "decDeg": 74.39386878,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 15110": {
+      "raDeg": 48.72547816,
+      "decDeg": 21.04462873,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 15197": {
+      "raDeg": 48.95844499,
+      "decDeg": -8.8198405,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 15474": {
+      "raDeg": 49.87904033,
+      "decDeg": -21.7579421,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 15510": {
+      "raDeg": 49.97177014,
+      "decDeg": -43.07154929,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 15737": {
+      "raDeg": 50.68863399,
+      "decDeg": 20.7421051,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 15863": {
+      "raDeg": 51.08061889,
+      "decDeg": 49.86124281,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 15900": {
+      "raDeg": 51.20349011,
+      "decDeg": 9.02906504,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 16083": {
+      "raDeg": 51.79217049,
+      "decDeg": 9.7327724,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 16322": {
+      "raDeg": 52.60198294,
+      "decDeg": 11.33648129,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 16335": {
+      "raDeg": 52.64367585,
+      "decDeg": 47.99517199,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 16369": {
+      "raDeg": 52.71819576,
+      "decDeg": 12.93668186,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 16537": {
+      "raDeg": 53.23509009,
+      "decDeg": -9.45830584,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 16611": {
+      "raDeg": 53.44686638,
+      "decDeg": -21.63281597,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 16826": {
+      "raDeg": 54.12233383,
+      "decDeg": 48.19270068,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 16852": {
+      "raDeg": 54.21882896,
+      "decDeg": 0.40283316,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17351": {
+      "raDeg": 55.70884185,
+      "decDeg": -37.31334485,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17358": {
+      "raDeg": 55.7311754,
+      "decDeg": 47.7876533,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17378": {
+      "raDeg": 55.81231706,
+      "decDeg": -9.76519868,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17448": {
+      "raDeg": 56.07969347,
+      "decDeg": 32.28827325,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17489": {
+      "raDeg": 56.20084227,
+      "decDeg": 24.28957712,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17499": {
+      "raDeg": 56.21884811,
+      "decDeg": 24.1134484,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17529": {
+      "raDeg": 56.29851422,
+      "decDeg": 42.57854437,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17531": {
+      "raDeg": 56.30200876,
+      "decDeg": 24.46737879,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17573": {
+      "raDeg": 56.45663804,
+      "decDeg": 24.36785796,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17579": {
+      "raDeg": 56.47693278,
+      "decDeg": 24.55462128,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17593": {
+      "raDeg": 56.53542672,
+      "decDeg": -12.1017353,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17608": {
+      "raDeg": 56.58150135,
+      "decDeg": 23.94846207,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17651": {
+      "raDeg": 56.71245432,
+      "decDeg": -23.248438,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17702": {
+      "raDeg": 56.87110065,
+      "decDeg": 24.10524193,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17717": {
+      "raDeg": 56.91508473,
+      "decDeg": -23.87479582,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17771": {
+      "raDeg": 57.06771677,
+      "decDeg": 11.14336637,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17797": {
+      "raDeg": 57.14926223,
+      "decDeg": -37.62012878,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17847": {
+      "raDeg": 57.29054669,
+      "decDeg": 24.05352412,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17851": {
+      "raDeg": 57.29668368,
+      "decDeg": 24.13682565,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17874": {
+      "raDeg": 57.36367035,
+      "decDeg": -36.2001125,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 17959": {
+      "raDeg": 57.58948256,
+      "decDeg": 71.33236777,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 18216": {
+      "raDeg": 58.42784574,
+      "decDeg": -24.61221253,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 18246": {
+      "raDeg": 58.53299363,
+      "decDeg": 31.88365776,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 18532": {
+      "raDeg": 59.46342138,
+      "decDeg": 40.01027315,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 18543": {
+      "raDeg": 59.50720862,
+      "decDeg": -13.50824471,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 18614": {
+      "raDeg": 59.74124892,
+      "decDeg": 35.79102701,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 18673": {
+      "raDeg": 59.98115045,
+      "decDeg": -24.01625677,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 18724": {
+      "raDeg": 60.17008591,
+      "decDeg": 12.49037571,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 18907": {
+      "raDeg": 60.78907003,
+      "decDeg": 5.98930909,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19038": {
+      "raDeg": 61.17357446,
+      "decDeg": 22.0820679,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19167": {
+      "raDeg": 61.64606374,
+      "decDeg": 50.35135022,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19205": {
+      "raDeg": 61.75215574,
+      "decDeg": 29.00128762,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19343": {
+      "raDeg": 62.16530527,
+      "decDeg": 47.71259359,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19513": {
+      "raDeg": 62.70783742,
+      "decDeg": 26.48103948,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19587": {
+      "raDeg": 62.96638834,
+      "decDeg": -6.8377787,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19811": {
+      "raDeg": 63.72212566,
+      "decDeg": 40.48372394,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19812": {
+      "raDeg": 63.72440722,
+      "decDeg": 48.40937312,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19849": {
+      "raDeg": 63.8234923,
+      "decDeg": -7.64455846,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19860": {
+      "raDeg": 63.88352173,
+      "decDeg": 8.89240989,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19949": {
+      "raDeg": 64.17960437,
+      "decDeg": 53.61180318,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 19990": {
+      "raDeg": 64.31535896,
+      "decDeg": 20.57874033,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20042": {
+      "raDeg": 64.47341068,
+      "decDeg": -33.79833145,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20070": {
+      "raDeg": 64.56073112,
+      "decDeg": 50.29563944,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20205": {
+      "raDeg": 64.94805793,
+      "decDeg": 15.62770031,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20250": {
+      "raDeg": 65.08847817,
+      "decDeg": 27.35094069,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20354": {
+      "raDeg": 65.38811942,
+      "decDeg": 46.4989629,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20430": {
+      "raDeg": 65.6455435,
+      "decDeg": 25.62935771,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20455": {
+      "raDeg": 65.73344722,
+      "decDeg": 17.5425843,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20507": {
+      "raDeg": 65.92033483,
+      "decDeg": -3.74533244,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20535": {
+      "raDeg": 66.00902233,
+      "decDeg": -34.01698632,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20635": {
+      "raDeg": 66.34207825,
+      "decDeg": 22.29398098,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20648": {
+      "raDeg": 66.37215593,
+      "decDeg": 17.92798917,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20711": {
+      "raDeg": 66.57664484,
+      "decDeg": 22.81369394,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20885": {
+      "raDeg": 67.14346805,
+      "decDeg": 15.96221721,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20889": {
+      "raDeg": 67.15388879,
+      "decDeg": 19.18052092,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20894": {
+      "raDeg": 67.16531219,
+      "decDeg": 15.8709468,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 20901": {
+      "raDeg": 67.20875444,
+      "decDeg": 13.04763905,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 21248": {
+      "raDeg": 68.3776229,
+      "decDeg": -29.76583186,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 21393": {
+      "raDeg": 68.88779874,
+      "decDeg": -30.56231049,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 21402": {
+      "raDeg": 68.91347315,
+      "decDeg": 10.16091706,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 21421": {
+      "raDeg": 68.98000195,
+      "decDeg": 16.50976164,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 21444": {
+      "raDeg": 69.07975243,
+      "decDeg": -3.352448,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 21476": {
+      "raDeg": 69.17264013,
+      "decDeg": 41.26485467,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 21589": {
+      "raDeg": 69.53917371,
+      "decDeg": 12.51087423,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 21594": {
+      "raDeg": 69.54529558,
+      "decDeg": -14.303587,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 21881": {
+      "raDeg": 70.56126452,
+      "decDeg": 22.95697545,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 22109": {
+      "raDeg": 71.37558764,
+      "decDeg": -3.25462465,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 22449": {
+      "raDeg": 72.45890935,
+      "decDeg": 6.96124744,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 22509": {
+      "raDeg": 72.65300943,
+      "decDeg": 8.90025258,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 22549": {
+      "raDeg": 72.80152507,
+      "decDeg": 5.60510146,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 22565": {
+      "raDeg": 72.84338884,
+      "decDeg": 18.83994085,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 22701": {
+      "raDeg": 73.2236682,
+      "decDeg": -5.45275591,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 22797": {
+      "raDeg": 73.5628985,
+      "decDeg": 2.44067149,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 22845": {
+      "raDeg": 73.7237672,
+      "decDeg": 10.15114511,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 22957": {
+      "raDeg": 74.09300449,
+      "decDeg": 13.51457755,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23015": {
+      "raDeg": 74.24840098,
+      "decDeg": 33.16613537,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23123": {
+      "raDeg": 74.63709525,
+      "decDeg": 1.71403506,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23364": {
+      "raDeg": 75.35977051,
+      "decDeg": -7.17397802,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23416": {
+      "raDeg": 75.49222507,
+      "decDeg": 43.82331397,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23453": {
+      "raDeg": 75.61950025,
+      "decDeg": 41.07588953,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23497": {
+      "raDeg": 75.77376699,
+      "decDeg": 21.5900617,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23522": {
+      "raDeg": 75.854572,
+      "decDeg": 60.44228144,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23607": {
+      "raDeg": 76.1422432,
+      "decDeg": 15.40418059,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23685": {
+      "raDeg": 76.36521705,
+      "decDeg": -22.37085673,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23767": {
+      "raDeg": 76.62862102,
+      "decDeg": 41.23464074,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23835": {
+      "raDeg": 76.86115023,
+      "decDeg": 18.64500711,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23871": {
+      "raDeg": 76.95178565,
+      "decDeg": 20.41845485,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23875": {
+      "raDeg": 76.96264146,
+      "decDeg": -5.08626282,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 23972": {
+      "raDeg": 77.28659571,
+      "decDeg": -8.75407607,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24010": {
+      "raDeg": 77.42483084,
+      "decDeg": 15.59727157,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24244": {
+      "raDeg": 78.07453075,
+      "decDeg": -11.86914287,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24305": {
+      "raDeg": 78.2328046,
+      "decDeg": -16.20542901,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24327": {
+      "raDeg": 78.30785422,
+      "decDeg": -12.94128833,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24436": {
+      "raDeg": 78.63446353,
+      "decDeg": -8.20163919,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24608": {
+      "raDeg": 79.17206517,
+      "decDeg": 45.99902927,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24674": {
+      "raDeg": 79.40166225,
+      "decDeg": -6.84438616,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24822": {
+      "raDeg": 79.81912416,
+      "decDeg": 22.09669104,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24845": {
+      "raDeg": 79.89385817,
+      "decDeg": -13.17677698,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 24873": {
+      "raDeg": 79.99596151,
+      "decDeg": -12.31560456,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25044": {
+      "raDeg": 80.4406153,
+      "decDeg": -0.38246922,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25142": {
+      "raDeg": 80.7083388,
+      "decDeg": 3.54444809,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25247": {
+      "raDeg": 80.98681839,
+      "decDeg": -7.80795569,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25281": {
+      "raDeg": 81.11923774,
+      "decDeg": -2.39713844,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25336": {
+      "raDeg": 81.28278416,
+      "decDeg": 6.34973451,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25428": {
+      "raDeg": 81.57290804,
+      "decDeg": 28.60787346,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25473": {
+      "raDeg": 81.70928405,
+      "decDeg": 3.09567718,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25539": {
+      "raDeg": 81.9086835,
+      "decDeg": 21.93698219,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25541": {
+      "raDeg": 81.91203061,
+      "decDeg": 34.47598643,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25606": {
+      "raDeg": 82.06135971,
+      "decDeg": -20.75923214,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25813": {
+      "raDeg": 82.69603301,
+      "decDeg": 5.94821792,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25859": {
+      "raDeg": 82.8030645,
+      "decDeg": -35.47043592,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25923": {
+      "raDeg": 82.98275119,
+      "decDeg": -7.30152625,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25930": {
+      "raDeg": 83.00166562,
+      "decDeg": -0.2990934,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25945": {
+      "raDeg": 83.0531302,
+      "decDeg": 18.59424525,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25950": {
+      "raDeg": 83.05893591,
+      "decDeg": 17.05815445,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25984": {
+      "raDeg": 83.18197584,
+      "decDeg": 32.1920314,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 25985": {
+      "raDeg": 83.18255798,
+      "decDeg": -17.82229227,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26126": {
+      "raDeg": 83.5699587,
+      "decDeg": 3.76693355,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26176": {
+      "raDeg": 83.70515764,
+      "decDeg": 9.48958528,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26207": {
+      "raDeg": 83.78449043,
+      "decDeg": 9.93416294,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26221": {
+      "raDeg": 83.81860863,
+      "decDeg": -5.38969624,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26235": {
+      "raDeg": 83.84541591,
+      "decDeg": -5.41606331,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26237": {
+      "raDeg": 83.84650694,
+      "decDeg": -4.83834045,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26241": {
+      "raDeg": 83.85825475,
+      "decDeg": -5.90989984,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26248": {
+      "raDeg": 83.86300222,
+      "decDeg": 24.03963793,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26311": {
+      "raDeg": 84.05338572,
+      "decDeg": -1.20191725,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26315": {
+      "raDeg": 84.06644622,
+      "decDeg": 47.71533787,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26344": {
+      "raDeg": 84.14677009,
+      "decDeg": 54.42868426,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26366": {
+      "raDeg": 84.22637775,
+      "decDeg": 9.291412,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26451": {
+      "raDeg": 84.41118447,
+      "decDeg": 21.14259299,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26563": {
+      "raDeg": 84.72121589,
+      "decDeg": -7.21270844,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26594": {
+      "raDeg": 84.79644123,
+      "decDeg": 4.12146667,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26634": {
+      "raDeg": 84.91224975,
+      "decDeg": -34.07404941,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26640": {
+      "raDeg": 84.93413604,
+      "decDeg": 25.89714891,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 26727": {
+      "raDeg": 85.18968672,
+      "decDeg": -1.94257841,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27072": {
+      "raDeg": 86.11656241,
+      "decDeg": -22.44748663,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27204": {
+      "raDeg": 86.49955386,
+      "decDeg": -32.30637997,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27288": {
+      "raDeg": 86.73895728,
+      "decDeg": -14.82194717,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27366": {
+      "raDeg": 86.93911641,
+      "decDeg": -9.66960186,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27468": {
+      "raDeg": 87.25399777,
+      "decDeg": 24.56755473,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27628": {
+      "raDeg": 87.7398034,
+      "decDeg": -35.76929225,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27654": {
+      "raDeg": 87.82980343,
+      "decDeg": -20.87751376,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27673": {
+      "raDeg": 87.87246934,
+      "decDeg": 39.14847936,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27810": {
+      "raDeg": 88.2786848,
+      "decDeg": -33.8014395,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27830": {
+      "raDeg": 88.33184814,
+      "decDeg": 27.61228536,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27913": {
+      "raDeg": 88.59618305,
+      "decDeg": 20.27641498,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27949": {
+      "raDeg": 88.71160776,
+      "decDeg": 55.7069049,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 27989": {
+      "raDeg": 88.79287161,
+      "decDeg": 7.40703634,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28103": {
+      "raDeg": 89.10132627,
+      "decDeg": -14.16803805,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28199": {
+      "raDeg": 89.38421613,
+      "decDeg": -35.28330688,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28237": {
+      "raDeg": 89.49857371,
+      "decDeg": 25.95391597,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28328": {
+      "raDeg": 89.78662719,
+      "decDeg": -42.81510761,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28358": {
+      "raDeg": 89.88145972,
+      "decDeg": 54.28498197,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28360": {
+      "raDeg": 89.88237261,
+      "decDeg": 44.94743492,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28380": {
+      "raDeg": 89.93015897,
+      "decDeg": 37.21276409,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28614": {
+      "raDeg": 90.59579323,
+      "decDeg": 9.64736756,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28716": {
+      "raDeg": 90.9799315,
+      "decDeg": 20.13845865,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 28734": {
+      "raDeg": 91.0300689,
+      "decDeg": 23.26363207,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29034": {
+      "raDeg": 91.88180046,
+      "decDeg": -37.25292114,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29038": {
+      "raDeg": 91.89300774,
+      "decDeg": 14.76852318,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29426": {
+      "raDeg": 92.98498656,
+      "decDeg": 14.20881425,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29434": {
+      "raDeg": 93.01365054,
+      "decDeg": 16.13044684,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29655": {
+      "raDeg": 93.71956952,
+      "decDeg": 22.50682376,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29696": {
+      "raDeg": 93.84473576,
+      "decDeg": 29.49871224,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29704": {
+      "raDeg": 93.85469568,
+      "decDeg": 16.14320591,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29800": {
+      "raDeg": 94.11070845,
+      "decDeg": 12.2717103,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29807": {
+      "raDeg": 94.13806399,
+      "decDeg": -35.14073157,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 29997": {
+      "raDeg": 94.71158258,
+      "decDeg": 69.3200343,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 30122": {
+      "raDeg": 95.07827982,
+      "decDeg": -30.06337656,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 30277": {
+      "raDeg": 95.52852147,
+      "decDeg": -33.43627251,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 30324": {
+      "raDeg": 95.6749475,
+      "decDeg": -17.95591658,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 30343": {
+      "raDeg": 95.73996302,
+      "decDeg": 22.51385027,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 30419": {
+      "raDeg": 95.94207368,
+      "decDeg": 4.59283881,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 30438": {
+      "raDeg": 95.98787763,
+      "decDeg": -52.69571799,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 30788": {
+      "raDeg": 97.04257272,
+      "decDeg": -32.58012947,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 30883": {
+      "raDeg": 97.24079361,
+      "decDeg": 20.2121672,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 31125": {
+      "raDeg": 97.96403433,
+      "decDeg": -23.41843727,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 31216": {
+      "raDeg": 98.22595658,
+      "decDeg": 7.33297921,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 31416": {
+      "raDeg": 98.76408302,
+      "decDeg": -22.96483318,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 31592": {
+      "raDeg": 99.17082883,
+      "decDeg": -19.25570928,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 31681": {
+      "raDeg": 99.42792641,
+      "decDeg": 16.39941482,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 31685": {
+      "raDeg": 99.44029869,
+      "decDeg": -43.19592394,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 31700": {
+      "raDeg": 99.47260802,
+      "decDeg": -18.23745713,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 31978": {
+      "raDeg": 100.24442101,
+      "decDeg": 9.89576021,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 32246": {
+      "raDeg": 100.98304088,
+      "decDeg": 25.13115531,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 32349": {
+      "raDeg": 101.28854105,
+      "decDeg": -16.71314306,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 32362": {
+      "raDeg": 101.3226398,
+      "decDeg": 12.89605513,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 32759": {
+      "raDeg": 102.46027285,
+      "decDeg": -32.50848752,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 32768": {
+      "raDeg": 102.48390349,
+      "decDeg": -50.61439973,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 32921": {
+      "raDeg": 102.88770733,
+      "decDeg": 21.76123162,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33018": {
+      "raDeg": 103.1972503,
+      "decDeg": 33.96136985,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33152": {
+      "raDeg": 103.53314518,
+      "decDeg": -24.18422296,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33160": {
+      "raDeg": 103.54783633,
+      "decDeg": -12.03859273,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33302": {
+      "raDeg": 103.90582904,
+      "decDeg": -20.13659348,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33345": {
+      "raDeg": 104.0276949,
+      "decDeg": -14.04344644,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33347": {
+      "raDeg": 104.03427636,
+      "decDeg": -17.05424675,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33449": {
+      "raDeg": 104.31916052,
+      "decDeg": 58.42305973,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33579": {
+      "raDeg": 104.65644451,
+      "decDeg": -28.97208931,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33646": {
+      "raDeg": 104.84442439,
+      "decDeg": 25.23574417,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33694": {
+      "raDeg": 105.0160332,
+      "decDeg": 76.97744152,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33856": {
+      "raDeg": 105.42979876,
+      "decDeg": -27.93484165,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 33977": {
+      "raDeg": 105.75613986,
+      "decDeg": -23.83330131,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 34045": {
+      "raDeg": 105.93955493,
+      "decDeg": -15.63325876,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 34088": {
+      "raDeg": 106.02723079,
+      "decDeg": 20.57029939,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 34444": {
+      "raDeg": 107.09785853,
+      "decDeg": -26.39320776,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 34693": {
+      "raDeg": 107.78496505,
+      "decDeg": 30.24528065,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 34769": {
+      "raDeg": 107.96608486,
+      "decDeg": -0.49278056,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 35037": {
+      "raDeg": 108.70275679,
+      "decDeg": -26.77268601,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 35264": {
+      "raDeg": 109.28568399,
+      "decDeg": -37.09748689,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 35350": {
+      "raDeg": 109.52336162,
+      "decDeg": 16.54047526,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 35550": {
+      "raDeg": 110.0307889,
+      "decDeg": 21.98233941,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 35846": {
+      "raDeg": 110.8689755,
+      "decDeg": 25.05060041,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 35904": {
+      "raDeg": 111.02377104,
+      "decDeg": -29.30311979,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36046": {
+      "raDeg": 111.43198371,
+      "decDeg": 27.79828561,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36188": {
+      "raDeg": 111.78780121,
+      "decDeg": 8.28940893,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36238": {
+      "raDeg": 111.93497685,
+      "decDeg": 21.44554856,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36366": {
+      "raDeg": 112.27754045,
+      "decDeg": 31.78407932,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36377": {
+      "raDeg": 112.3078263,
+      "decDeg": -43.30189129,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36514": {
+      "raDeg": 112.67754202,
+      "decDeg": -30.96228313,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36547": {
+      "raDeg": 112.76866761,
+      "decDeg": 82.41156871,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36850": {
+      "raDeg": 113.65001898,
+      "decDeg": 31.88863645,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36917": {
+      "raDeg": 113.8455718,
+      "decDeg": -28.36927798,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 36962": {
+      "raDeg": 113.98071783,
+      "decDeg": 26.89600343,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37096": {
+      "raDeg": 114.34216663,
+      "decDeg": -34.96857044,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37173": {
+      "raDeg": 114.57519746,
+      "decDeg": -25.36478805,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37229": {
+      "raDeg": 114.70783872,
+      "decDeg": -26.8038924,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37279": {
+      "raDeg": 114.82724194,
+      "decDeg": 5.22750767,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37297": {
+      "raDeg": 114.86397492,
+      "decDeg": -38.3080602,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37300": {
+      "raDeg": 114.86912974,
+      "decDeg": 17.67451551,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37629": {
+      "raDeg": 115.82785545,
+      "decDeg": 28.8840717,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37648": {
+      "raDeg": 115.88498187,
+      "decDeg": -28.41095714,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37677": {
+      "raDeg": 115.95196716,
+      "decDeg": -28.9548352,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37740": {
+      "raDeg": 116.11195237,
+      "decDeg": 24.39812929,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37773": {
+      "raDeg": 116.18282329,
+      "decDeg": -66.07204846,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37819": {
+      "raDeg": 116.31376631,
+      "decDeg": -37.96859848,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37826": {
+      "raDeg": 116.33068263,
+      "decDeg": 28.02631031,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 37908": {
+      "raDeg": 116.53122379,
+      "decDeg": 18.51016877,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 38070": {
+      "raDeg": 117.02156206,
+      "decDeg": -25.93718054,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 38164": {
+      "raDeg": 117.30957923,
+      "decDeg": -46.37322729,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 38170": {
+      "raDeg": 117.32357809,
+      "decDeg": -24.85978401,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 38414": {
+      "raDeg": 118.05435622,
+      "decDeg": -40.57579889,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 38455": {
+      "raDeg": 118.16105542,
+      "decDeg": -38.86282206,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 38722": {
+      "raDeg": 118.91626746,
+      "decDeg": 19.88406657,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 38827": {
+      "raDeg": 119.19475729,
+      "decDeg": -52.98240062,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 38835": {
+      "raDeg": 119.21482616,
+      "decDeg": -22.88014849,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 38901": {
+      "raDeg": 119.41713237,
+      "decDeg": -30.33458703,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 39340": {
+      "raDeg": 120.62842941,
+      "decDeg": 63.09034005,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 39360": {
+      "raDeg": 120.68662049,
+      "decDeg": -41.30986539,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 39429": {
+      "raDeg": 120.89612561,
+      "decDeg": -40.00318846,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 39757": {
+      "raDeg": 121.88625899,
+      "decDeg": -24.30443677,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 39780": {
+      "raDeg": 121.9410051,
+      "decDeg": 21.58197937,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 39938": {
+      "raDeg": 122.34608921,
+      "decDeg": 42.43078783,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 39953": {
+      "raDeg": 122.38314727,
+      "decDeg": -47.33661177,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 40015": {
+      "raDeg": 122.58415252,
+      "decDeg": 69.72479195,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 40091": {
+      "raDeg": 122.83958436,
+      "decDeg": -39.61855304,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 40167": {
+      "raDeg": 123.05295353,
+      "decDeg": 17.64813756,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 40326": {
+      "raDeg": 123.51202967,
+      "decDeg": -40.34773028,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 40526": {
+      "raDeg": 124.12895101,
+      "decDeg": 9.18566295,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 40646": {
+      "raDeg": 124.46008016,
+      "decDeg": 59.57112846,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 40843": {
+      "raDeg": 125.01613464,
+      "decDeg": 27.21862138,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 41075": {
+      "raDeg": 125.70887544,
+      "decDeg": 43.18837233,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 41307": {
+      "raDeg": 126.41529546,
+      "decDeg": -3.90636482,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 41704": {
+      "raDeg": 127.56679232,
+      "decDeg": 60.7184311,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 41822": {
+      "raDeg": 127.8990288,
+      "decDeg": 18.09455771,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 41909": {
+      "raDeg": 128.17718645,
+      "decDeg": 20.44127049,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42080": {
+      "raDeg": 128.6507805,
+      "decDeg": 65.14527349,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42312": {
+      "raDeg": 129.41100573,
+      "decDeg": -42.98910371,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42313": {
+      "raDeg": 129.41419739,
+      "decDeg": 5.70379868,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42402": {
+      "raDeg": 129.68936993,
+      "decDeg": 3.34147477,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42434": {
+      "raDeg": 129.79210153,
+      "decDeg": 59.93924272,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42515": {
+      "raDeg": 130.02556894,
+      "decDeg": -35.30830091,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42527": {
+      "raDeg": 130.05374429,
+      "decDeg": 64.32787175,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42556": {
+      "raDeg": 130.11263537,
+      "decDeg": 19.54484056,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42570": {
+      "raDeg": 130.15656369,
+      "decDeg": -46.64875492,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42576": {
+      "raDeg": 130.17912927,
+      "decDeg": 51.43063883,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42799": {
+      "raDeg": 130.80619315,
+      "decDeg": 3.39866539,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42806": {
+      "raDeg": 130.82172127,
+      "decDeg": 21.46859609,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42828": {
+      "raDeg": 130.89811451,
+      "decDeg": -33.18641133,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42884": {
+      "raDeg": 131.09985828,
+      "decDeg": -42.64932331,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42911": {
+      "raDeg": 131.17129209,
+      "decDeg": 18.15486399,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 42913": {
+      "raDeg": 131.17582214,
+      "decDeg": -54.70856797,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 43023": {
+      "raDeg": 131.50689464,
+      "decDeg": -46.0415392,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 43103": {
+      "raDeg": 131.67430955,
+      "decDeg": 28.76000509,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 43109": {
+      "raDeg": 131.6943593,
+      "decDeg": 6.41890691,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 43234": {
+      "raDeg": 132.10825351,
+      "decDeg": 5.83788486,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 43409": {
+      "raDeg": 132.63338051,
+      "decDeg": -27.71005869,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 43531": {
+      "raDeg": 132.98684264,
+      "decDeg": 43.72649196,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 43813": {
+      "raDeg": 133.84868687,
+      "decDeg": 5.9455277,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 43825": {
+      "raDeg": 133.8813149,
+      "decDeg": -27.68162589,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44066": {
+      "raDeg": 134.62165408,
+      "decDeg": 11.85777198,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44127": {
+      "raDeg": 134.80349479,
+      "decDeg": 48.04234956,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44191": {
+      "raDeg": 135.02266724,
+      "decDeg": -41.25373789,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44248": {
+      "raDeg": 135.16146765,
+      "decDeg": 41.78344401,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44390": {
+      "raDeg": 135.63635792,
+      "decDeg": 67.62957486,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44405": {
+      "raDeg": 135.68444595,
+      "decDeg": 24.45293256,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44471": {
+      "raDeg": 135.90649494,
+      "decDeg": 47.15665934,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44625": {
+      "raDeg": 136.40575173,
+      "decDeg": 64.05459601,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44659": {
+      "raDeg": 136.49324097,
+      "decDeg": 5.09234249,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44700": {
+      "raDeg": 136.63245022,
+      "decDeg": 38.45225024,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44798": {
+      "raDeg": 136.93676819,
+      "decDeg": 10.66821521,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44816": {
+      "raDeg": 136.99907126,
+      "decDeg": -43.43262406,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44901": {
+      "raDeg": 137.21827365,
+      "decDeg": 51.60472728,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 44946": {
+      "raDeg": 137.33972475,
+      "decDeg": 22.04544728,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45038": {
+      "raDeg": 137.59802574,
+      "decDeg": 67.13423886,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45075": {
+      "raDeg": 137.72887992,
+      "decDeg": 63.51378087,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45336": {
+      "raDeg": 138.59080529,
+      "decDeg": 2.31502422,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45410": {
+      "raDeg": 138.80781962,
+      "decDeg": 14.9415367,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45493": {
+      "raDeg": 139.04699516,
+      "decDeg": 54.02171207,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45556": {
+      "raDeg": 139.27261834,
+      "decDeg": -59.27526115,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45688": {
+      "raDeg": 139.71111394,
+      "decDeg": 36.80289763,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45764": {
+      "raDeg": 139.98243737,
+      "decDeg": 74.01675676,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45860": {
+      "raDeg": 140.26441169,
+      "decDeg": 34.39252592,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45896": {
+      "raDeg": 140.36322747,
+      "decDeg": 32.9022065,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 45941": {
+      "raDeg": 140.52845511,
+      "decDeg": -55.01069531,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46146": {
+      "raDeg": 141.16366395,
+      "decDeg": 26.18244091,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46351": {
+      "raDeg": 141.75581633,
+      "decDeg": 47.7732188,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46390": {
+      "raDeg": 141.8968826,
+      "decDeg": -8.65868335,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46404": {
+      "raDeg": 141.9454878,
+      "decDeg": -6.07102871,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46509": {
+      "raDeg": 142.28682816,
+      "decDeg": -2.76895627,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46651": {
+      "raDeg": 142.67547063,
+      "decDeg": -40.46688763,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46701": {
+      "raDeg": 142.80564072,
+      "decDeg": -57.0343916,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46733": {
+      "raDeg": 142.88154025,
+      "decDeg": 63.06179545,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46750": {
+      "raDeg": 142.93016816,
+      "decDeg": 22.96806545,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46771": {
+      "raDeg": 142.98663458,
+      "decDeg": 11.3000307,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46776": {
+      "raDeg": 142.99556148,
+      "decDeg": -1.18465438,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46853": {
+      "raDeg": 143.21802191,
+      "decDeg": 51.67860208,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 46977": {
+      "raDeg": 143.62069943,
+      "decDeg": 69.83015419,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 47193": {
+      "raDeg": 144.27229969,
+      "decDeg": 81.32642085,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 47431": {
+      "raDeg": 144.96389156,
+      "decDeg": -1.14265722,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 47452": {
+      "raDeg": 145.07657975,
+      "decDeg": -14.33224542,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 47508": {
+      "raDeg": 145.28799116,
+      "decDeg": 9.89239902,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 47723": {
+      "raDeg": 145.93292295,
+      "decDeg": 14.02170696,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 47908": {
+      "raDeg": 146.4629267,
+      "decDeg": 23.77427792,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 47911": {
+      "raDeg": 146.48077015,
+      "decDeg": 63.65341732,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 48319": {
+      "raDeg": 147.74871542,
+      "decDeg": 59.03910437,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 48356": {
+      "raDeg": 147.86951033,
+      "decDeg": -14.84654997,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 48402": {
+      "raDeg": 148.02650069,
+      "decDeg": 54.06428574,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 48455": {
+      "raDeg": 148.19149028,
+      "decDeg": 26.00708498,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 48638": {
+      "raDeg": 148.76395029,
+      "decDeg": 61.11613097,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 48774": {
+      "raDeg": 149.2156452,
+      "decDeg": -54.5677973,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 48883": {
+      "raDeg": 149.55579541,
+      "decDeg": 12.44483936,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 48893": {
+      "raDeg": 149.59545794,
+      "decDeg": 72.87959798,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 49029": {
+      "raDeg": 150.05343468,
+      "decDeg": 8.04427686,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 49363": {
+      "raDeg": 151.15143814,
+      "decDeg": 53.8917256,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 49402": {
+      "raDeg": 151.28121856,
+      "decDeg": -13.06467435,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 49583": {
+      "raDeg": 151.83313948,
+      "decDeg": 16.76266572,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 49637": {
+      "raDeg": 151.9763285,
+      "decDeg": 9.99766389,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 49641": {
+      "raDeg": 151.98456489,
+      "decDeg": -0.37162786,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 49669": {
+      "raDeg": 152.09358075,
+      "decDeg": 11.96719513,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 49765": {
+      "raDeg": 152.37959839,
+      "decDeg": 68.66408596,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 49841": {
+      "raDeg": 152.64748785,
+      "decDeg": -12.35383921,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 50335": {
+      "raDeg": 154.17251805,
+      "decDeg": 23.4173284,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 50372": {
+      "raDeg": 154.27469564,
+      "decDeg": 42.91446855,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 50583": {
+      "raDeg": 154.99234054,
+      "decDeg": 19.84186032,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 50801": {
+      "raDeg": 155.58251355,
+      "decDeg": 41.4994335,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 51069": {
+      "raDeg": 156.52293768,
+      "decDeg": -16.83609584,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 51401": {
+      "raDeg": 157.47678657,
+      "decDeg": 65.62630441,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 51437": {
+      "raDeg": 157.57292935,
+      "decDeg": -0.63697208,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 51585": {
+      "raDeg": 158.04916002,
+      "decDeg": 14.13720956,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 51624": {
+      "raDeg": 158.20281305,
+      "decDeg": 9.30659431,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 51697": {
+      "raDeg": 158.43251255,
+      "decDeg": 53.49745429,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 51808": {
+      "raDeg": 158.77328496,
+      "decDeg": 75.71298403,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 51992": {
+      "raDeg": 159.33582567,
+      "decDeg": 56.43135673,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 52064": {
+      "raDeg": 159.58289549,
+      "decDeg": 60.12503008,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 52085": {
+      "raDeg": 159.6458878,
+      "decDeg": -16.87663687,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 52264": {
+      "raDeg": 160.19214607,
+      "decDeg": 41.52675444,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 52457": {
+      "raDeg": 160.85429114,
+      "decDeg": 23.18838442,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 52689": {
+      "raDeg": 161.60563681,
+      "decDeg": 14.19480263,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 52730": {
+      "raDeg": 161.70037254,
+      "decDeg": -69.20979312,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 52911": {
+      "raDeg": 162.31430258,
+      "decDeg": 10.54526139,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 52943": {
+      "raDeg": 162.40596699,
+      "decDeg": -16.19413208,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 52959": {
+      "raDeg": 162.47388998,
+      "decDeg": 27.97387214,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 53273": {
+      "raDeg": 163.43233719,
+      "decDeg": -2.12924149,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 53417": {
+      "raDeg": 163.90353339,
+      "decDeg": 24.74975451,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 53740": {
+      "raDeg": 164.94478664,
+      "decDeg": -18.29909723,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 53807": {
+      "raDeg": 165.14016441,
+      "decDeg": 3.61753351,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 53824": {
+      "raDeg": 165.18680144,
+      "decDeg": 6.10150342,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 53907": {
+      "raDeg": 165.45695372,
+      "decDeg": -2.48449705,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 53910": {
+      "raDeg": 165.4599615,
+      "decDeg": 56.38234478,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 53954": {
+      "raDeg": 165.58242155,
+      "decDeg": 20.17974575,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 54061": {
+      "raDeg": 165.93265365,
+      "decDeg": 61.75111888,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 54182": {
+      "raDeg": 166.25512463,
+      "decDeg": 7.33612254,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 54204": {
+      "raDeg": 166.33346925,
+      "decDeg": -27.29359566,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 54539": {
+      "raDeg": 167.41608092,
+      "decDeg": 44.49855337,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 54682": {
+      "raDeg": 167.91452617,
+      "decDeg": -22.82560642,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 54872": {
+      "raDeg": 168.52671705,
+      "decDeg": 20.52403384,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 54879": {
+      "raDeg": 168.56017036,
+      "decDeg": 15.4297631,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 55084": {
+      "raDeg": 169.16568371,
+      "decDeg": -3.65151412,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 55219": {
+      "raDeg": 169.61981385,
+      "decDeg": 33.09423881,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 55282": {
+      "raDeg": 169.83551103,
+      "decDeg": -14.77904358,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 55434": {
+      "raDeg": 170.28436733,
+      "decDeg": 6.02935289,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 55642": {
+      "raDeg": 170.98070334,
+      "decDeg": 10.52969772,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 55687": {
+      "raDeg": 171.15252245,
+      "decDeg": -10.85938276,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 55705": {
+      "raDeg": 171.22076335,
+      "decDeg": -17.68401748,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 55765": {
+      "raDeg": 171.4019142,
+      "decDeg": 16.45655059,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 56109": {
+      "raDeg": 172.51821988,
+      "decDeg": 29.96511521,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 56127": {
+      "raDeg": 172.57867422,
+      "decDeg": -3.00345887,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 56211": {
+      "raDeg": 172.85120199,
+      "decDeg": 69.33112161,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 56343": {
+      "raDeg": 173.25107936,
+      "decDeg": -31.85752405,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 56410": {
+      "raDeg": 173.48489895,
+      "decDeg": 36.81573666,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 56633": {
+      "raDeg": 174.17061875,
+      "decDeg": -9.80225368,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 56647": {
+      "raDeg": 174.23720774,
+      "decDeg": -0.82385424,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 56922": {
+      "raDeg": 175.05341839,
+      "decDeg": -34.7446553,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 57283": {
+      "raDeg": 176.19066226,
+      "decDeg": -18.35061467,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 57328": {
+      "raDeg": 176.32085333,
+      "decDeg": 8.25817475,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 57380": {
+      "raDeg": 176.46487734,
+      "decDeg": 6.52981394,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 57399": {
+      "raDeg": 176.51305887,
+      "decDeg": 47.77933701,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 57565": {
+      "raDeg": 176.9967765,
+      "decDeg": 20.21894121,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 57632": {
+      "raDeg": 177.26615977,
+      "decDeg": 14.57233687,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 57757": {
+      "raDeg": 177.67202553,
+      "decDeg": 1.76537705,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 57936": {
+      "raDeg": 178.22733867,
+      "decDeg": -33.90813014,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 58001": {
+      "raDeg": 178.45725536,
+      "decDeg": 53.69473296,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 58188": {
+      "raDeg": 179.00409802,
+      "decDeg": -17.15080863,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 58590": {
+      "raDeg": 180.21829289,
+      "decDeg": 6.61439464,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 58948": {
+      "raDeg": 181.30279,
+      "decDeg": 8.73284563,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 59196": {
+      "raDeg": 182.08976505,
+      "decDeg": -50.72240999,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 59199": {
+      "raDeg": 182.10313607,
+      "decDeg": -24.72877993,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 59316": {
+      "raDeg": 182.53135773,
+      "decDeg": -22.61979211,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 59449": {
+      "raDeg": 182.9131309,
+      "decDeg": -52.36841559,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 59747": {
+      "raDeg": 183.78648733,
+      "decDeg": -58.74890179,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 59774": {
+      "raDeg": 183.85603795,
+      "decDeg": 57.03259792,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 59803": {
+      "raDeg": 183.95194937,
+      "decDeg": -17.5419837,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 59847": {
+      "raDeg": 184.08564668,
+      "decDeg": 23.94542332,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 60030": {
+      "raDeg": 184.66790853,
+      "decDeg": -0.7871448,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 60129": {
+      "raDeg": 184.97663096,
+      "decDeg": -0.66674709,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 60172": {
+      "raDeg": 185.08813566,
+      "decDeg": 3.31272688,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 60189": {
+      "raDeg": 185.14046113,
+      "decDeg": -22.21583387,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 60221": {
+      "raDeg": 185.23214915,
+      "decDeg": -13.56574902,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 60718": {
+      "raDeg": 186.64975585,
+      "decDeg": -63.09905586,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 60742": {
+      "raDeg": 186.73469831,
+      "decDeg": 28.26861975,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 60823": {
+      "raDeg": 187.01004828,
+      "decDeg": -50.2306048,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 60965": {
+      "raDeg": 187.4665965,
+      "decDeg": -16.51509397,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61084": {
+      "raDeg": 187.79137202,
+      "decDeg": -57.11256922,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61174": {
+      "raDeg": 188.01868646,
+      "decDeg": -16.19586556,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61281": {
+      "raDeg": 188.37101041,
+      "decDeg": 69.78820992,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61317": {
+      "raDeg": 188.43788561,
+      "decDeg": 41.35676779,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61359": {
+      "raDeg": 188.59680864,
+      "decDeg": -23.39662306,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61394": {
+      "raDeg": 188.71299083,
+      "decDeg": 22.62918961,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61622": {
+      "raDeg": 189.42636588,
+      "decDeg": -48.54128816,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61740": {
+      "raDeg": 189.81171855,
+      "decDeg": -7.99550439,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61932": {
+      "raDeg": 190.38002079,
+      "decDeg": -48.95988553,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61941": {
+      "raDeg": 190.41667557,
+      "decDeg": -1.44952231,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 61960": {
+      "raDeg": 190.47086482,
+      "decDeg": 10.23584294,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 62267": {
+      "raDeg": 191.40467529,
+      "decDeg": 7.67331477,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 62434": {
+      "raDeg": 191.93049537,
+      "decDeg": -59.68873246,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 62572": {
+      "raDeg": 192.30750199,
+      "decDeg": 83.41285818,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 62956": {
+      "raDeg": 193.5068041,
+      "decDeg": 55.95984301,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 62985": {
+      "raDeg": 193.58822553,
+      "decDeg": -9.53894647,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 63003": {
+      "raDeg": 193.64857337,
+      "decDeg": -57.17789116,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 63090": {
+      "raDeg": 193.90201366,
+      "decDeg": 3.39759862,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 63125": {
+      "raDeg": 194.00767051,
+      "decDeg": 38.31824617,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 63494": {
+      "raDeg": 195.14982714,
+      "decDeg": -3.3686079,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 63608": {
+      "raDeg": 195.54483557,
+      "decDeg": 10.95910186,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 63972": {
+      "raDeg": 196.64603079,
+      "decDeg": -41.58840727,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 64004": {
+      "raDeg": 196.72776268,
+      "decDeg": -49.90621586,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 64078": {
+      "raDeg": 196.97417871,
+      "decDeg": -10.74038528,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 64238": {
+      "raDeg": 197.48755015,
+      "decDeg": -5.53892987,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 64407": {
+      "raDeg": 198.01451923,
+      "decDeg": -16.1979034,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 64924": {
+      "raDeg": 199.60405,
+      "decDeg": -18.30861062,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 64962": {
+      "raDeg": 199.7302224,
+      "decDeg": -23.17141246,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 65109": {
+      "raDeg": 200.15027321,
+      "decDeg": -36.71208109,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 65378": {
+      "raDeg": 200.98091604,
+      "decDeg": 54.92541525,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 65474": {
+      "raDeg": 201.2983523,
+      "decDeg": -11.16124491,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 65477": {
+      "raDeg": 201.30589832,
+      "decDeg": 54.98799884,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 65936": {
+      "raDeg": 202.76111861,
+      "decDeg": -39.40727983,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 66006": {
+      "raDeg": 202.99144179,
+      "decDeg": -6.25571065,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 66098": {
+      "raDeg": 203.24204653,
+      "decDeg": -10.16490767,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 66247": {
+      "raDeg": 203.66866043,
+      "decDeg": -13.21430591,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 66249": {
+      "raDeg": 203.673978,
+      "decDeg": -0.59593821,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 66657": {
+      "raDeg": 204.97196962,
+      "decDeg": -53.46636269,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 66803": {
+      "raDeg": 205.40346122,
+      "decDeg": -8.70308218,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 66821": {
+      "raDeg": 205.43672827,
+      "decDeg": -54.55936543,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67153": {
+      "raDeg": 206.42319432,
+      "decDeg": -33.04336606,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67172": {
+      "raDeg": 206.48471128,
+      "decDeg": -12.42654721,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67234": {
+      "raDeg": 206.66403516,
+      "decDeg": -51.43269771,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67275": {
+      "raDeg": 206.81681937,
+      "decDeg": 17.45677436,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67301": {
+      "raDeg": 206.8856088,
+      "decDeg": 49.31330288,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67457": {
+      "raDeg": 207.36146356,
+      "decDeg": -34.45063035,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67459": {
+      "raDeg": 207.36957439,
+      "decDeg": 15.79780583,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67464": {
+      "raDeg": 207.3762392,
+      "decDeg": -41.68765971,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67472": {
+      "raDeg": 207.40419934,
+      "decDeg": -42.47368506,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67494": {
+      "raDeg": 207.468102,
+      "decDeg": -18.13407618,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67627": {
+      "raDeg": 207.85807331,
+      "decDeg": 64.72328281,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67669": {
+      "raDeg": 207.95677175,
+      "decDeg": -32.99401625,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67786": {
+      "raDeg": 208.30228458,
+      "decDeg": -31.92758624,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67927": {
+      "raDeg": 208.6713175,
+      "decDeg": 18.39858742,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 67929": {
+      "raDeg": 208.67581845,
+      "decDeg": -1.50307142,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68002": {
+      "raDeg": 208.88514539,
+      "decDeg": -47.28826634,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68245": {
+      "raDeg": 209.56785278,
+      "decDeg": -42.10070526,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68282": {
+      "raDeg": 209.6698807,
+      "decDeg": -44.8035314,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68520": {
+      "raDeg": 210.41159648,
+      "decDeg": 1.54458338,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68523": {
+      "raDeg": 210.43121648,
+      "decDeg": -45.60336989,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68702": {
+      "raDeg": 210.95601898,
+      "decDeg": -60.3729784,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68756": {
+      "raDeg": 211.09760837,
+      "decDeg": 64.37580873,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68862": {
+      "raDeg": 211.5116084,
+      "decDeg": -41.17958035,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68895": {
+      "raDeg": 211.59278733,
+      "decDeg": -26.68201883,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 68933": {
+      "raDeg": 211.67218608,
+      "decDeg": -36.36869575,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 69112": {
+      "raDeg": 212.21253759,
+      "decDeg": 77.54743312,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 69427": {
+      "raDeg": 213.22392088,
+      "decDeg": -10.274044,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 69483": {
+      "raDeg": 213.37062458,
+      "decDeg": 51.78999066,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 69673": {
+      "raDeg": 213.91811403,
+      "decDeg": 19.18726997,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 69701": {
+      "raDeg": 214.00368717,
+      "decDeg": -5.99952622,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 69713": {
+      "raDeg": 214.04195627,
+      "decDeg": 51.36701398,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 69732": {
+      "raDeg": 214.09656821,
+      "decDeg": 46.08791894,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 69974": {
+      "raDeg": 214.77750771,
+      "decDeg": -13.37116634,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 69996": {
+      "raDeg": 214.85096972,
+      "decDeg": -46.05808391,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 70090": {
+      "raDeg": 215.13949709,
+      "decDeg": -37.88526711,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 70104": {
+      "raDeg": 215.17729569,
+      "decDeg": -45.1868814,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 70300": {
+      "raDeg": 215.75940538,
+      "decDeg": -39.51176599,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 70497": {
+      "raDeg": 216.30008064,
+      "decDeg": 51.85171354,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 70574": {
+      "raDeg": 216.53431272,
+      "decDeg": -45.22138996,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 70692": {
+      "raDeg": 216.88134383,
+      "decDeg": 75.69593921,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 70755": {
+      "raDeg": 217.05091806,
+      "decDeg": -2.22795009,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71053": {
+      "raDeg": 217.95774098,
+      "decDeg": 30.37114497,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71075": {
+      "raDeg": 218.01982421,
+      "decDeg": 38.30788348,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71284": {
+      "raDeg": 218.66954381,
+      "decDeg": 29.74480735,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71352": {
+      "raDeg": 218.87688163,
+      "decDeg": -42.15774562,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71683": {
+      "raDeg": 219.92041034,
+      "decDeg": -60.83514707,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71795": {
+      "raDeg": 220.28716819,
+      "decDeg": 13.72833113,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71860": {
+      "raDeg": 220.48239101,
+      "decDeg": -47.38814127,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71865": {
+      "raDeg": 220.49005323,
+      "decDeg": -37.79342394,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71908": {
+      "raDeg": 220.62785433,
+      "decDeg": -64.97456957,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 71957": {
+      "raDeg": 220.76484284,
+      "decDeg": -5.6574291,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 72010": {
+      "raDeg": 220.91451458,
+      "decDeg": -35.17322549,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 72105": {
+      "raDeg": 221.24687869,
+      "decDeg": 27.07417383,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 72220": {
+      "raDeg": 221.56246594,
+      "decDeg": 1.8929383,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 72489": {
+      "raDeg": 222.32954567,
+      "decDeg": -14.14898587,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 72552": {
+      "raDeg": 222.49327659,
+      "decDeg": 28.61583341,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 72607": {
+      "raDeg": 222.67664751,
+      "decDeg": 74.15547596,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 72622": {
+      "raDeg": 222.71990536,
+      "decDeg": -16.04161047,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73273": {
+      "raDeg": 224.63314193,
+      "decDeg": -43.13386699,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73334": {
+      "raDeg": 224.79041254,
+      "decDeg": -42.10414199,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73473": {
+      "raDeg": 225.24328191,
+      "decDeg": -8.51893488,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73555": {
+      "raDeg": 225.48663804,
+      "decDeg": 40.39063671,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73568": {
+      "raDeg": 225.52713391,
+      "decDeg": 25.00825646,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73714": {
+      "raDeg": 226.01775793,
+      "decDeg": -25.28185602,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73745": {
+      "raDeg": 226.11190457,
+      "decDeg": 26.94765981,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73807": {
+      "raDeg": 226.27960699,
+      "decDeg": -47.05119386,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73945": {
+      "raDeg": 226.65674312,
+      "decDeg": -16.25676124,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 73996": {
+      "raDeg": 226.82477948,
+      "decDeg": 24.86959294,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74087": {
+      "raDeg": 227.09908475,
+      "decDeg": 26.30118271,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74117": {
+      "raDeg": 227.21095653,
+      "decDeg": -45.27979406,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74376": {
+      "raDeg": 227.98400434,
+      "decDeg": -48.73770212,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74392": {
+      "raDeg": 228.05546736,
+      "decDeg": -19.79163143,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74395": {
+      "raDeg": 228.07167982,
+      "decDeg": -52.09907465,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74604": {
+      "raDeg": 228.6555245,
+      "decDeg": -31.51912564,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74666": {
+      "raDeg": 228.87543241,
+      "decDeg": 33.31510222,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74785": {
+      "raDeg": 229.25196591,
+      "decDeg": -9.38286694,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74857": {
+      "raDeg": 229.45768699,
+      "decDeg": -30.14866233,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 74911": {
+      "raDeg": 229.63353586,
+      "decDeg": -47.87519201,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 75049": {
+      "raDeg": 230.03599149,
+      "decDeg": 29.61631109,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 75097": {
+      "raDeg": 230.1822884,
+      "decDeg": 71.83397308,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 75141": {
+      "raDeg": 230.34306833,
+      "decDeg": -40.64745946,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 75264": {
+      "raDeg": 230.67036465,
+      "decDeg": -44.68957314,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 75312": {
+      "raDeg": 230.80094284,
+      "decDeg": 30.28824114,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 75411": {
+      "raDeg": 231.12306762,
+      "decDeg": 37.37696091,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 75458": {
+      "raDeg": 231.2324337,
+      "decDeg": 58.96602354,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 75695": {
+      "raDeg": 231.95771631,
+      "decDeg": 29.10549164,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 75973": {
+      "raDeg": 232.73229511,
+      "decDeg": 40.83306815,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76127": {
+      "raDeg": 233.23248309,
+      "decDeg": 31.35915517,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76219": {
+      "raDeg": 233.54383219,
+      "decDeg": -10.06395962,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76267": {
+      "raDeg": 233.67162293,
+      "decDeg": 26.71491041,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76276": {
+      "raDeg": 233.7007926,
+      "decDeg": 10.53885916,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76297": {
+      "raDeg": 233.78525156,
+      "decDeg": -41.16669497,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76333": {
+      "raDeg": 233.88141398,
+      "decDeg": -14.78955365,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76470": {
+      "raDeg": 234.25607748,
+      "decDeg": -28.13507099,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76600": {
+      "raDeg": 234.66410153,
+      "decDeg": -29.77768935,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76617": {
+      "raDeg": 234.70356906,
+      "decDeg": 34.67507876,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76742": {
+      "raDeg": 235.07043893,
+      "decDeg": -23.81805841,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76852": {
+      "raDeg": 235.38788463,
+      "decDeg": 19.67050566,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76880": {
+      "raDeg": 235.48674445,
+      "decDeg": -19.67857446,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 76952": {
+      "raDeg": 235.68599269,
+      "decDeg": 26.29551419,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77048": {
+      "raDeg": 235.99716849,
+      "decDeg": 32.51582804,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77055": {
+      "raDeg": 236.01443312,
+      "decDeg": 77.79449901,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77060": {
+      "raDeg": 236.01841829,
+      "decDeg": -15.67267949,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77070": {
+      "raDeg": 236.06664914,
+      "decDeg": 6.42551971,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77233": {
+      "raDeg": 236.54672877,
+      "decDeg": 15.42192602,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77257": {
+      "raDeg": 236.61144121,
+      "decDeg": 7.35323973,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77450": {
+      "raDeg": 237.18503586,
+      "decDeg": 18.1417793,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77512": {
+      "raDeg": 237.39874182,
+      "decDeg": 26.06854936,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77516": {
+      "raDeg": 237.40527375,
+      "decDeg": -3.43014112,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77622": {
+      "raDeg": 237.70371344,
+      "decDeg": 4.4775798,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77634": {
+      "raDeg": 237.7397573,
+      "decDeg": -33.62710488,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77661": {
+      "raDeg": 237.81642977,
+      "decDeg": 20.97787548,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77760": {
+      "raDeg": 238.16747684,
+      "decDeg": 42.44998796,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77811": {
+      "raDeg": 238.33358671,
+      "decDeg": -20.16699405,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 77853": {
+      "raDeg": 238.45615438,
+      "decDeg": -16.7296223,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78072": {
+      "raDeg": 239.11247598,
+      "decDeg": 15.66473327,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78104": {
+      "raDeg": 239.22119438,
+      "decDeg": -29.21401221,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78105": {
+      "raDeg": 239.2228396,
+      "decDeg": -33.96602225,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78159": {
+      "raDeg": 239.39709121,
+      "decDeg": 26.87802632,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78207": {
+      "raDeg": 239.54740116,
+      "decDeg": -14.27931773,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78265": {
+      "raDeg": 239.71300283,
+      "decDeg": -26.1140428,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78384": {
+      "raDeg": 240.03058543,
+      "decDeg": -38.39664079,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78401": {
+      "raDeg": 240.08338225,
+      "decDeg": -22.62162024,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78493": {
+      "raDeg": 240.36079431,
+      "decDeg": 29.85107821,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78527": {
+      "raDeg": 240.4737656,
+      "decDeg": 58.56443739,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78554": {
+      "raDeg": 240.57370453,
+      "decDeg": 22.80439543,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78592": {
+      "raDeg": 240.69937951,
+      "decDeg": 46.03685378,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78820": {
+      "raDeg": 241.35931206,
+      "decDeg": -19.80539286,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78918": {
+      "raDeg": 241.64815129,
+      "decDeg": -36.80221297,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 78933": {
+      "raDeg": 241.70180197,
+      "decDeg": -20.66913479,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 79043": {
+      "raDeg": 242.0189437,
+      "decDeg": 17.04699349,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 79101": {
+      "raDeg": 242.19249715,
+      "decDeg": 44.93481883,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 79374": {
+      "raDeg": 242.99891879,
+      "decDeg": -19.46064684,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 79404": {
+      "raDeg": 243.07588221,
+      "decDeg": -27.92631564,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 79593": {
+      "raDeg": 243.58652601,
+      "decDeg": -3.69397562,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 79822": {
+      "raDeg": 244.37708768,
+      "decDeg": 75.75470385,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 79881": {
+      "raDeg": 244.57467023,
+      "decDeg": -28.61377598,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 79882": {
+      "raDeg": 244.58016994,
+      "decDeg": -4.69260809,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 79992": {
+      "raDeg": 244.93519958,
+      "decDeg": 46.31327084,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80112": {
+      "raDeg": 245.29717718,
+      "decDeg": -25.59275259,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80170": {
+      "raDeg": 245.48018203,
+      "decDeg": 19.15302185,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80181": {
+      "raDeg": 245.52454222,
+      "decDeg": 30.89173424,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80331": {
+      "raDeg": 245.99794523,
+      "decDeg": 61.51407536,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80343": {
+      "raDeg": 246.02582204,
+      "decDeg": -20.03721137,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80463": {
+      "raDeg": 246.35387324,
+      "decDeg": 14.03341514,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80473": {
+      "raDeg": 246.39633811,
+      "decDeg": -23.44711764,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80569": {
+      "raDeg": 246.75599294,
+      "decDeg": -18.45619698,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80628": {
+      "raDeg": 246.95094563,
+      "decDeg": -8.37170055,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80763": {
+      "raDeg": 247.35194804,
+      "decDeg": -26.43194608,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80816": {
+      "raDeg": 247.55525697,
+      "decDeg": 21.4896485,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80883": {
+      "raDeg": 247.72850509,
+      "decDeg": 1.98410056,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80894": {
+      "raDeg": 247.78497886,
+      "decDeg": -16.61264015,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 80975": {
+      "raDeg": 248.03411079,
+      "decDeg": -21.46647783,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 81126": {
+      "raDeg": 248.52578863,
+      "decDeg": 42.43689565,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 81266": {
+      "raDeg": 248.97066423,
+      "decDeg": -28.21596156,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 81377": {
+      "raDeg": 249.28970847,
+      "decDeg": -10.5671518,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 81660": {
+      "raDeg": 250.22966425,
+      "decDeg": 64.58908555,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 81693": {
+      "raDeg": 250.32282132,
+      "decDeg": 31.60188695,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 81833": {
+      "raDeg": 250.72391068,
+      "decDeg": 38.92246103,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 82080": {
+      "raDeg": 251.49233961,
+      "decDeg": 82.03725071,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 82396": {
+      "raDeg": 252.54268738,
+      "decDeg": -34.29260982,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 82405": {
+      "raDeg": 252.59270693,
+      "decDeg": -2.65424668,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 82514": {
+      "raDeg": 252.96766195,
+      "decDeg": -38.04732717,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 82545": {
+      "raDeg": 253.08397295,
+      "decDeg": -38.01747781,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 82671": {
+      "raDeg": 253.49886366,
+      "decDeg": -42.36201968,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 82673": {
+      "raDeg": 253.50209743,
+      "decDeg": 10.16544339,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 82729": {
+      "raDeg": 253.64627156,
+      "decDeg": -42.36075916,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 82860": {
+      "raDeg": 254.00566477,
+      "decDeg": 65.13467204,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83000": {
+      "raDeg": 254.41779418,
+      "decDeg": 9.37505626,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83081": {
+      "raDeg": 254.65512817,
+      "decDeg": -55.99005508,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83153": {
+      "raDeg": 254.89602773,
+      "decDeg": -53.16049005,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83207": {
+      "raDeg": 255.07252582,
+      "decDeg": 30.92633926,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83254": {
+      "raDeg": 255.24225416,
+      "decDeg": 22.6321519,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83262": {
+      "raDeg": 255.26510631,
+      "decDeg": -4.22245426,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83313": {
+      "raDeg": 255.40149728,
+      "decDeg": 33.56826922,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83608": {
+      "raDeg": 256.3340928,
+      "decDeg": 54.46986308,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83838": {
+      "raDeg": 257.00867045,
+      "decDeg": 35.93521504,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 83895": {
+      "raDeg": 257.19677111,
+      "decDeg": 65.71463676,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84012": {
+      "raDeg": 257.59442659,
+      "decDeg": -15.72514757,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84143": {
+      "raDeg": 258.038233,
+      "decDeg": -43.23849039,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84345": {
+      "raDeg": 258.66192687,
+      "decDeg": 14.39025314,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84379": {
+      "raDeg": 258.75801735,
+      "decDeg": 24.83958739,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84380": {
+      "raDeg": 258.76189282,
+      "decDeg": 36.80915527,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84405": {
+      "raDeg": 258.83869698,
+      "decDeg": -26.60004896,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84606": {
+      "raDeg": 259.41785775,
+      "decDeg": 37.29134328,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84835": {
+      "raDeg": 260.08811224,
+      "decDeg": 46.24068047,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84880": {
+      "raDeg": 260.2068148,
+      "decDeg": -12.846882,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84893": {
+      "raDeg": 260.25087615,
+      "decDeg": -21.11243499,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84969": {
+      "raDeg": 260.49806157,
+      "decDeg": -67.7706496,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 84970": {
+      "raDeg": 260.50243371,
+      "decDeg": -24.99948797,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85112": {
+      "raDeg": 260.92072033,
+      "decDeg": 37.14592396,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85139": {
+      "raDeg": 260.99005723,
+      "decDeg": 8.85258733,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85258": {
+      "raDeg": 261.32498828,
+      "decDeg": -55.52982397,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85267": {
+      "raDeg": 261.34858274,
+      "decDeg": -56.37768824,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85340": {
+      "raDeg": 261.59257241,
+      "decDeg": -24.17502346,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85365": {
+      "raDeg": 261.65806271,
+      "decDeg": -5.08649188,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85423": {
+      "raDeg": 261.8386001,
+      "decDeg": -29.86669942,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85670": {
+      "raDeg": 262.60823708,
+      "decDeg": 52.30135901,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85693": {
+      "raDeg": 262.68457505,
+      "decDeg": 26.1106045,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85696": {
+      "raDeg": 262.69099501,
+      "decDeg": -37.29574016,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85755": {
+      "raDeg": 262.85396193,
+      "decDeg": -23.96258036,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85792": {
+      "raDeg": 262.96050661,
+      "decDeg": -49.87598159,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85805": {
+      "raDeg": 262.9912082,
+      "decDeg": 68.13470186,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85819": {
+      "raDeg": 263.04340826,
+      "decDeg": 55.18411077,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85822": {
+      "raDeg": 263.05373826,
+      "decDeg": 86.58632924,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85829": {
+      "raDeg": 263.06616249,
+      "decDeg": 55.17280674,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 85927": {
+      "raDeg": 263.40219373,
+      "decDeg": -37.10374835,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86032": {
+      "raDeg": 263.73335321,
+      "decDeg": 12.56057584,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86092": {
+      "raDeg": 263.91504719,
+      "decDeg": -46.50559076,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86182": {
+      "raDeg": 264.15677461,
+      "decDeg": 48.58547866,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86201": {
+      "raDeg": 264.23787472,
+      "decDeg": 68.75718933,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86228": {
+      "raDeg": 264.32969072,
+      "decDeg": -42.99782155,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86248": {
+      "raDeg": 264.3637993,
+      "decDeg": -50.05948478,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86263": {
+      "raDeg": 264.39677181,
+      "decDeg": -15.39840835,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86284": {
+      "raDeg": 264.46133236,
+      "decDeg": -8.11872126,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86414": {
+      "raDeg": 264.86621847,
+      "decDeg": 46.00632216,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86565": {
+      "raDeg": 265.35381884,
+      "decDeg": -12.87517268,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86614": {
+      "raDeg": 265.4846127,
+      "decDeg": 72.14949916,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86670": {
+      "raDeg": 265.62199908,
+      "decDeg": -39.02992092,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86736": {
+      "raDeg": 265.85772897,
+      "decDeg": -21.68308566,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86742": {
+      "raDeg": 265.86823714,
+      "decDeg": 4.56691684,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86782": {
+      "raDeg": 265.99651272,
+      "decDeg": 53.80175482,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86796": {
+      "raDeg": 266.0363211,
+      "decDeg": -51.83358836,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 86974": {
+      "raDeg": 266.61549553,
+      "decDeg": 27.72249917,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87072": {
+      "raDeg": 266.89011276,
+      "decDeg": -27.83076255,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87073": {
+      "raDeg": 266.89617137,
+      "decDeg": -40.12698197,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87108": {
+      "raDeg": 266.97322515,
+      "decDeg": 2.70745875,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87212": {
+      "raDeg": 267.26805764,
+      "decDeg": 50.78054478,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87261": {
+      "raDeg": 267.4643802,
+      "decDeg": -37.04337105,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87585": {
+      "raDeg": 268.38178961,
+      "decDeg": 56.87245216,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87808": {
+      "raDeg": 269.06324389,
+      "decDeg": 37.25052158,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87833": {
+      "raDeg": 269.15157439,
+      "decDeg": 51.48895101,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87933": {
+      "raDeg": 269.44096106,
+      "decDeg": 29.24792527,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 87998": {
+      "raDeg": 269.62562385,
+      "decDeg": 30.18926892,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88048": {
+      "raDeg": 269.75665662,
+      "decDeg": -9.77334973,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88149": {
+      "raDeg": 270.06582324,
+      "decDeg": 4.36864674,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88175": {
+      "raDeg": 270.12050178,
+      "decDeg": -3.69016112,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88192": {
+      "raDeg": 270.16131466,
+      "decDeg": 2.93158759,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88290": {
+      "raDeg": 270.43828967,
+      "decDeg": 1.30510936,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88404": {
+      "raDeg": 270.77046145,
+      "decDeg": -8.18025785,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88601": {
+      "raDeg": 271.36338682,
+      "decDeg": 2.50243928,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88635": {
+      "raDeg": 271.45218586,
+      "decDeg": -30.42365007,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88714": {
+      "raDeg": 271.65782832,
+      "decDeg": -50.09145462,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88771": {
+      "raDeg": 271.8375861,
+      "decDeg": 9.56365345,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 88794": {
+      "raDeg": 271.88562824,
+      "decDeg": 28.76247025,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 89341": {
+      "raDeg": 273.44086963,
+      "decDeg": -21.05883031,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 89642": {
+      "raDeg": 274.4072049,
+      "decDeg": -36.76128103,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 89826": {
+      "raDeg": 274.96550503,
+      "decDeg": 36.06444696,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 89908": {
+      "raDeg": 275.18933831,
+      "decDeg": 71.33772734,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 89931": {
+      "raDeg": 275.24842337,
+      "decDeg": -29.82803914,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 89937": {
+      "raDeg": 275.25974572,
+      "decDeg": 72.73369763,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 89962": {
+      "raDeg": 275.32883578,
+      "decDeg": -2.897122,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90037": {
+      "raDeg": 275.57751714,
+      "decDeg": -38.65682498,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90139": {
+      "raDeg": 275.92402821,
+      "decDeg": 21.77034249,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90156": {
+      "raDeg": 275.97770388,
+      "decDeg": 58.8005852,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90185": {
+      "raDeg": 276.04310967,
+      "decDeg": -34.3843146,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90191": {
+      "raDeg": 276.05750733,
+      "decDeg": 39.50724983,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90422": {
+      "raDeg": 276.74345947,
+      "decDeg": -45.96832919,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90496": {
+      "raDeg": 276.99278955,
+      "decDeg": -25.42124732,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90887": {
+      "raDeg": 278.08877815,
+      "decDeg": -39.70390941,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90905": {
+      "raDeg": 278.14384287,
+      "decDeg": 57.04561627,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 90982": {
+      "raDeg": 278.37566714,
+      "decDeg": -42.31245871,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 91262": {
+      "raDeg": 279.23410832,
+      "decDeg": 38.78299311,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 91755": {
+      "raDeg": 280.65815094,
+      "decDeg": 55.53940044,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 91875": {
+      "raDeg": 280.94558795,
+      "decDeg": -38.32331062,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 91919": {
+      "raDeg": 281.08473883,
+      "decDeg": 39.66997686,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 91926": {
+      "raDeg": 281.09489936,
+      "decDeg": 39.61259557,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 91971": {
+      "raDeg": 281.19306613,
+      "decDeg": 37.60505025,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92041": {
+      "raDeg": 281.41397083,
+      "decDeg": -26.9907794,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92308": {
+      "raDeg": 282.21029394,
+      "decDeg": -43.67999681,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92405": {
+      "raDeg": 282.47052043,
+      "decDeg": 32.55108873,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92420": {
+      "raDeg": 282.51997462,
+      "decDeg": 33.36267788,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92512": {
+      "raDeg": 282.80002755,
+      "decDeg": 59.38828895,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92761": {
+      "raDeg": 283.54239695,
+      "decDeg": -22.7448202,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92782": {
+      "raDeg": 283.59902616,
+      "decDeg": 71.29708956,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92791": {
+      "raDeg": 283.62620294,
+      "decDeg": 36.89860518,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92855": {
+      "raDeg": 283.81631956,
+      "decDeg": -26.29659428,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92946": {
+      "raDeg": 284.05483475,
+      "decDeg": 4.20352956,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92953": {
+      "raDeg": 284.07071918,
+      "decDeg": -42.71060161,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 92989": {
+      "raDeg": 284.16871114,
+      "decDeg": -37.34318339,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93085": {
+      "raDeg": 284.43241556,
+      "decDeg": -21.10662433,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93174": {
+      "raDeg": 284.68114151,
+      "decDeg": -37.10708855,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93194": {
+      "raDeg": 284.73593568,
+      "decDeg": 32.68955312,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93279": {
+      "raDeg": 285.00342257,
+      "decDeg": 32.14549051,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93506": {
+      "raDeg": 285.65301428,
+      "decDeg": -29.88011429,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93542": {
+      "raDeg": 285.77846922,
+      "decDeg": -42.09499443,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93683": {
+      "raDeg": 286.17055765,
+      "decDeg": -21.74135451,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93747": {
+      "raDeg": 286.3525518,
+      "decDeg": 13.86370983,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93805": {
+      "raDeg": 286.56229139,
+      "decDeg": -4.88233456,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93825": {
+      "raDeg": 286.60433158,
+      "decDeg": -37.06275714,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 93864": {
+      "raDeg": 286.73517629,
+      "decDeg": -27.66981416,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94005": {
+      "raDeg": 287.08722077,
+      "decDeg": -40.4966376,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94114": {
+      "raDeg": 287.36782635,
+      "decDeg": -37.90423953,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94141": {
+      "raDeg": 287.44097404,
+      "decDeg": -21.02352534,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94160": {
+      "raDeg": 287.50730185,
+      "decDeg": -39.34070677,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94376": {
+      "raDeg": 288.13814581,
+      "decDeg": 67.66131695,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94481": {
+      "raDeg": 288.43953645,
+      "decDeg": 39.14596968,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94643": {
+      "raDeg": 288.88498822,
+      "decDeg": -25.25660677,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94648": {
+      "raDeg": 288.8887238,
+      "decDeg": 73.35521457,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94713": {
+      "raDeg": 289.09206426,
+      "decDeg": 38.13372778,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94779": {
+      "raDeg": 289.27545794,
+      "decDeg": 53.36816064,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 94820": {
+      "raDeg": 289.40868994,
+      "decDeg": -18.95288215,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95081": {
+      "raDeg": 290.16696656,
+      "decDeg": 65.7144303,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95168": {
+      "raDeg": 290.41823037,
+      "decDeg": -17.84725155,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95176": {
+      "raDeg": 290.43175842,
+      "decDeg": -15.95500233,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95241": {
+      "raDeg": 290.65952718,
+      "decDeg": -44.45891013,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95347": {
+      "raDeg": 290.97146411,
+      "decDeg": -40.61564629,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95477": {
+      "raDeg": 291.31854426,
+      "decDeg": -24.50844892,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95501": {
+      "raDeg": 291.37396941,
+      "decDeg": 3.11457923,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95564": {
+      "raDeg": 291.57972363,
+      "decDeg": -21.77668185,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95577": {
+      "raDeg": 291.61520489,
+      "decDeg": -21.24589214,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95645": {
+      "raDeg": 291.82697454,
+      "decDeg": -23.34714833,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95853": {
+      "raDeg": 292.42641389,
+      "decDeg": 51.72946747,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 95947": {
+      "raDeg": 292.68035529,
+      "decDeg": 27.9596948,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96044": {
+      "raDeg": 292.92740724,
+      "decDeg": -19.38645017,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96100": {
+      "raDeg": 293.08577692,
+      "decDeg": 69.66540172,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96229": {
+      "raDeg": 293.52178228,
+      "decDeg": 7.37931918,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96274": {
+      "raDeg": 293.64141424,
+      "decDeg": -23.85881177,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96440": {
+      "raDeg": 294.1085904,
+      "decDeg": -18.85289016,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96441": {
+      "raDeg": 294.11059344,
+      "decDeg": 50.22046347,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96465": {
+      "raDeg": 294.17662107,
+      "decDeg": -24.88356664,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96468": {
+      "raDeg": 294.18031892,
+      "decDeg": -1.28655047,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96483": {
+      "raDeg": 294.2227024,
+      "decDeg": -7.02747069,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96665": {
+      "raDeg": 294.79850093,
+      "decDeg": 5.39778241,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96683": {
+      "raDeg": 294.84418456,
+      "decDeg": 30.1532335,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96757": {
+      "raDeg": 295.02409394,
+      "decDeg": 18.01393839,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96760": {
+      "raDeg": 295.02977888,
+      "decDeg": -23.42905463,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96837": {
+      "raDeg": 295.26222378,
+      "decDeg": 17.47612356,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96950": {
+      "raDeg": 295.6295525,
+      "decDeg": -16.12397392,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 96984": {
+      "raDeg": 295.70115076,
+      "decDeg": 17.96828626,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97031": {
+      "raDeg": 295.80108669,
+      "decDeg": -19.11210311,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97138": {
+      "raDeg": 296.13597683,
+      "decDeg": -22.8557627,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97165": {
+      "raDeg": 296.24350878,
+      "decDeg": 45.13069195,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97278": {
+      "raDeg": 296.56487567,
+      "decDeg": 10.61326869,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97290": {
+      "raDeg": 296.59091351,
+      "decDeg": -19.76089482,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97365": {
+      "raDeg": 296.84693842,
+      "decDeg": 18.53425912,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97417": {
+      "raDeg": 296.99990339,
+      "decDeg": -20.95758846,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97433": {
+      "raDeg": 297.04255658,
+      "decDeg": 70.26783533,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97496": {
+      "raDeg": 297.24437005,
+      "decDeg": 19.14197806,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97649": {
+      "raDeg": 297.6945086,
+      "decDeg": 8.86738491,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97804": {
+      "raDeg": 298.11818257,
+      "decDeg": 1.00567827,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97892": {
+      "raDeg": 298.39741251,
+      "decDeg": 59.70852496,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 97938": {
+      "raDeg": 298.56175736,
+      "decDeg": 8.46165027,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98032": {
+      "raDeg": 298.81532954,
+      "decDeg": -41.8684135,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98036": {
+      "raDeg": 298.82819233,
+      "decDeg": 6.40793334,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98066": {
+      "raDeg": 298.95927101,
+      "decDeg": -26.29968718,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98073": {
+      "raDeg": 298.98078459,
+      "decDeg": 58.84601982,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98103": {
+      "raDeg": 299.05930285,
+      "decDeg": 11.42370978,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98110": {
+      "raDeg": 299.07665069,
+      "decDeg": 35.08349079,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98162": {
+      "raDeg": 299.23677038,
+      "decDeg": -27.1698625,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98258": {
+      "raDeg": 299.48758471,
+      "decDeg": -15.49126255,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98337": {
+      "raDeg": 299.68911516,
+      "decDeg": 19.49209287,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98353": {
+      "raDeg": 299.7382347,
+      "decDeg": -26.19582739,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98412": {
+      "raDeg": 299.93405965,
+      "decDeg": -35.27624433,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98688": {
+      "raDeg": 300.66441367,
+      "decDeg": -27.70987972,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98702": {
+      "raDeg": 300.7043634,
+      "decDeg": 67.87344872,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98823": {
+      "raDeg": 301.03461172,
+      "decDeg": 7.27793427,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 98962": {
+      "raDeg": 301.38635475,
+      "decDeg": 61.99524822,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 99255": {
+      "raDeg": 302.22215174,
+      "decDeg": 77.71136178,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 99473": {
+      "raDeg": 302.82610327,
+      "decDeg": -0.82147569,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 99572": {
+      "raDeg": 303.10731366,
+      "decDeg": -12.61702214,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 99655": {
+      "raDeg": 303.34917142,
+      "decDeg": 56.56752223,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 99675": {
+      "raDeg": 303.40792782,
+      "decDeg": 46.74132417,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 99848": {
+      "raDeg": 303.8679927,
+      "decDeg": 47.7142053,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 100027": {
+      "raDeg": 304.41190045,
+      "decDeg": -12.50821403,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 100064": {
+      "raDeg": 304.5134103,
+      "decDeg": -12.54485877,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 100195": {
+      "raDeg": 304.84833016,
+      "decDeg": -19.1185068,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 100310": {
+      "raDeg": 305.16586145,
+      "decDeg": -12.75904403,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 100345": {
+      "raDeg": 305.25269347,
+      "decDeg": -14.78140119,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 100453": {
+      "raDeg": 305.55708346,
+      "decDeg": 40.2566815,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 100881": {
+      "raDeg": 306.83001454,
+      "decDeg": -18.21169433,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101027": {
+      "raDeg": 307.21509857,
+      "decDeg": -17.81366828,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101044": {
+      "raDeg": 307.26174083,
+      "decDeg": 83.62546296,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101084": {
+      "raDeg": 307.36294172,
+      "decDeg": 56.06817898,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101093": {
+      "raDeg": 307.39511383,
+      "decDeg": 62.99413722,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101123": {
+      "raDeg": 307.47454931,
+      "decDeg": -18.58298474,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101138": {
+      "raDeg": 307.51471567,
+      "decDeg": 48.95155039,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101260": {
+      "raDeg": 307.87666197,
+      "decDeg": 74.95465942,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101421": {
+      "raDeg": 308.30318657,
+      "decDeg": 11.30333217,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101483": {
+      "raDeg": 308.48748693,
+      "decDeg": 13.02720146,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101589": {
+      "raDeg": 308.82711738,
+      "decDeg": 14.67418482,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101769": {
+      "raDeg": 309.38695734,
+      "decDeg": 14.59520289,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101800": {
+      "raDeg": 309.45456696,
+      "decDeg": 11.37769664,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101882": {
+      "raDeg": 309.68326968,
+      "decDeg": 13.31512567,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101916": {
+      "raDeg": 309.7816354,
+      "decDeg": 10.08615196,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101923": {
+      "raDeg": 309.81798449,
+      "decDeg": -14.95471233,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101958": {
+      "raDeg": 309.90939395,
+      "decDeg": 15.9120527,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 101984": {
+      "raDeg": 310.01232708,
+      "decDeg": -18.1386063,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102098": {
+      "raDeg": 310.3579727,
+      "decDeg": 45.28033423,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102281": {
+      "raDeg": 310.86477381,
+      "decDeg": 15.07468224,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102422": {
+      "raDeg": 311.32195263,
+      "decDeg": 61.83679404,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102431": {
+      "raDeg": 311.33831928,
+      "decDeg": 57.58029799,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102485": {
+      "raDeg": 311.52402547,
+      "decDeg": -25.27051682,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102488": {
+      "raDeg": 311.55180091,
+      "decDeg": 33.96945334,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102532": {
+      "raDeg": 311.66465833,
+      "decDeg": 16.12477326,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102589": {
+      "raDeg": 311.85219564,
+      "decDeg": 36.49073658,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102618": {
+      "raDeg": 311.91888574,
+      "decDeg": -9.49568988,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102727": {
+      "raDeg": 312.23872779,
+      "decDeg": 61.11885714,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102775": {
+      "raDeg": 312.32920846,
+      "decDeg": 58.74874488,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 102978": {
+      "raDeg": 312.95540084,
+      "decDeg": -26.91912642,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 103045": {
+      "raDeg": 313.16335749,
+      "decDeg": -8.98323782,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 103401": {
+      "raDeg": 314.22512443,
+      "decDeg": -9.69751669,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 103413": {
+      "raDeg": 314.29338184,
+      "decDeg": 41.16719384,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104019": {
+      "raDeg": 316.10135259,
+      "decDeg": -19.85493122,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104060": {
+      "raDeg": 316.23273251,
+      "decDeg": 43.92785122,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104139": {
+      "raDeg": 316.48658082,
+      "decDeg": -17.23271095,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104234": {
+      "raDeg": 316.78202266,
+      "decDeg": -25.00574796,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104365": {
+      "raDeg": 317.1400538,
+      "decDeg": -21.19352539,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104385": {
+      "raDeg": 317.19869846,
+      "decDeg": -76.2124269,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104459": {
+      "raDeg": 317.39830336,
+      "decDeg": -11.37165474,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104521": {
+      "raDeg": 317.58529617,
+      "decDeg": 10.13194861,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104732": {
+      "raDeg": 318.23408977,
+      "decDeg": 30.22708128,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104858": {
+      "raDeg": 318.61995883,
+      "decDeg": 10.00771855,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104887": {
+      "raDeg": 318.69727757,
+      "decDeg": 38.04432043,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104963": {
+      "raDeg": 318.90787714,
+      "decDeg": -20.65169052,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 104987": {
+      "raDeg": 318.95581976,
+      "decDeg": 5.2480739,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 105102": {
+      "raDeg": 319.35396892,
+      "decDeg": 39.39469016,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 105199": {
+      "raDeg": 319.64408982,
+      "decDeg": 62.58545529,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 105515": {
+      "raDeg": 320.56157261,
+      "decDeg": -16.83455521,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 105570": {
+      "raDeg": 320.72325739,
+      "decDeg": 6.81111338,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 105881": {
+      "raDeg": 321.66678212,
+      "decDeg": -22.41137838,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 106032": {
+      "raDeg": 322.16489595,
+      "decDeg": 70.56069481,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 106039": {
+      "raDeg": 322.18048346,
+      "decDeg": -21.80716659,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 106140": {
+      "raDeg": 322.48699859,
+      "decDeg": 23.63882922,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 106278": {
+      "raDeg": 322.88966951,
+      "decDeg": -5.57115593,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 106723": {
+      "raDeg": 324.27009487,
+      "decDeg": -19.46601352,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 106786": {
+      "raDeg": 324.43767522,
+      "decDeg": -7.85414212,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 106787": {
+      "raDeg": 324.4390348,
+      "decDeg": 19.31857481,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 106944": {
+      "raDeg": 324.88868707,
+      "decDeg": 2.24376298,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 106985": {
+      "raDeg": 325.02225935,
+      "decDeg": -16.66225343,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107095": {
+      "raDeg": 325.38722004,
+      "decDeg": -14.0468604,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107119": {
+      "raDeg": 325.47948373,
+      "decDeg": 71.31118695,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107188": {
+      "raDeg": 325.66423845,
+      "decDeg": -18.86630105,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107259": {
+      "raDeg": 325.87689561,
+      "decDeg": 58.78005308,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107310": {
+      "raDeg": 326.03501874,
+      "decDeg": 28.74322228,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107315": {
+      "raDeg": 326.04641808,
+      "decDeg": 9.87500791,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107348": {
+      "raDeg": 326.12787716,
+      "decDeg": 17.35004352,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107354": {
+      "raDeg": 326.16126755,
+      "decDeg": 25.64500284,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107380": {
+      "raDeg": 326.2366159,
+      "decDeg": -33.02555306,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107382": {
+      "raDeg": 326.25102876,
+      "decDeg": -9.08242443,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107472": {
+      "raDeg": 326.51816071,
+      "decDeg": 22.94888549,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107517": {
+      "raDeg": 326.63366745,
+      "decDeg": -11.36593201,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107556": {
+      "raDeg": 326.75952199,
+      "decDeg": -16.12656595,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107608": {
+      "raDeg": 326.93405546,
+      "decDeg": -30.89830582,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107763": {
+      "raDeg": 327.46117477,
+      "decDeg": 30.17427852,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 107887": {
+      "raDeg": 327.89264809,
+      "decDeg": 19.82664938,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 108036": {
+      "raDeg": 328.32326591,
+      "decDeg": -13.55180134,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 108085": {
+      "raDeg": 328.48189202,
+      "decDeg": -37.3648229,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 108661": {
+      "raDeg": 330.20922938,
+      "decDeg": -28.45373726,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 108874": {
+      "raDeg": 330.82845686,
+      "decDeg": -2.15533588,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 108917": {
+      "raDeg": 330.94650782,
+      "decDeg": 64.62775425,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109068": {
+      "raDeg": 331.4195499,
+      "decDeg": 5.05828453,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109074": {
+      "raDeg": 331.44593869,
+      "decDeg": -0.31982656,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109139": {
+      "raDeg": 331.60918894,
+      "decDeg": -13.86954013,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109176": {
+      "raDeg": 331.75197729,
+      "decDeg": 25.3450461,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109285": {
+      "raDeg": 332.0956383,
+      "decDeg": -32.98839827,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109410": {
+      "raDeg": 332.49688603,
+      "decDeg": 33.17826747,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109427": {
+      "raDeg": 332.54924902,
+      "decDeg": 6.197789,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109472": {
+      "raDeg": 332.65610232,
+      "decDeg": -11.56495901,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109492": {
+      "raDeg": 332.71359131,
+      "decDeg": 58.20124992,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109556": {
+      "raDeg": 332.87743467,
+      "decDeg": 59.41451451,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109654": {
+      "raDeg": 333.19921276,
+      "decDeg": 34.60471273,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109693": {
+      "raDeg": 333.29239384,
+      "decDeg": 86.10785672,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109754": {
+      "raDeg": 333.46958944,
+      "decDeg": 39.71488928,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109789": {
+      "raDeg": 333.57806796,
+      "decDeg": -27.76691218,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109857": {
+      "raDeg": 333.75699582,
+      "decDeg": 57.04346522,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 109937": {
+      "raDeg": 333.9923757,
+      "decDeg": 37.74873483,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 110003": {
+      "raDeg": 334.20819329,
+      "decDeg": -7.78323706,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 110273": {
+      "raDeg": 335.04961499,
+      "decDeg": -7.82110592,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 110395": {
+      "raDeg": 335.41374983,
+      "decDeg": -1.38735315,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 110672": {
+      "raDeg": 336.31921857,
+      "decDeg": 1.37739245,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 110778": {
+      "raDeg": 336.64228154,
+      "decDeg": -16.74214759,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 110960": {
+      "raDeg": 337.20750231,
+      "decDeg": -0.02006304,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 110992": {
+      "raDeg": 337.29254382,
+      "decDeg": 26.76320924,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 110991": {
+      "raDeg": 337.29269975,
+      "decDeg": 58.4151899,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 111045": {
+      "raDeg": 337.44142048,
+      "decDeg": -27.10723481,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 111056": {
+      "raDeg": 337.47070072,
+      "decDeg": 78.82433733,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 111104": {
+      "raDeg": 337.62192333,
+      "decDeg": 43.12338985,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 111123": {
+      "raDeg": 337.66172918,
+      "decDeg": -10.67788619,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 111188": {
+      "raDeg": 337.87620651,
+      "decDeg": -32.34602798,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 111497": {
+      "raDeg": 338.83887054,
+      "decDeg": -0.11736123,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 111841": {
+      "raDeg": 339.81532883,
+      "decDeg": 39.05028301,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 111944": {
+      "raDeg": 340.12825981,
+      "decDeg": 44.27628068,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 111954": {
+      "raDeg": 340.16385653,
+      "decDeg": -27.0436148,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112029": {
+      "raDeg": 340.36531181,
+      "decDeg": 10.83139111,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112031": {
+      "raDeg": 340.36938127,
+      "decDeg": 40.22546314,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112051": {
+      "raDeg": 340.43920724,
+      "decDeg": 29.3076892,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112158": {
+      "raDeg": 340.75053573,
+      "decDeg": 30.22130866,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112211": {
+      "raDeg": 340.89688564,
+      "decDeg": -18.83030716,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112242": {
+      "raDeg": 341.02285629,
+      "decDeg": 41.81922714,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112440": {
+      "raDeg": 341.63267663,
+      "decDeg": 23.56567939,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112447": {
+      "raDeg": 341.67267295,
+      "decDeg": 12.17408381,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112529": {
+      "raDeg": 341.88828134,
+      "decDeg": -19.61287445,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112716": {
+      "raDeg": 342.39795761,
+      "decDeg": -13.59253756,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112724": {
+      "raDeg": 342.42046735,
+      "decDeg": 66.20071089,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112731": {
+      "raDeg": 342.44261913,
+      "decDeg": 55.90268437,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112748": {
+      "raDeg": 342.5004181,
+      "decDeg": 24.60168486,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112917": {
+      "raDeg": 343.00811365,
+      "decDeg": 43.31236494,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112935": {
+      "raDeg": 343.09902715,
+      "decDeg": 9.83555733,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112948": {
+      "raDeg": 343.13149128,
+      "decDeg": -32.87545019,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 112961": {
+      "raDeg": 343.15360192,
+      "decDeg": -7.57967878,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113136": {
+      "raDeg": 343.6626635,
+      "decDeg": -15.82075994,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113186": {
+      "raDeg": 343.80676809,
+      "decDeg": 8.81609536,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113189": {
+      "raDeg": 343.81196404,
+      "decDeg": -36.38858056,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113246": {
+      "raDeg": 343.98705005,
+      "decDeg": -32.53970196,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113281": {
+      "raDeg": 344.09846242,
+      "decDeg": 41.60388627,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113368": {
+      "raDeg": 344.41177323,
+      "decDeg": -29.62183701,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113726": {
+      "raDeg": 345.48019377,
+      "decDeg": 42.32597866,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113788": {
+      "raDeg": 345.6514039,
+      "decDeg": 42.7578062,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113881": {
+      "raDeg": 345.94305575,
+      "decDeg": 28.08245462,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113889": {
+      "raDeg": 345.9691938,
+      "decDeg": 3.82006998,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113963": {
+      "raDeg": 346.1900702,
+      "decDeg": 15.20536786,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 113996": {
+      "raDeg": 346.29047874,
+      "decDeg": -7.69381853,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 114119": {
+      "raDeg": 346.67003033,
+      "decDeg": -23.7431168,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 114341": {
+      "raDeg": 347.36150879,
+      "decDeg": -21.17248555,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 114375": {
+      "raDeg": 347.47865379,
+      "decDeg": -22.45759248,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 114724": {
+      "raDeg": 348.58055219,
+      "decDeg": -6.0485268,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 114855": {
+      "raDeg": 348.97198728,
+      "decDeg": -9.08769554,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 114939": {
+      "raDeg": 349.21229368,
+      "decDeg": -7.72646619,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 114971": {
+      "raDeg": 349.28955677,
+      "decDeg": 3.28224524,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115033": {
+      "raDeg": 349.47584844,
+      "decDeg": -9.1824899,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115115": {
+      "raDeg": 349.74021218,
+      "decDeg": -9.610731,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115227": {
+      "raDeg": 350.08557117,
+      "decDeg": 5.38145156,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115250": {
+      "raDeg": 350.1592632,
+      "decDeg": 23.7403592,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115404": {
+      "raDeg": 350.66291976,
+      "decDeg": -15.03938012,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115438": {
+      "raDeg": 350.7429228,
+      "decDeg": -20.10034505,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115623": {
+      "raDeg": 351.3444225,
+      "decDeg": 23.40401243,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115669": {
+      "raDeg": 351.51173897,
+      "decDeg": -20.64186122,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115738": {
+      "raDeg": 351.73293881,
+      "decDeg": 1.25583758,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 115830": {
+      "raDeg": 351.99236589,
+      "decDeg": 6.37909727,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116247": {
+      "raDeg": 353.31927128,
+      "decDeg": -20.91452506,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116482": {
+      "raDeg": 354.04024223,
+      "decDeg": -26.8763167,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116584": {
+      "raDeg": 354.3904487,
+      "decDeg": 46.45917621,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116631": {
+      "raDeg": 354.53407969,
+      "decDeg": 43.2680761,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116727": {
+      "raDeg": 354.83742516,
+      "decDeg": 77.63196681,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116758": {
+      "raDeg": 354.94598676,
+      "decDeg": -14.22204281,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116771": {
+      "raDeg": 354.98675133,
+      "decDeg": 5.62735374,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116805": {
+      "raDeg": 355.10184089,
+      "decDeg": 44.33397776,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116901": {
+      "raDeg": 355.44082263,
+      "decDeg": -17.81653327,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116928": {
+      "raDeg": 355.51200741,
+      "decDeg": 1.7804172,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 116971": {
+      "raDeg": 355.68035357,
+      "decDeg": -14.54474243,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 117089": {
+      "raDeg": 356.05025914,
+      "decDeg": -18.27692862,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 117221": {
+      "raDeg": 356.50849555,
+      "decDeg": 46.42029095,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 117371": {
+      "raDeg": 356.97811533,
+      "decDeg": 67.80681263,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 117629": {
+      "raDeg": 357.83884091,
+      "decDeg": -18.90915459,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 117863": {
+      "raDeg": 358.59598888,
+      "decDeg": 57.49939052,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 118209": {
+      "raDeg": 359.66837736,
+      "decDeg": -3.55580738,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 118243": {
+      "raDeg": 359.75220729,
+      "decDeg": 55.75494069,
+      "frame": "icrs",
+      "epoch": 1991.25
+    },
+    "HIP 118268": {
+      "raDeg": 359.82750994,
+      "decDeg": 6.86359373,
+      "frame": "icrs",
+      "epoch": 1991.25
+    }
+  }
+}

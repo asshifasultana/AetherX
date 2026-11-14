@@ -1,5 +1,14 @@
 # SphereX
 
+## Cultural sky context and Gaia
+
+Open **Cultural sky context** below the timeline for cited Hawaiian, Vedic,
+Bengali, and Lakota entries. Arabic al-Sufi and Kamilaroi/Euahlayi selectors
+explain their pending adaptation permissions; the five-group content target is
+not yet complete. Enable **Gaia stars** under Overlays for approximate dated
+catalog markers and an accessible source list. `culture` and `gaia=1` travel in
+shared links. See [content sourcing, maintenance, astrometric limits, and tests](docs/cultural-context-and-gaia.md).
+
 ## Railway deployment
 
 Railway runs alongside Vercel. The Railway GitHub Actions workflow deploys pushes to `main`, supports manual runs, and accepts an exact `source_ref` when called by the daily observation-index workflow. Each deployment runs the regression suite before uploading the checked-out source. The CLI is pinned to [Railway v5.63.1](https://github.com/railwayapp/cli/releases/tag/v5.63.1).

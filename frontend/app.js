@@ -4,6 +4,7 @@ import { presets } from './presets.js';
 import { mountObjectLookup } from './object-lookup.js';
 import { initialViewState, isEmbedded } from './share.js';
 import { encodeViewState } from './url-state.js';
+import { MODE_DESCRIPTIONS, SETTINGS_SCHEMA, DISPLAY_KEYS, OBSERVATION_KEYS, normalizeSettings, applyLook, reconcileLook, resetKeys, loadStoredSettings, storeSettings } from './viewer-settings.js';
 ensureSearchForm();
 const initialEntry = readSearchEntry(typeof location === 'undefined' ? '' : location.search);
 const $ = id => document.getElementById(id);
@@ -20,8 +21,9 @@ let position = {
   frame: 'icrs',
   ...(restoredTargetId ? { targetId: restoredTargetId } : {})
 };
-const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, maxStackFrames: 80, combineExposures: true, hideBadPixels: true, rejectVisitGlitches: true, qualityOverlay: false, inspectPixels: false, consistentBrightness: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: false, labelAsteroids: false, asteroidMagnitude: 20 };
-let viewerSettings = { ...defaultSettings, band: initialViewState.band, fovArcmin: initialViewState.fovArcmin };
+// Remembered display and processing choices; a shared link's band and field
+// of view always win over what this browser last used.
+let viewerSettings = { ...normalizeSettings({ ...loadStoredSettings(), band: initialViewState.band, fovArcmin: initialViewState.fovArcmin }), pinnedReferenceKey: '' };
 const ranges = ['0.75 – 1.09', '1.10 – 1.62', '1.63 – 2.41', '2.42 – 3.82', '3.83 – 4.41', '4.42 – 5.00'];
 const signed = n => `${n < 0 ? '' : '+'}${n.toFixed(4)}`;
 function updateSelection() { document.querySelectorAll('[data-target]').forEach(b => { const active = b.dataset.target === selected; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); }); }
@@ -58,6 +60,15 @@ const targetSearch = mountTargetSearch({
   },
   onMoving: () => window.dispatchEvent(new CustomEvent('sky:moving-search-requested'))
 });
+window.addEventListener('sky:navigate-context',event=>{
+  const data=event.detail;
+  if(!Number.isFinite(data?.raDeg)||!Number.isFinite(data?.decDeg)||Math.abs(data.decDeg)>90)return;
+  objectLookup.invalidate();
+  position={raDeg:data.raDeg,decDeg:data.decDeg,frame:'icrs'};selected=null;updateSelection();
+  targetSearch.setMode('coordinates');targetSearch.setPosition(position,'degrees');
+  window.dispatchEvent(new CustomEvent('sky:search-entry',{detail:{type:'coordinates',query:'',format:'degrees',resolved:true}}));
+  showPosition({name:data.name||'Cultural sky position',type:'CULTURAL NAVIGATION ANCHOR · ICRS',description:'A verified anchor for this cultural figure; SPHEREx coverage is checked separately.'});
+});
 function renderEntryMode(mode, query = $('lookup-name').value) {
   const moving = mode === 'moving';
   $('moving-target').hidden = !moving;
@@ -79,15 +90,9 @@ window.addEventListener('sky:observations-loaded', event => {
   $('target-search-status').textContent = event.detail.failed && !$('search-error').hidden
     ? $('search-error').textContent : '';
 });
-const modeDescriptions = {
-  'time-lapse': 'Play observations in date order to follow changes over time.',
-  blink: 'Alternate between observations to spot changes at a glance.',
-  difference: 'Compare observations by subtracting one image from another.',
-  'motion-trail': 'Trace how sources move across successive observations.',
-  'deep-stack': 'Per-pixel median across up to the selected number of UTC-day frames. Masked, missing and uncovered pixels do not count as zeros.'
-};
-const checkboxes = { 'combine-exposures': 'combineExposures', 'hide-bad-pixels': 'hideBadPixels', 'reject-visit-glitches': 'rejectVisitGlitches', 'consistent-brightness': 'consistentBrightness', 'inspect-pixels': 'inspectPixels', invert: 'invert' };
-const selects = { stretch: 'stretch', colours: 'colours' };
+const TONE_KEYS = new Set(['stretch', 'scaleMode', 'contrast', 'brightness']);
+const optionLists = selector => [...(document.querySelectorAll?.(selector) || [])];
+let lastDisplayLimits = null;
 function emitSettings(source) {
   window.dispatchEvent(new CustomEvent('sky:viewer-settings-changed', { detail: { ...viewerSettings, source } }));
 }
@@ -106,41 +111,102 @@ window.addEventListener('sky:coverage-stack-requested', event => {
   renderSettings();
   emitSettings('coverage-stack'); // FITS viewer stacks the newly selected band
 });
+const maskBoxes = () => optionLists('#mask-categories input[type="checkbox"]');
+function readControl(control, element) {
+  if (control.type === 'checkbox') return element.checked;
+  if (control.type === 'multi') return maskBoxes().filter(box => box.checked).map(box => box.value);
+  if (control.type === 'number') return element.value === '' || element.value == null ? null : Number(element.value);
+  if (control.type === 'range' || control.number) return Number(element.value);
+  return element.value;
+}
 function renderSettings() {
-  $('detector-array').value = String(viewerSettings.band);
-  $('view-mode').value = viewerSettings.viewMode;
-  $('field-of-view').value = viewerSettings.fovArcmin;
-  $('field-of-view-value').value = viewerSettings.fovArcmin + '′';
-  $('field-of-view').setAttribute('aria-valuetext', viewerSettings.fovArcmin + ' arcminutes');
+  for (const control of SETTINGS_SCHEMA) {
+    const element = $(control.id);
+    if (!element) continue;
+    const value = viewerSettings[control.key];
+    if (control.type === 'checkbox') element.checked = Boolean(value);
+    else if (control.type === 'multi') for (const box of maskBoxes()) box.checked = value.includes(box.value);
+    else if (control.type === 'number') element.value = value ?? '';
+    else element.value = control.type === 'range' ? value : String(value);
+    const output = control.format && $(control.id + '-value');
+    if (output) output.value = control.format(value);
+    if (control.valuetext) element.setAttribute('aria-valuetext', control.valuetext(value));
+  }
+  for (const radio of optionLists('input[name="look"]')) radio.checked = radio.value === viewerSettings.look;
   $('band-range').textContent = ranges[viewerSettings.band - 1] + ' μm';
-  $('mode-description').textContent = modeDescriptions[viewerSettings.viewMode];
-  for (const [id, key] of Object.entries(checkboxes)) $(id).checked = viewerSettings[key];
-  for (const [id, key] of Object.entries(selects)) $(id).value = String(viewerSettings[key]);
-  $('contrast').value = viewerSettings.contrast; $('contrast-value').value = viewerSettings.contrast + '%';
-  $('max-stack-frames').value = viewerSettings.maxStackFrames;
-  $('max-stack-frames-value').value = `${viewerSettings.maxStackFrames} frames`;
+  $('mode-description').textContent = MODE_DESCRIPTIONS[viewerSettings.viewMode];
+  // Show only the controls that matter for the chosen mode and scale.
+  for (const element of optionLists('[data-show-mode]')) element.hidden = !element.dataset.showMode.split(' ').includes(viewerSettings.viewMode);
+  for (const element of optionLists('[data-show-scale]')) element.hidden = viewerSettings.scaleMode !== element.dataset.showScale;
 }
-for (const [id, key] of [['detector-array', 'band'], ['view-mode', 'viewMode']]) {
-  $(id).addEventListener('change', () => { viewerSettings[key] = key === 'band' ? Number($(id).value) : $(id).value; renderSettings(); emitSettings(); });
+function update(changes, { announce = '' } = {}) {
+  let next = { ...viewerSettings, ...changes };
+  if (Object.keys(changes).some(key => TONE_KEYS.has(key)) && !('look' in changes)) next = reconcileLook(next);
+  // Switching to manual limits starts from the limits currently on screen.
+  if (changes.scaleMode === 'manual' && lastDisplayLimits && next.scaleLow === null && next.scaleHigh === null) {
+    next.scaleLow = Number(lastDisplayLimits.low.toPrecision(4)); next.scaleHigh = Number(lastDisplayLimits.high.toPrecision(4));
+  }
+  viewerSettings = { ...normalizeSettings(next), pinnedReferenceKey: next.pinnedReferenceKey || '' };
+  renderSettings(); storeSettings(viewerSettings); emitSettings();
+  if (announce) $('announcement').textContent = announce;
 }
-$('field-of-view').addEventListener('input', () => {
-  $('field-of-view-value').value = $('field-of-view').value + '′';
-  $('field-of-view').setAttribute('aria-valuetext', $('field-of-view').value + ' arcminutes');
+for (const control of SETTINGS_SCHEMA) {
+  const element = $(control.id);
+  if (!element) continue;
+  if (control.type === 'range') element.addEventListener('input', () => {
+    const value = Number(element.value), output = control.format && $(control.id + '-value');
+    if (output) output.value = control.format(value);
+    if (control.valuetext) element.setAttribute('aria-valuetext', control.valuetext(value));
+  });
+  const commit = control.type === 'range' && control.commit !== 'change' ? 'input' : 'change';
+  element.addEventListener(commit, () => {
+    const value = readControl(control, element);
+    if (JSON.stringify(value) === JSON.stringify(viewerSettings[control.key])) return;
+    update({ [control.key]: value });
+  });
+}
+for (const radio of optionLists('input[name="look"]')) radio.addEventListener('change', () => {
+  if (!radio.checked) return;
+  if (radio.value === 'custom') {
+    const advanced = document.querySelector?.('details[data-advanced="display"]');
+    if (advanced) advanced.open = true;
+    update({ look: 'custom' });
+  } else {
+    const looked = applyLook(viewerSettings, radio.value);
+    update({ look: looked.look, stretch: looked.stretch, scaleMode: looked.scaleMode, contrast: looked.contrast, brightness: looked.brightness });
+  }
 });
-$('field-of-view').addEventListener('change', () => {
-  const next = Number($('field-of-view').value);
-  if (next === viewerSettings.fovArcmin) return;
-  viewerSettings.fovArcmin = next; renderSettings(); emitSettings();
+window.addEventListener('sky:reference-frame-pinned', event => {
+  if (!event.detail?.key) return;
+  update({ referenceFrame: 'pinned', pinnedReferenceKey: event.detail.key }, { announce: 'This frame is now the comparison reference.' });
 });
-for (const [id, key] of Object.entries(checkboxes)) $(id).addEventListener('change', () => { viewerSettings[key] = $(id).checked; emitSettings(); });
-for (const [id, key] of Object.entries(selects)) $(id).addEventListener('change', () => { viewerSettings[key] = key === 'asteroidMagnitude' ? Number($(id).value) : $(id).value; emitSettings(); });
-$('contrast').addEventListener('input', () => { viewerSettings.contrast = Number($('contrast').value); $('contrast-value').value = viewerSettings.contrast + '%'; emitSettings(); });
-$('max-stack-frames').addEventListener('input', () => { $('max-stack-frames-value').value = `${$('max-stack-frames').value} frames`; });
-$('max-stack-frames').addEventListener('change', () => { viewerSettings.maxStackFrames = Number($('max-stack-frames').value); emitSettings(); });
+window.addEventListener('sky:display-scale-locked', () => {
+  viewerSettings.consistentBrightness = true; renderSettings(); storeSettings(viewerSettings);
+  $('announcement').textContent = 'Display scale locked to the current frame.';
+});
+window.addEventListener('sky:display-limits', event => { if (Number.isFinite(event.detail?.low) && Number.isFinite(event.detail?.high)) lastDisplayLimits = event.detail; });
 $('reset-button').addEventListener('click', () => {
-  viewerSettings = { ...defaultSettings }; renderSettings(); emitSettings();
-  $('announcement').textContent = 'All observation settings reset to their defaults.';
+  viewerSettings = { ...resetKeys(viewerSettings, OBSERVATION_KEYS), pinnedReferenceKey: '' };
+  renderSettings(); storeSettings(viewerSettings); emitSettings();
+  $('announcement').textContent = 'View and processing settings reset to their defaults.';
 });
+$('reset-display')?.addEventListener('click', () => {
+  viewerSettings = resetKeys(viewerSettings, DISPLAY_KEYS);
+  renderSettings(); storeSettings(viewerSettings); emitSettings();
+  $('announcement').textContent = 'Display settings reset to their defaults.';
+});
+// Remember which sections and Advanced panels are open.
+const OPEN_KEY = 'spherex-open-sections-v1';
+let openSections = {};
+try { openSections = JSON.parse(globalThis.localStorage?.getItem(OPEN_KEY) || '{}') || {}; } catch { openSections = {}; }
+for (const details of optionLists('details[data-advanced], details[data-section]')) {
+  const name = details.dataset.advanced ? `advanced-${details.dataset.advanced}` : `section-${details.dataset.section}`;
+  if (typeof openSections[name] === 'boolean') details.open = openSections[name];
+  details.addEventListener('toggle', () => {
+    openSections[name] = details.open;
+    try { globalThis.localStorage?.setItem(OPEN_KEY, JSON.stringify(openSections)); } catch { /* storage may be unavailable */ }
+  });
+}
 renderSettings();
 updateSelection();
 targetSearch.setEntry(initialEntry);

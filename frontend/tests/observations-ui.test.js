@@ -84,7 +84,8 @@ test('a new target clears retry state and preset fallback retains its outage war
   assert.equal(get('retry-observations').hidden, true);
   assert.equal(get('archive-mode-label').textContent, 'Preset index fallback');
   assert.match(get('search-status').textContent, /Live IRSA search was unavailable/);
-  assert.equal(get('results-warnings').children[0].textContent, data.warnings[0]);
+  // The outage note lives in the status line; the warnings list is reserved for actionable truncation notices.
+  assert.equal(get('results-warnings').hidden, true);
   assert.equal(get('search-error').hidden, true);
 });
 

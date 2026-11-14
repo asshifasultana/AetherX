@@ -24,6 +24,7 @@ test('viewer paints previews, preserves every contributor and suppresses stale r
   };
   globalThis.location = { origin: 'http://localhost' };
   const emit = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
+  const grids=[];window.addEventListener('sky:display-grid-changed',event=>grids.push(event.detail));
   try {
     const { showCutout, cutoutRequestUrl } = await import('../fits-viewer.js');
     emit('sky:target-selected', { raDeg: 359.999, decDeg: 4.69 });
@@ -56,12 +57,15 @@ test('viewer paints previews, preserves every contributor and suppresses stale r
     emit('sky:viewer-settings-changed', { viewMode: 'time-lapse' });
     await showCutout(exposure(0));
     assert.ok(elements.get('sky-canvas').pixels?.length);
+    assert.equal(grids.at(-1).centerRaDeg,359.999);
+    assert.equal(grids.at(-1).startUtc,'2026-03-01T00:00:00.000Z');
     const clearPixels = elements.get('sky-canvas').pixels.slice();
-    emit('sky:viewer-settings-changed', { qualityOverlay: true, showTargetMarker: true, labelAsteroids: true });
+    // Overlays draw on their own canvas: the science image pixels never change.
+    emit('sky:viewer-settings-changed', { qualityOverlay: true, showCrosshair: true, showCompass: true });
     await showCutout(exposure(0));
     assert.deepEqual(elements.get('sky-canvas').pixels, clearPixels);
-    assert.equal(elements.get('target-marker').hidden, true);
-    assert.equal(elements.get('quality-legend').hidden, true);
+    assert.equal(elements.get('quality-legend').hidden, false);
+    assert.equal(elements.get('colour-bar').hidden, false);
     assert.equal(elements.get('source-mark').hidden, true);
     const originalFetch = globalThis.fetch;
     let inspected;
@@ -83,6 +87,7 @@ test('viewer paints previews, preserves every contributor and suppresses stale r
     emit('sky:target-selected', { raDeg: 12, decDeg: 0 });
     const draws = elements.get('sky-canvas').draws;
     await pending;
+    assert.equal(grids.at(-1),null);
     assert.equal(elements.get('sky-canvas').draws, draws);
     assert.equal(elements.get('export-sky-png').disabled, true);
     emit('sky:target-selected', { targetId: 'barnard', raDeg: 269.4521, decDeg: 4.6934 });

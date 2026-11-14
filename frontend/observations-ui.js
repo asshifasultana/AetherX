@@ -12,7 +12,7 @@ let position = { raDeg: 269.4521, decDeg: 4.6934, frame: 'icrs' };
 let targetName = 'Barnard’s Star', result = null, page = 0, controller, requestNumber = 0;
 let submittedParams, searchFailed = false;
 const qualityCache = new Map();
-const sourceLabel = data => data.source.kind === 'scheduled-index' ? 'Preset index fallback' : data.cached ? 'Cached IRSA search' : 'Live IRSA search';
+const sourceLabel = data => data.source.kind === 'scheduled-index' ? (data.source.fallback ? 'Preset index fallback' : 'Scheduled preset index') : data.cached ? 'Cached IRSA search' : 'Live IRSA search';
 const emit = (type, detail) => {
   if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent(type, { detail }));
 };
@@ -229,7 +229,7 @@ async function loadIndexStatus() {
     const signature = JSON.stringify(status); if (signature === previousIndexStatus) return;
     previousIndexStatus = signature;
     let message = status.available ? `Last successful check: ${formatTime(status.lastSuccessfulCheckAt)} · ${status.totalObservations.toLocaleString()} indexed detector images.` : 'The index has not been initialized yet. Searches use IRSA directly.';
-    if (status.available) message += ' Searches use cached live IRSA queries first; this index is an outage fallback.';
+    if (status.available) message += ' Fresh snapshots serve fixed preset positions; moving targets use live queries.';
     if (status.available && status.stale) message += ' The fallback index is overdue for its daily check.';
     if (status.status === 'error') message += ' Latest check failed; the last good index is retained.';
     $('index-update-summary').textContent = message;

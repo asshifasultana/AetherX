@@ -36,7 +36,7 @@ export function indexStatus(manifest, now = Date.now()) {
   const checked = manifest?.lastSuccessfulCheckAt || null;
   return {
     available: Boolean(manifest?.targets?.length), status: manifest?.status || 'uninitialized',
-    scope: 'outage fallback for five preset positions; all positions use cached live IRSA search first', schedule: UPDATE_SCHEDULE,
+    scope: 'fresh snapshots for fixed preset positions; moving targets and custom positions use cached live search', schedule: UPDATE_SCHEDULE,
     lastAttemptAt: manifest?.lastAttemptAt || null, lastSuccessfulCheckAt: checked,
     lastChangedAt: manifest?.lastChangedAt || null, stale: !checked || now - Date.parse(checked) > INDEX_MAX_AGE_MS,
     collections: manifest?.collections || [], totalObservations: manifest?.totalObservations || 0,
@@ -44,7 +44,7 @@ export function indexStatus(manifest, now = Date.now()) {
     targets: (manifest?.targets || []).map(({ id, name, count, productCount, checkedAt, hash }) => ({ id, name, count, productCount, checkedAt, hash }))
   };
 }
-export function indexedResponse(snapshot, entry, manifest, search, { stale = false } = {}) {
+export function indexedResponse(snapshot, entry, manifest, search, { stale = false, fallback = true } = {}) {
   const filtered = snapshot.products.filter(o => (!search.detector || o.detector === search.detector) && (search.release === 'all' || o.release?.toLowerCase() === search.release) && (search.startMjd === null || o.endMjd >= search.startMjd) && (search.endMjd === null || o.startMjd < search.endMjd));
   const preferred = preferredProducts(filtered);
   const uri = item => item.accessUrl?.replace('https://irsa.ipac.caltech.edu/', '') || '';
@@ -52,7 +52,7 @@ export function indexedResponse(snapshot, entry, manifest, search, { stale = fal
   const selected = ordered.slice(0, MAX_RESULTS), more = ordered.length > MAX_RESULTS;
   const duplicatesRemoved = search.afterUri ? 0 : filtered.length - preferred.length;
   return {
-    query: search, source: { name: 'NASA/IPAC IRSA', service: TAP_URL, kind: 'scheduled-index', fallback: true, retrievedAt: entry.checkedAt, indexLastCheckedAt: manifest.lastSuccessfulCheckAt, indexHash: entry.hash, collections: manifest.collections, targetId: entry.id, stale },
+    query: search, source: { name: 'NASA/IPAC IRSA', service: TAP_URL, kind: 'scheduled-index', fallback, retrievedAt: entry.checkedAt, indexLastCheckedAt: manifest.lastSuccessfulCheckAt, indexHash: entry.hash, collections: manifest.collections, targetId: entry.id, stale },
     observations: preferredProducts(selected), count: selected.length, matchedProducts: selected.length + duplicatesRemoved,
     duplicatesRemoved, truncated: more, cached: false, nextCursor: more ? Buffer.from(uri(selected.at(-1))).toString('base64url') : null,
     warnings: [
@@ -61,7 +61,7 @@ export function indexedResponse(snapshot, entry, manifest, search, { stale = fal
       search.targetId
         ? 'The fallback index was built at the stored position and may miss observations along the star’s path. Cutouts still use proper motion.'
         : 'Fixed ICRS position search: proper motion is not propagated to observation dates.',
-      'Live IRSA search was unavailable. Showing the last successful preset index; newer observations or revisions may be missing.',
+      ...(fallback ? ['Live IRSA search was unavailable. Showing the last successful preset index; newer observations or revisions may be missing.'] : ['Results use the latest complete scheduled snapshot; observations released since its check may be missing.']),
       ...(stale ? ['Showing the last successful preset index; newer observations or revisions may be missing.'] : []),
       ...(manifest.status === 'error' ? ['The latest scheduled check failed. These results come from the last successful index.'] : []),
       ...(more ? ['More indexed products are available. Use Load more observations to complete the list.'] : [])
@@ -84,6 +84,11 @@ export function createIndexedSearch({ store = createIndexStore(), now = () => Da
       try { if (entry?.hash === expectedVersion) snapshot = await store.snapshot(entry); } catch {}
       if (!snapshot) throw new SearchError('The observation index changed while you were browsing. Start a new search to load the updated results.', 409);
       return indexedResponse(snapshot, entry, manifest, search, { stale: now() - Date.parse(entry.checkedAt) > INDEX_MAX_AGE_MS });
+    }
+    // Existing snapshots cover fixed positions, not proper-motion tracks.
+    if (entry && !search.targetId && !search.afterUri && params.get('refresh') !== 'live' && now() - Date.parse(entry.checkedAt) <= INDEX_MAX_AGE_MS) {
+      try { snapshot = await store.snapshot(entry); } catch { snapshot = null; }
+      if (snapshot) return indexedResponse(snapshot, entry, manifest, search, { fallback: false });
     }
     const collections = manifest?.collections?.length ? manifest.collections : COLLECTIONS;
     const key = collections.join(',');

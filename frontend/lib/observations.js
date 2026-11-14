@@ -226,7 +226,13 @@ export function createSearchService({ fetchImpl = fetch, now = () => Date.now(),
       const deadline = AbortSignal.timeout(timeoutMs);
       const signal = AbortSignal.any([record.controller.signal, deadline]);
       try {
-        for (const query of queries) rows.push(...await queryArchive(query, { fetchImpl, timeoutMs, signal }));
+        // Limit TAP concurrency per search; each batch retains query order.
+        for (let i = 0; i < queries.length; i += 2) {
+          const batches = await Promise.allSettled(queries.slice(i, i + 2).map(query => queryArchive(query, { fetchImpl, timeoutMs, signal })));
+          const failed = batches.find(batch => batch.status === 'rejected');
+          if (failed) throw failed.reason;
+          for (const batch of batches) rows.push(...batch.value);
+        }
       } catch (error) {
         if (deadline.aborted && !record.controller.signal.aborted) throw new SearchError('IRSA search timed out. Please retry or narrow the date range.', 504);
         throw error;
@@ -247,7 +253,7 @@ export function createSearchService({ fetchImpl = fetch, now = () => Date.now(),
           ...(truncated ? [`More archive products are available. Use Load more observations or narrow your filters; the loaded list is incomplete.`] : [])
         ]
       };
-      resources.set(key, result, now() + 300000, now());
+      resources.set(key, result, now() + 900000, now());
       return result;
     })();
     record.promise = request.finally(() => { pending.delete(key); release(); });

@@ -97,7 +97,7 @@ test('successful searches are cached, expire, coalesce and preserve source time'
   assert.equal(calls, 1); assert.equal(first.count, 3); assert.equal(concurrent.count, 3);
   assert.equal((await service(valid())).cached, true);
   assert.equal(first.source.retrievedAt, new Date(clock).toISOString());
-  clock += 300001; await service(valid()); assert.equal(calls, 2);
+  clock += 900001; await service(valid()); assert.equal(calls, 2);
 });
 test('empty and truncated results are explicit; failed searches are not cached', async () => {
   const empty = await createSearchService({ fetchImpl: async () => new Response('obs_id,energy_bandpassname\n') })(valid());

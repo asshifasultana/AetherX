@@ -26,7 +26,7 @@ const state = {
   shownKey: null
 };
 
-// Warm one upcoming daily frame at a time. Its exposures share the bounded S3
+// Warm up to four upcoming daily frames at a time. Its exposures share the bounded S3
 // pool and yield queue priority to selected frames and deep-stack work. IRSA
 // fallback transfers remain serialized independently.
 const prefetch = {
@@ -68,12 +68,12 @@ function updateStepButtons() {
   $('step-forward').disabled = state.frames.length < 2 || state.index >= last;
 }
 
-function nextPrefetchFrame() {
+function nextPrefetchFrame(excluded = new Set()) {
   const count = state.frames.length;
   for (let step = 0; step < count; step++) {
     const frame = state.frames[(state.index + step) % count];
     const key = observationKey(frame);
-    if (!prefetch.fetched.has(key) && !prefetch.failed.has(key)) return frame;
+    if (!excluded.has(key) && !prefetch.fetched.has(key) && !prefetch.failed.has(key)) return frame;
   }
   return null;
 }
@@ -117,26 +117,35 @@ function prefetchFinished() {
 async function runPrefetch() {
   prefetch.timer = null;
   if (prefetch.running || prefetch.paused || state.playing || !state.frames.length) return;
-  const frame = nextPrefetchFrame();
-  if (!frame) { prefetchFinished(); return; }
-  const key = observationKey(frame);
+  const batch = [], excluded = new Set();
+  for (let i = 0; i < 4; i++) {
+    const frame = nextPrefetchFrame(excluded);
+    if (!frame) break;
+    batch.push(frame); excluded.add(observationKey(frame));
+  }
+  if (!batch.length) { prefetchFinished(); return; }
   const controller = new AbortController();
   prefetch.controller = controller;
   prefetch.running = true;
-  let ok = false, aborted = false;
   try {
-    await warmCutout(frame, controller.signal);
-    ok = true;
-  } catch (error) {
-    aborted = error?.name === 'AbortError';
+    await Promise.all(batch.map(async frame => {
+      const key = observationKey(frame);
+      try {
+        await warmCutout(frame, controller.signal);
+        if (!controller.signal.aborted) prefetch.fetched.add(key);
+      } catch (error) {
+        if (!controller.signal.aborted && error?.name !== 'AbortError') prefetch.failed.add(key);
+      }
+      if (!controller.signal.aborted) prefetchAnnounce();
+    }));
   } finally {
-    if (prefetch.controller === controller) prefetch.controller = null;
-    prefetch.running = false;
+    // An old batch must never clear a new target's controller or running flag.
+    if (prefetch.controller === controller) {
+      prefetch.controller = null;
+      prefetch.running = false;
+      if (!controller.signal.aborted) schedulePrefetch(0);
+    }
   }
-  if (ok) prefetch.fetched.add(key);
-  else if (!aborted) prefetch.failed.add(key);
-  prefetchAnnounce();
-  if (!controller.signal.aborted) schedulePrefetch(aborted ? 600 : 90);
 }
 
 function drawPlaceholder(canvas, frame) {

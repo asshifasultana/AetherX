@@ -4,7 +4,7 @@ import { medianStack } from './lib/stack.js';
 import { ImageScheduler, abortError } from './lib/image-scheduler.js';
 
 export class ImagePipeline {
-  constructor() { this.scheduler = new ImageScheduler(4); this.pending = new Map(); this.sequence = 0; this.disabled = false; }
+  constructor() { this.scheduler = new ImageScheduler(8); this.pending = new Map(); this.sequence = 0; this.disabled = false; }
   async start() {
     if (this.disabled || typeof Worker === 'undefined') return false;
     if (!this.starting) this.starting = new Promise(resolve => {

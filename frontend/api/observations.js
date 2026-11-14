@@ -8,13 +8,19 @@ export function createObservationsHandler(search = searchObservations) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'no-store');
     if (req.method !== 'GET') { res.setHeader('Allow', 'GET'); res.statusCode = 405; res.end(JSON.stringify({ error: 'Use GET to search observations.' })); return; }
+    const controller = new AbortController();
+    const disconnect = () => { if (!res.writableFinished) controller.abort(); };
+    res.once('close', disconnect);
     try {
       const params = new URL(req.url, 'http://localhost').searchParams;
-      res.end(JSON.stringify(await search(params)));
+      const result = await search(params, { signal: controller.signal });
+      if (!res.destroyed) res.end(JSON.stringify(result));
     } catch (error) {
-      res.statusCode = error instanceof SearchError ? error.status : 500;
-      res.end(JSON.stringify({ error: error instanceof SearchError ? error.message : 'Observation search failed. Please retry.' }));
-    }
+      if (res.destroyed) return;
+      if (error.retryAfter) res.setHeader('Retry-After', String(error.retryAfter));
+      res.statusCode = error instanceof SearchError || error.retryAfter ? error.status : 500;
+      res.end(JSON.stringify({ error: error instanceof SearchError || error.retryAfter ? error.message : 'Observation search failed. Please retry.', ...(error instanceof SearchError && error.code ? { code: error.code } : {}) }));
+    } finally { res.off('close', disconnect); }
   };
 }
 export default createObservationsHandler();

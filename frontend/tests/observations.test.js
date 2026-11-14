@@ -70,7 +70,7 @@ test('science URLs reject unrelated hosts, traversal and non-science paths', () 
 test('TAP XML errors and HTTP failures never turn into empty results', async () => {
   await assert.rejects(queryArchive('test', { fetchImpl: async () => new Response('<VOTABLE><INFO name="QUERY_STATUS" value="ERROR">bad query</INFO></VOTABLE>') }), { status: 502 });
   let attempts = 0;
-  await assert.rejects(queryArchive('test', { fetchImpl: async () => { attempts++; return new Response('Unavailable', { status: 503 }); } }), { status: 502 });
+  await assert.rejects(queryArchive('test', { fetchImpl: async () => { attempts++; return new Response('Unavailable', { status: 503 }); } }), { status: 502, code: 'IRSA_UNAVAILABLE' });
   assert.equal(attempts, 2);
 });
 test('transient network failure is retried and upstream timeout is explicit', async () => {
@@ -119,9 +119,25 @@ test('HTTP search endpoint validates input and returns JSON/method errors', asyn
   const service = createSearchService({ fetchImpl: async () => new Response(fixture) });
   await withServer(createObservationsHandler(service), async base => {
     const invalid = await fetch(base + '/api/observations?raDeg=360&decDeg=0'); assert.equal(invalid.status, 400);
-    assert.match((await invalid.json()).error, /RA/);
+    const invalidData = await invalid.json();
+    assert.match(invalidData.error, /RA/); assert.equal(Object.hasOwn(invalidData, 'code'), false);
     const response = await fetch(base + '/api/observations?' + valid()); assert.equal(response.status, 200); assert.equal((await response.json()).count, 3);
     const method = await fetch(base + '/api/observations', { method: 'POST' }); assert.equal(method.status, 405); assert.equal(method.headers.get('allow'), 'GET');
+  });
+});
+
+test('HTTP search endpoint identifies IRSA outages and a later retry can succeed', async () => {
+  let attempts = 0;
+  const service = createSearchService({ fetchImpl: async () => ++attempts <= 2 ? new Response('Unavailable', { status: 503 }) : new Response(fixture) });
+  await withServer(createObservationsHandler(service), async base => {
+    const url = base + '/api/observations?' + valid({ raDeg: '101.287155333', decDeg: '-16.716115861' });
+    const failed = await fetch(url);
+    assert.equal(failed.status, 502);
+    assert.deepEqual(await failed.json(), { error: 'IRSA is temporarily unavailable. Please retry.', code: 'IRSA_UNAVAILABLE' });
+    assert.equal(attempts, 2);
+    const retry = await fetch(url);
+    assert.equal(retry.status, 200); assert.equal((await retry.json()).count, 3);
+    assert.equal(attempts, 3);
   });
 });
 test('local server serves the UI and routes API errors without exposing private modules', async () => {

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { preferredProducts } from '../observation-products.js';
 import { COLLECTIONS, MAX_RESULTS, TAP_URL, SearchError, createSearchService, validateSearch } from './observations.js';
+import { metadataResources } from './resources.js';
 
 export const INDEX_DIRECTORY = fileURLToPath(new URL('../data/', import.meta.url));
 export const INDEX_MAX_AGE_MS = 48 * 3600000;
@@ -35,7 +36,7 @@ export function indexStatus(manifest, now = Date.now()) {
   const checked = manifest?.lastSuccessfulCheckAt || null;
   return {
     available: Boolean(manifest?.targets?.length), status: manifest?.status || 'uninitialized',
-    scope: 'five preset positions; other positions use live IRSA search', schedule: UPDATE_SCHEDULE,
+    scope: 'outage fallback for five preset positions; all positions use cached live IRSA search first', schedule: UPDATE_SCHEDULE,
     lastAttemptAt: manifest?.lastAttemptAt || null, lastSuccessfulCheckAt: checked,
     lastChangedAt: manifest?.lastChangedAt || null, stale: !checked || now - Date.parse(checked) > INDEX_MAX_AGE_MS,
     collections: manifest?.collections || [], totalObservations: manifest?.totalObservations || 0,
@@ -51,22 +52,23 @@ export function indexedResponse(snapshot, entry, manifest, search, { stale = fal
   const selected = ordered.slice(0, MAX_RESULTS), more = ordered.length > MAX_RESULTS;
   const duplicatesRemoved = search.afterUri ? 0 : filtered.length - preferred.length;
   return {
-    query: search, source: { name: 'NASA/IPAC IRSA', service: TAP_URL, kind: 'scheduled-index', retrievedAt: entry.checkedAt, indexLastCheckedAt: manifest.lastSuccessfulCheckAt, indexHash: entry.hash, collections: manifest.collections, targetId: entry.id, stale },
+    query: search, source: { name: 'NASA/IPAC IRSA', service: TAP_URL, kind: 'scheduled-index', fallback: true, retrievedAt: entry.checkedAt, indexLastCheckedAt: manifest.lastSuccessfulCheckAt, indexHash: entry.hash, collections: manifest.collections, targetId: entry.id, stale },
     observations: preferredProducts(selected), count: selected.length, matchedProducts: selected.length + duplicatesRemoved,
     duplicatesRemoved, truncated: more, cached: false, nextCursor: more ? Buffer.from(uri(selected.at(-1))).toString('base64url') : null,
     warnings: [
       'Wavelength bounds describe each image, not the exact wavelength at the target pixel.',
       'Archive quality flags are reported as provided. FITS pixel flags at the target are not assessed.',
       'Fixed ICRS position search: proper motion is not propagated to observation dates.',
+      'Live IRSA search was unavailable. Showing the last successful preset index; newer observations or revisions may be missing.',
       ...(stale ? ['Showing the last successful preset index; newer observations or revisions may be missing.'] : []),
       ...(manifest.status === 'error' ? ['The latest scheduled check failed. These results come from the last successful index.'] : []),
       ...(more ? ['More indexed products are available. Use Load more observations to complete the list.'] : [])
     ]
   };
 }
-export function createIndexedSearch({ store = createIndexStore(), now = () => Date.now(), liveFactory = collections => createSearchService({ collections }) } = {}) {
+export function createIndexedSearch({ store = createIndexStore(), now = () => Date.now(), liveFactory = collections => createSearchService({ collections, resources: metadataResources }) } = {}) {
   const liveServices = new Map();
-  return async params => {
+  return async (params, options = {}) => {
     const search = validateSearch(params);
     const expectedVersion = params.get('indexVersion');
     if (expectedVersion && !/^[a-f0-9]{64}$/.test(expectedVersion)) throw new SearchError('Invalid index version.', 400);
@@ -74,16 +76,21 @@ export function createIndexedSearch({ store = createIndexStore(), now = () => Da
     try {
       manifest = await store.manifest();
       entry = manifest?.targets.find(t => Math.abs(t.raDeg - search.raDeg) < 1e-10 && Math.abs(t.decDeg - search.decDeg) < 1e-10);
-      if (entry) snapshot = await store.snapshot(entry);
     } catch { /* Never let a missing or damaged local index block a live search. */ snapshot = null; }
     if (manifest?.collections.length && search.release !== 'all' && !manifest.collections.some(c => c === 'spherex_' + search.release || c === 'spherex_' + search.release + '_deep')) throw new SearchError('The selected archive release is not available.', 400);
-    if (expectedVersion && (!snapshot || entry.hash !== expectedVersion)) throw new SearchError('The observation index changed while you were browsing. Start a new search to load the updated results.', 409);
-    if (snapshot && expectedVersion) return indexedResponse(snapshot, entry, manifest, search, { stale: now() - Date.parse(entry.checkedAt) > INDEX_MAX_AGE_MS });
-    if (snapshot && now() - Date.parse(entry.checkedAt) <= INDEX_MAX_AGE_MS) return indexedResponse(snapshot, entry, manifest, search);
+    if (expectedVersion) {
+      try { if (entry?.hash === expectedVersion) snapshot = await store.snapshot(entry); } catch {}
+      if (!snapshot) throw new SearchError('The observation index changed while you were browsing. Start a new search to load the updated results.', 409);
+      return indexedResponse(snapshot, entry, manifest, search, { stale: now() - Date.parse(entry.checkedAt) > INDEX_MAX_AGE_MS });
+    }
     const collections = manifest?.collections?.length ? manifest.collections : COLLECTIONS;
     const key = collections.join(',');
     if (!liveServices.has(key)) { liveServices.set(key, liveFactory(collections)); while (liveServices.size > 3) liveServices.delete(liveServices.keys().next().value); }
-    try { return await liveServices.get(key)(params); }
-    catch (error) { if (snapshot) return indexedResponse(snapshot, entry, manifest, search, { stale: true }); throw error; }
+    try { return await liveServices.get(key)(params, options); }
+    catch (error) {
+      if (options.signal?.aborted || search.afterUri || !entry || ![502, 504].includes(error.status)) throw error;
+      try { snapshot = await store.snapshot(entry); } catch { throw error; }
+      return indexedResponse(snapshot, entry, manifest, search, { stale: now() - Date.parse(entry.checkedAt) > INDEX_MAX_AGE_MS });
+    }
   };
 }

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { updateIndex, compareProducts, discoverCollections, fetchTargetProducts } from '../../scripts/observation-index.mjs';
 import { createIndexStore, createIndexedSearch, indexedResponse, indexStatus, INDEX_MAX_AGE_MS } from '../lib/index-store.js';
-import { parseCsv, normalizeRow, validateSearch, MAX_RESULTS } from '../lib/observations.js';
+import { parseCsv, normalizeRow, validateSearch, MAX_RESULTS, SearchError } from '../lib/observations.js';
 
 const raw = parseCsv(await readFile(new URL('./fixtures/irsa-sample.csv', import.meta.url), 'utf8'));
 const products = raw.map(normalizeRow);
@@ -93,7 +93,7 @@ test('scheduled index supports release/date/detector filters and keeps raw relea
   const qr3 = { ...products[0], release: 'QR3', collection: 'spherex_qr3', productId: 'qr3', processingVersion: 'l2b-v27-2026-271', accessUrl: products[0].accessUrl.replace('/qr2/', '/qr3/') };
   await updateIndex(setup(directory, { fetchProducts: async () => [...products, qr3] }));
   const store = createIndexStore({ directory });
-  const service = createIndexedSearch({ store, liveFactory: () => async () => { throw new Error('A fresh preset should not call IRSA'); } });
+  const service = createIndexedSearch({ store, liveFactory: () => async () => { throw new SearchError('IRSA unavailable'); } });
   const all = await service(params()); assert.equal(all.source.kind, 'scheduled-index'); assert.equal(all.count, 3);
   assert.equal(all.observations.find(o => o.detector === 3 && o.observationId === products[0].observationId).release, 'QR3');
   const qr2 = await service(params({ release: 'qr2', detector: '3', startDate: '2025-05-05', endDate: '2025-05-05' }));
@@ -104,7 +104,7 @@ test('custom coordinates always use live search; stale snapshots try live before
   const directory = await workspace(t), clock = Date.parse('2026-11-04T00:00:00Z');
   await updateIndex(setup(directory, { now: () => clock }));
   const store = createIndexStore({ directory }); let calls = 0;
-  const service = createIndexedSearch({ store, now: () => clock + INDEX_MAX_AGE_MS + 1, liveFactory: () => async () => { calls++; throw new Error('offline'); } });
+  const service = createIndexedSearch({ store, now: () => clock + INDEX_MAX_AGE_MS + 1, liveFactory: () => async () => { calls++; throw new SearchError('offline'); } });
   const fallback = await service(params()); assert.equal(calls, 1); assert.equal(fallback.source.stale, true); assert.ok(fallback.warnings.some(w => w.includes('newer observations')));
   const continuation = await service(params({ cursor: Buffer.from(raw[0].uri).toString('base64url'), indexVersion: fallback.source.indexHash }));
   assert.equal(continuation.source.indexHash, fallback.source.indexHash); assert.equal(calls, 1);
@@ -129,4 +129,39 @@ test('snapshot pagination uses a consistent cursor and does not duplicate bounda
   assert.equal(last.count, 2); assert.equal(last.nextCursor, null);
   assert.equal(new Set([...first.observations, ...last.observations].map(o => o.productId)).size, items.length);
   assert.equal(indexStatus({ ...manifest, targets: [], totalObservations: items.length }).totalObservations, items.length);
+});
+
+test('fresh presets use live results, including empty results, without loading snapshots', async t => {
+  const directory = await workspace(t); await updateIndex(setup(directory));
+  const store = createIndexStore({ directory }); let calls = 0;
+  const service = createIndexedSearch({ store: { ...store, snapshot: async () => { throw new Error('Snapshot should not be read'); } }, liveFactory: () => async () => {
+    calls++; return { source: { kind: 'live' }, observations: [], count: 0 };
+  } });
+  const result = await service(params()); assert.equal(result.source.kind, 'live'); assert.equal(result.count, 0); assert.equal(calls, 1);
+});
+
+test('fresh fallback is labelled and only upstream failures can select it', async t => {
+  const directory = await workspace(t); const clock = Date.now(); await updateIndex(setup(directory, { now: () => clock }));
+  const store = createIndexStore({ directory });
+  const service = status => createIndexedSearch({ store, now: () => clock, liveFactory: () => async () => { throw new SearchError('failed', status); } });
+  for (const status of [502, 504]) {
+    const fallback = await service(status)(params()); assert.equal(fallback.source.fallback, true); assert.equal(fallback.source.stale, false);
+    assert.ok(fallback.warnings.some(w => w.includes('Live IRSA search was unavailable')));
+    const empty = await service(status)(params({ endDate: '2020-01-01' })); assert.equal(empty.count, 0); assert.equal(empty.source.fallback, true);
+  }
+  for (const status of [400, 409, 503, 500]) await assert.rejects(service(status)(params()), { status });
+  await assert.rejects(service(502)(params({ cursor: Buffer.from(raw[0].uri).toString('base64url') })), { status: 502 });
+  await assert.rejects(service(502)(params({ raDeg: 'invalid' })), { status: 400 });
+});
+
+test('missing or corrupt fallback never masks an upstream error', async t => {
+  const directory = await workspace(t);
+  const offline = () => async () => { throw new SearchError('IRSA offline'); };
+  const store = createIndexStore({ directory });
+  await assert.rejects(createIndexedSearch({ store, liveFactory: offline })(params()), /IRSA offline/);
+  const manifest = await updateIndex(setup(directory));
+  await writeFile(path.join(directory, manifest.targets[0].snapshot), '{}');
+  const service = createIndexedSearch({ store, liveFactory: offline });
+  await assert.rejects(service(params()), /IRSA offline/);
+  await assert.rejects(service(params({ indexVersion: manifest.targets[0].hash })), { status: 409 });
 });

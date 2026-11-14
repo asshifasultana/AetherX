@@ -1,11 +1,12 @@
 import { preferredProducts } from '../observation-products.js';
+import { createSearchResources } from './resources.js';
 // IRSA TAP/CAOM metadata adapter. The reference project's tools/build_index.py
 // informed the archive tables and processing-version selection; no code is copied.
 export const TAP_URL = 'https://irsa.ipac.caltech.edu/TAP/sync';
 export const COLLECTIONS = ['spherex_qr3', 'spherex_qr3_deep', 'spherex_qr2', 'spherex_qr2_deep'];
 export const MAX_RESULTS = 2000;
 export class SearchError extends Error {
-  constructor(message, status = 502) { super(message); this.status = status; }
+  constructor(message, status = 502, code) { super(message); this.status = status; this.code = code; }
 }
 
 function numeric(value, name, min, max, exclusiveMax = false) {
@@ -68,23 +69,40 @@ export function buildQuery(search, { collections: available = COLLECTIONS } = {}
 
 // RFC 4180 quoted fields, embedded line breaks, empty cells, BOM and CRLF.
 export function parseCsv(text) {
-  const rows = []; let row = [], cell = '', quoted = false;
+  const rows = []; let row = [], i = 0;
   text = text.replace(/^\uFEFF/, '');
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    if (char === '"') {
-      if (quoted && text[i + 1] === '"') { cell += '"'; i++; }
-      else if (quoted) quoted = false;
-      else if (cell === '') quoted = true;
-      else throw new SearchError('IRSA returned malformed CSV. Please retry.');
-    } else if (char === ',' && !quoted) { row.push(cell); cell = ''; }
-    else if ((char === '\n' || char === '\r') && !quoted) {
-      if (char === '\r' && text[i + 1] === '\n') i++;
-      row.push(cell); if (row.some(value => value !== '')) rows.push(row); row = []; cell = '';
-    } else cell += char;
+  while (i < text.length) {
+    let cell;
+    if (text[i] === '"') {
+      const start = ++i;
+      while (i < text.length) {
+        if (text[i] !== '"') { i++; continue; }
+        if (text[i + 1] === '"') { i += 2; continue; }
+        break;
+      }
+      if (i === text.length) throw new SearchError('IRSA returned an incomplete table. Please retry.');
+      cell = text.slice(start, i++).replace(/""/g, '"');
+      if (i < text.length && text[i] !== ',' && text[i] !== '\r' && text[i] !== '\n') throw new SearchError('IRSA returned malformed CSV. Please retry.');
+    } else {
+      const start = i;
+      while (i < text.length && text[i] !== ',' && text[i] !== '\r' && text[i] !== '\n') {
+        if (text[i] === '"') throw new SearchError('IRSA returned malformed CSV. Please retry.');
+        i++;
+      }
+      // Slice complete fields instead of allocating a string node for every character.
+      cell = text.slice(start, i);
+    }
+    row.push(cell);
+    if (i === text.length) break;
+    const delimiter = text[i++];
+    if (delimiter === ',') { if (i === text.length) row.push(''); }
+    else {
+      if (delimiter === '\r' && text[i] === '\n') i++;
+      if (row.some(value => value !== '')) rows.push(row);
+      row = [];
+    }
   }
-  if (quoted) throw new SearchError('IRSA returned an incomplete table. Please retry.');
-  if (row.length || cell !== '') { row.push(cell); if (row.some(value => value !== '')) rows.push(row); }
+  if (row.some(value => value !== '')) rows.push(row);
   const headers = rows.shift();
   if (!headers?.includes('obs_id')) throw new SearchError('IRSA did not return the expected observation table. Please retry.');
   return rows.map(values => {
@@ -135,19 +153,20 @@ export function deduplicate(rows) {
   catch { throw new SearchError('IRSA returned an observation without a valid identifier or detector.'); }
 }
 
-export async function queryArchive(query, { fetchImpl = fetch, timeoutMs = 90000 } = {}) {
+export async function queryArchive(query, { fetchImpl = fetch, timeoutMs = 90000, signal } = {}) {
   const controller = new AbortController();
+  const requestSignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal;
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     for (let attempt = 0; attempt < 2; attempt++) {
       let response;
       try {
-        response = await fetchImpl(TAP_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'text/csv' }, body: new URLSearchParams({ REQUEST: 'doQuery', LANG: 'ADQL', QUERY: query, FORMAT: 'csv', MAXREC: String(MAX_RESULTS + 1) }), signal: controller.signal });
-      } catch (error) { if (attempt === 0 && !controller.signal.aborted) continue; throw error; }
+        response = await fetchImpl(TAP_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'text/csv' }, body: new URLSearchParams({ REQUEST: 'doQuery', LANG: 'ADQL', QUERY: query, FORMAT: 'csv', MAXREC: String(MAX_RESULTS + 1) }), signal: requestSignal });
+      } catch (error) { if (attempt === 0 && !requestSignal.aborted) continue; throw error; }
       if (!response.ok) {
         await response.body?.cancel();
         if (attempt === 0 && [429, 502, 503, 504].includes(response.status)) continue;
-        throw new SearchError('IRSA is temporarily unavailable. Please retry.');
+        throw new SearchError('IRSA is temporarily unavailable. Please retry.', 502, response.status === 503 ? 'IRSA_UNAVAILABLE' : undefined);
       }
       let text = ''; const reader = response.body.getReader(); const decoder = new TextDecoder(); let bytes = 0;
       while (true) { const { value, done } = await reader.read(); if (done) break; bytes += value.byteLength; if (bytes > 12_000_000) { await reader.cancel(); throw new SearchError('The archive response is too large. Narrow your date or detector filters.'); } text += decoder.decode(value, { stream: true }); }
@@ -159,21 +178,26 @@ export async function queryArchive(query, { fetchImpl = fetch, timeoutMs = 90000
       return parseCsv(text);
     }
   } catch (error) {
+    if (signal?.aborted) throw signal.reason;
     if (error instanceof SearchError) throw error;
     if (controller.signal.aborted) throw new SearchError('IRSA search timed out. Please retry or narrow the date range.', 504);
     throw new SearchError('Could not reach IRSA. Please check your connection and retry.');
   } finally { clearTimeout(timer); }
 }
 
-export function createSearchService({ fetchImpl = fetch, now = () => Date.now(), timeoutMs = 90000, collections = COLLECTIONS } = {}) {
-  const cache = new Map(), pending = new Map();
-  return async function searchObservations(params) {
-    const search = validateSearch(params), key = JSON.stringify(search);
-    const cached = cache.get(key);
-    if (cached && cached.expires > now()) return { ...cached.result, cached: true };
-    if (pending.has(key)) return pending.get(key);
+export function createSearchService({ fetchImpl = fetch, now = () => Date.now(), timeoutMs = 90000, collections = COLLECTIONS, resources = createSearchResources() } = {}) {
+  const { pending } = resources;
+  return async function searchObservations(params, { signal } = {}) {
+    signal?.throwIfAborted();
+    const search = validateSearch(params), key = JSON.stringify([collections, search]);
+    const cached = resources.get(key, now());
+    if (cached) return { ...cached, cached: true };
+    if (pending.has(key)) return joinRequest(pending.get(key), signal);
+    const release = resources.gate.acquire();
+    const record = { controller: new AbortController(), waiters: 0 };
     const request = (async () => {
-      const rows = await queryArchive(buildQuery(search, { collections }), { fetchImpl, timeoutMs });
+      const rows = await queryArchive(buildQuery(search, { collections }), { fetchImpl, timeoutMs, signal: record.controller.signal });
+      record.controller.signal.throwIfAborted();
       const truncated = rows.length > MAX_RESULTS;
       const observations = deduplicate(rows.slice(0, MAX_RESULTS));
       const result = {
@@ -188,11 +212,27 @@ export function createSearchService({ fetchImpl = fetch, now = () => Date.now(),
           ...(truncated ? [`More archive products are available. Use Load more observations or narrow your filters; the loaded list is incomplete.`] : [])
         ]
       };
-      cache.set(key, { result, expires: now() + 300000 });
-      while (cache.size > 40) cache.delete(cache.keys().next().value);
+      resources.set(key, result, now() + 300000, now());
       return result;
     })();
-    pending.set(key, request);
-    try { return await request; } finally { pending.delete(key); }
+    record.promise = request.finally(() => { pending.delete(key); release(); });
+    pending.set(key, record);
+    return joinRequest(record, signal);
   };
+}
+
+async function joinRequest(record, signal) {
+  record.waiters++;
+  let onAbort;
+  try {
+    signal?.throwIfAborted();
+    if (!signal) return await record.promise;
+    return await Promise.race([record.promise, new Promise((resolve, reject) => {
+      onAbort = () => reject(signal.reason);
+      signal.addEventListener('abort', onAbort, { once: true });
+    })]);
+  } finally {
+    if (onAbort) signal.removeEventListener('abort', onAbort);
+    if (--record.waiters === 0) record.controller.abort();
+  }
 }

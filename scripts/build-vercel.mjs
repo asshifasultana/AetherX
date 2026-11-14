@@ -14,6 +14,7 @@ for (const [name, maxDuration] of [['observations', 120], ['observation-quality'
   await mkdir(path.join(directory, 'api'), { recursive: true });
   await mkdir(path.join(directory, 'lib'), { recursive: true });
   await copyFile(path.join(frontend, 'api', name + '.js'), path.join(directory, 'api', name + '.js'));
+  if (name !== 'resolve-object') await copyFile(path.join(frontend, 'lib', 'resources.js'), path.join(directory, 'lib', 'resources.js'));
   await copyFile(path.join(frontend, 'observation-products.js'), path.join(directory, 'observation-products.js'));
   if (name === 'resolve-object') await copyFile(path.join(frontend, 'lib', 'name-resolver.js'), path.join(directory, 'lib', 'name-resolver.js'));
   if (name === 'resolve-object') await copyFile(path.join(frontend, 'coordinates.js'), path.join(directory, 'coordinates.js'));

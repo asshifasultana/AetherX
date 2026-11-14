@@ -27,5 +27,6 @@ export function createAppServer() { return createServer(async (req, res) => {
 }); }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.PORT) || 5173;
-  createAppServer().listen(port, '127.0.0.1', () => console.log(`Local: http://127.0.0.1:${port}`));
+  const host = process.env.HOST || '127.0.0.1';
+  createAppServer().listen(port, host, () => console.log(`Listening: http://${host}:${port}`));
 }

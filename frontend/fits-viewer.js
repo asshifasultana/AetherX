@@ -216,7 +216,10 @@ export async function showCutout(observation, { quiet = false } = {}) {
   try {
     const response = await fetch('/api/cutout?' + params, { signal: requestController.signal });
     if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'The cutout could not be retrieved.'); }
-    const image = readFits(await response.arrayBuffer()); image.matrix = matrixFor(image.header);
+    let bytes;
+    try { bytes = await response.arrayBuffer(); }
+    catch { throw new Error('The cutout download was interrupted or exceeded the 24 MiB limit. Try again or choose a smaller field of view.'); }
+    const image = readFits(bytes); image.matrix = matrixFor(image.header);
     if (sequence !== activeSequence) return;
     activeObservation.image = image; const coverage = drawImage(image);
     window.dispatchEvent(new CustomEvent('sky:cutout-detector-selected', { detail: { detector: observation.detector } }));
@@ -224,7 +227,7 @@ export async function showCutout(observation, { quiet = false } = {}) {
     const masked = image.flags && settings.hideBadPixels ? Array.from(image.flags).filter(value => (value & BAD_PIXEL_MASK) !== 0).length : 0;
     caption.textContent = `${date} · D${observation.detector} · ${formatWavelength(observation)} · ${settings.fovArcmin}′ square · north up${masked ? ` · ${masked} flagged pixels masked` : ''}`;
     status.hidden = true;
-    cacheState.textContent = response.headers.get('X-Cutout-Cache') === 'HIT' ? 'From local cache' : 'Retrieved from IRSA';
+    cacheState.textContent = 'Retrieved from IRSA · browser caching enabled';
     document.getElementById('target-marker').hidden = !settings.showTargetMarker;
   } catch (error) {
     if (sequence === activeSequence && !requestController.signal.aborted) { resetViewer(error.message); status.classList.add('is-error'); cacheState.textContent = 'Cutout unavailable'; }

@@ -7,8 +7,9 @@ const formatTime = value => value ? value.replace('T', ' ').replace(/\.\d+Z$/, '
 const pageSize = 25;
 let position = { raDeg: 269.4521, decDeg: 4.6934, frame: 'icrs' };
 let targetName = 'Barnard’s Star', result = null, page = 0, controller, requestNumber = 0;
-let submittedParams;
+let submittedParams, searchFailed = false;
 const qualityCache = new Map();
+const sourceLabel = data => data.source.kind === 'scheduled-index' ? 'Preset index fallback' : data.cached ? 'Cached IRSA search' : 'Live IRSA search';
 
 function updateTarget() { $('search-target').textContent = `${targetName} · ${position.raDeg.toFixed(6)}°, ${position.decDeg >= 0 ? '+' : ''}${position.decDeg.toFixed(6)}° · ICRS`; }
 window.addEventListener('sky:target-selected', event => {
@@ -17,11 +18,12 @@ window.addEventListener('sky:target-selected', event => {
 });
 function setBusy(busy) {
   $('observations').setAttribute('aria-busy', String(busy));
-  $('find-observations').textContent = busy ? 'Searching IRSA…' : 'Find observations ↗';
+  $('find-observations').textContent = busy ? 'Searching IRSA…' : searchFailed ? 'Retry observations' : 'Find observations ↗';
   $('find-observations').disabled = busy; $('cancel-search').hidden = !busy;
 }
 async function search() {
   controller?.abort(); const current = ++requestNumber; controller = new AbortController(); const activeController = controller;
+  searchFailed = false;
   result = null; page = 0; $('observation-results').hidden = true; $('search-error').hidden = true;
   $('archive-mode-label').textContent = 'IRSA archive';
   const startDate = $('search-start').value, endDate = $('search-end').value;
@@ -35,17 +37,18 @@ async function search() {
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) throw new Error('The observation API is not available. Start the supplied Node server locally, or deploy the API functions with the frontend.');
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'The archive search failed. Please retry.');
+    if (!response.ok) throw new Error(data.code === 'IRSA_UNAVAILABLE' ? 'IRSA’s observation service is temporarily unavailable. Your target is selected. Retry shortly.' : data.error || 'The archive search failed. Please retry.');
     if (!Array.isArray(data.observations)) throw new Error('The observation service returned an invalid response. Please retry.');
     if (current !== requestNumber) return;
     result = data;
-    $('archive-mode-label').textContent = data.source.kind === 'scheduled-index' ? (data.source.stale ? 'Last good index' : 'Updated preset index') : 'Live IRSA search';
-    if (!data.count) { $('search-status').textContent = 'No observations cover this position with the selected filters. Try another date range, release, or detector.'; return; }
-    $('search-status').textContent = `Found ${data.count} detector images covering ${targetName}.`;
+    $('search-status').textContent = data.count ? `Found ${data.count} detector images covering ${targetName}.` : data.source.fallback
+      ? 'The preset fallback index has no matches for these filters. Live IRSA search was unavailable; current coverage could not be checked.'
+      : 'No observations cover this position with the selected filters. Try another date range, release, or detector.';
     renderResults();
   } catch (error) {
     if (current !== requestNumber) return;
     if (activeController.signal.aborted && activeController.signal.reason !== 'timeout') { $('search-status').textContent = 'Search cancelled. You can search again.'; return; }
+    searchFailed = true;
     $('search-status').textContent = 'Search did not complete.';
     $('search-error').textContent = activeController.signal.reason === 'timeout' ? 'The archive search timed out. Try a shorter date range or one detector.' : error.message;
     $('search-error').hidden = false;
@@ -61,7 +64,7 @@ function renderResults() {
   $('results-summary').textContent = `${result.count.toLocaleString()} detector images loaded · ${new Set(result.observations.map(o => o.observationId)).size.toLocaleString()} pointings${result.nextCursor ? ' · more available' : ''}`;
   $('load-more-observations').hidden = !result.nextCursor; $('load-more-observations').disabled = false; $('load-more-observations').textContent = 'Load more observations ↓';
   const indexed = result.source.kind === 'scheduled-index';
-  $('archive-mode-label').textContent = indexed ? (result.source.stale ? 'Last good index' : 'Updated preset index') : 'Live IRSA search';
+  $('archive-mode-label').textContent = sourceLabel(result);
   $('results-provenance').textContent = `Source: ${result.source.name} · ${indexed ? 'Preset index checked' : 'Retrieved'} ${formatTime(result.source.retrievedAt)}${!indexed && result.cached ? ' · Cached (up to 5 minutes)' : ''} · ${result.duplicatesRemoved} duplicate / older products removed.`;
   $('detector-summary').replaceChildren();
   for (let detector = 1; detector <= 6; detector++) {
@@ -99,7 +102,7 @@ function field(list, name, value) { const group = make('div'); group.append(make
 function renderRows() {
   if (!result) return;
   const sorted = $('result-sort').value === 'newest' ? [...result.observations].reverse() : result.observations;
-  const pages = Math.ceil(sorted.length / pageSize); page = Math.max(0, Math.min(page, pages - 1));
+  const pages = Math.max(1, Math.ceil(sorted.length / pageSize)); page = Math.max(0, Math.min(page, pages - 1));
   $('observation-rows').replaceChildren();
   for (const observation of sorted.slice(page * pageSize, (page + 1) * pageSize)) {
     const row = make('tr');
@@ -169,7 +172,8 @@ async function loadIndexStatus() {
     const signature = JSON.stringify(status); if (signature === previousIndexStatus) return;
     previousIndexStatus = signature;
     let message = status.available ? `Last successful check: ${formatTime(status.lastSuccessfulCheckAt)} · ${status.totalObservations.toLocaleString()} indexed detector images.` : 'The index has not been initialized yet. Searches use IRSA directly.';
-    if (status.available && status.stale) message += ' The daily index check is overdue; live search will be attempted.';
+    if (status.available) message += ' Searches use cached live IRSA queries first; this index is an outage fallback.';
+    if (status.available && status.stale) message += ' The fallback index is overdue for its daily check.';
     if (status.status === 'error') message += ' Latest check failed; the last good index is retained.';
     $('index-update-summary').textContent = message;
     $('index-update-changes').textContent = status.changes ? `Most recent check: ${status.changes.added} new · ${status.changes.revised} revised · ${status.changes.removed} removed. Scheduled around 10:27 AM Bangladesh time daily.` : 'Scheduled around 10:27 AM Bangladesh time daily after the update workflow is enabled on GitHub.';

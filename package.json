@@ -9,6 +9,7 @@
     "update:index": "node scripts/update-observation-index.mjs",
     "build": "node scripts/build-vercel.mjs",
     "dev": "node frontend/server.mjs",
+    "start": "node frontend/server.mjs",
     "test": "node --test frontend/coordinates.test.js frontend/tests/*.test.js"
   }
 }

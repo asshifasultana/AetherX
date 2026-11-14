@@ -22,6 +22,7 @@ jobs:
       source_ref: ${{ steps.persist.outputs.source_ref }}
       changed: ${{ steps.persist.outputs.changed }}
       deploy_enabled: ${{ steps.credentials.outputs.enabled }}
+      railway_deploy_enabled: ${{ steps.railway_credentials.outputs.enabled }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,6 +63,18 @@ jobs:
             echo 'enabled=false' >> "$GITHUB_OUTPUT"
             echo '::warning::Index saved. Configure the existing Vercel deployment secrets to publish it automatically.'
           fi
+      - name: Check Railway deployment configuration
+        id: railway_credentials
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          if [[ -n "$RAILWAY_TOKEN" && -n "$RAILWAY_SERVICE_ID" ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo '::warning::Index saved. Configure RAILWAY_TOKEN and RAILWAY_SERVICE_ID to publish it to Railway automatically.'
+          fi
       - name: Preserve failed-check diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
@@ -80,3 +93,15 @@ jobs:
     with:
       source_ref: ${{ needs.update.outputs.source_ref }}
     secrets: inherit
+
+  deploy-railway:
+    needs: update
+    if: needs.update.outputs.changed == 'true' && needs.update.outputs.railway_deploy_enabled == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/railway.yml
+    with:
+      source_ref: ${{ needs.update.outputs.source_ref }}
+    secrets:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}

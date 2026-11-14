@@ -2,7 +2,7 @@ import {
   buildFrames, frameDelayMs, frameFractions, frameGaps, frameTime, formatGap,
   formatGapShort, nearestFrameIndex, nearestFrameIndexByTime, nextSpeed, observationKey
 } from './timelapse-core.js';
-import { showCutout } from './fits-viewer.js';
+import { showCutout, warmCutout } from './fits-viewer.js';
 
 const $ = id => document.getElementById(id);
 const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
@@ -24,6 +24,20 @@ const state = {
   cache: new Map(),
   shownKey: null
 };
+
+// Frames are warmed after the archive search so playback does not pause on a
+// ~5 MB download between frames. The archive server admits one cutout at a
+// time, so warm-up is strictly sequential and yields to viewer requests.
+const prefetch = {
+  timer: null,
+  controller: null,
+  running: false,
+  paused: 0,
+  fetched: new Set(),
+  failed: new Set(),
+  fov: null
+};
+let prefetchNote = false;
 
 const dateOf = frame => new Date(frameTime(frame));
 const shortDate = frame => dateFormat.format(dateOf(frame));
@@ -51,6 +65,77 @@ function updateStepButtons() {
   const last = state.frames.length - 1;
   $('step-back').disabled = state.frames.length < 2 || state.index <= 0;
   $('step-forward').disabled = state.frames.length < 2 || state.index >= last;
+}
+
+function nextPrefetchFrame() {
+  const count = state.frames.length;
+  for (let step = 0; step < count; step++) {
+    const frame = state.frames[(state.index + step) % count];
+    const key = observationKey(frame);
+    if (!prefetch.fetched.has(key) && !prefetch.failed.has(key)) return frame;
+  }
+  return null;
+}
+
+function schedulePrefetch(delay = 0) {
+  clearTimeout(prefetch.timer);
+  prefetch.timer = null;
+  if (!state.frames.length || prefetch.paused || state.playing) return;
+  prefetch.timer = setTimeout(() => { void runPrefetch(); }, delay);
+}
+
+function stopPrefetch() {
+  clearTimeout(prefetch.timer);
+  prefetch.timer = null;
+  prefetch.controller?.abort();
+  prefetch.controller = null;
+}
+
+function resetPrefetch() {
+  stopPrefetch();
+  prefetch.fetched.clear();
+  prefetch.failed.clear();
+  prefetch.running = false;
+}
+
+function prefetchAnnounce() {
+  if (!prefetchNote || prefetch.paused || state.playing || !state.frames.length) return;
+  const total = state.frames.length;
+  setStatus(`${total} dated ${total === 1 ? 'frame' : 'frames'} ready. Preloading ${Math.min(prefetch.fetched.size, total)}/${total} for smooth playback…`);
+}
+
+function prefetchFinished() {
+  if (!prefetchNote || prefetch.paused || state.playing || !state.frames.length) return;
+  prefetchNote = false;
+  const total = state.frames.length, done = prefetch.fetched.size;
+  setStatus(done >= total
+    ? `All ${total} frames preloaded — press play for smooth playback.`
+    : `${done} of ${total} frames preloaded. The rest will load on demand.`);
+}
+
+async function runPrefetch() {
+  prefetch.timer = null;
+  if (prefetch.running || prefetch.paused || state.playing || !state.frames.length) return;
+  const frame = nextPrefetchFrame();
+  if (!frame) { prefetchFinished(); return; }
+  const key = observationKey(frame);
+  const controller = new AbortController();
+  prefetch.controller = controller;
+  prefetch.running = true;
+  let ok = false, aborted = false;
+  try {
+    await warmCutout(frame, controller.signal);
+    ok = true;
+  } catch (error) {
+    aborted = error?.name === 'AbortError';
+  } finally {
+    if (prefetch.controller === controller) prefetch.controller = null;
+    prefetch.running = false;
+  }
+  if (ok) prefetch.fetched.add(key);
+  else if (!aborted) prefetch.failed.add(key);
+  prefetchAnnounce();
+  if (!controller.signal.aborted) schedulePrefetch(aborted ? 600 : 90);
 }
 
 function drawPlaceholder(canvas, frame) {
@@ -244,18 +329,37 @@ function rebuild({ keepTime = false, announce = true } = {}) {
   } else if (announce) {
     setStatus(`${state.frames.length} dated ${state.frames.length === 1 ? 'frame' : 'frames'} ready. Press play, step with the arrow buttons, or choose a thumbnail. Uneven tick spacing shows real gaps in time.`);
   }
+  resetPrefetch();
+  if (state.frames.length > 1) {
+    prefetchNote = true;
+    prefetchAnnounce();
+    schedulePrefetch(0);
+  } else {
+    prefetchNote = false;
+  }
   return state.frames;
 }
 
-async function selectFrame(index) {
+async function selectFrame(index, { playback = false } = {}) {
   if (!state.frames.length) return;
   state.index = Math.max(0, Math.min(state.frames.length - 1, index));
   updateCurrent();
   const frame = state.frames[state.index];
-  setStatus(`Loading ${frameDate(frame)} · D${frame.detector}…`);
-  await showCutout(frame);
-  if (state.frames[state.index] === frame) {
-    setStatus(`Frame ${state.index + 1} of ${state.frames.length} · ${frameDate(frame)}. Use ← → or the timeline to scrub.`);
+  prefetch.paused++;
+  prefetchNote = false;
+  if (!playback) setStatus(`Loading ${frameDate(frame)} · D${frame.detector}…`);
+  try {
+    // Playback stays quiet: the previous frame remains on screen until the next
+    // one is ready, so there is no "loading cutout" flash between frames.
+    await showCutout(frame, { quiet: playback, keepImage: playback });
+  } finally {
+    prefetch.paused = Math.max(0, prefetch.paused - 1);
+    if (state.frames[state.index] === frame) {
+      setStatus(playback
+        ? `Playing · frame ${state.index + 1} of ${state.frames.length} · ${frameDate(frame)}`
+        : `Frame ${state.index + 1} of ${state.frames.length} · ${frameDate(frame)}. Use ← → or the timeline to scrub.`);
+    }
+    schedulePrefetch(200);
   }
 }
 
@@ -265,6 +369,7 @@ function pausePlayback() {
   clearTimeout(state.timer);
   state.timer = null;
   updatePlayButton();
+  schedulePrefetch(300);
 }
 
 function scheduleNext(delay) {
@@ -272,13 +377,15 @@ function scheduleNext(delay) {
   const token = state.token;
   state.timer = setTimeout(async () => {
     if (!state.playing || token !== state.token) return;
-    await selectFrame((state.index + 1) % state.frames.length);
+    await selectFrame((state.index + 1) % state.frames.length, { playback: true });
     if (state.playing && token === state.token) scheduleNext(frameDelayMs(state.speed));
   }, delay);
 }
 
 async function playPlayback() {
   if (state.frames.length < 2) return;
+  // Any warm-up already in flight may finish; a requested frame always preempts
+  // it, and playback itself never starts another speculative download.
   state.playing = true;
   state.token++;
   updatePlayButton();
@@ -325,6 +432,17 @@ document.addEventListener('keydown', event => {
 
 window.addEventListener('sky:viewer-settings-changed', event => {
   const detail = event.detail || {};
+  const fov = detail.fovArcmin === undefined ? prefetch.fov : Number(detail.fovArcmin);
+  if (fov !== prefetch.fov) {
+    prefetch.fov = fov;
+    // Every cutout URL encodes the field of view, so a new FOV invalidates warm-up.
+    resetPrefetch();
+    if (state.frames.length > 1) {
+      prefetchNote = true;
+      prefetchAnnounce();
+      schedulePrefetch(0);
+    }
+  }
   const band = detail.band === undefined ? state.band : Number(detail.band);
   const combine = detail.combineExposures === undefined ? state.combineExposures : Boolean(detail.combineExposures);
   if (band === state.band && combine === state.combineExposures) return;
@@ -337,7 +455,11 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   rebuild({ keepTime: true });
 });
 
-window.addEventListener('sky:target-selected', () => { state.shownKey = null; });
+window.addEventListener('sky:target-selected', () => {
+  state.shownKey = null;
+  prefetchNote = false;
+  resetPrefetch();
+});
 
 window.addEventListener('sky:observations-loading', () => {
   state.observations = [];
@@ -351,18 +473,29 @@ window.addEventListener('sky:observations-loaded', event => {
   if (event.detail?.failed) setStatus('The archive search did not complete. Adjust the filters and try again.');
 });
 
+function paintThumbFrom(observation, source) {
+  if (!observation || !source) return;
+  const key = observationKey(observation);
+  const entry = state.thumbs.get(key);
+  if (!entry) return;
+  paintThumb(entry.canvas, source);
+  entry.button.classList.add('has-thumb');
+  try { state.cache.set(key, entry.canvas.toDataURL('image/jpeg', 0.72)); } catch {}
+}
+
+// Warm-up renders each frame off-screen, so the filmstrip fills in with real
+// images while the archive is still downloading the rest of the sequence.
+window.addEventListener('sky:cutout-warmed', event => {
+  paintThumbFrom(event.detail?.observation, event.detail?.canvas);
+});
+
 window.addEventListener('sky:cutout-rendered', event => {
   const observation = event.detail?.observation;
   if (!observation) return;
   const key = observationKey(observation);
   state.shownKey = key;
-  const entry = state.thumbs.get(key);
-  const source = document.getElementById('sky-canvas');
-  if (entry && source) {
-    paintThumb(entry.canvas, source);
-    entry.button.classList.add('has-thumb');
-    try { state.cache.set(key, entry.canvas.toDataURL('image/jpeg', 0.72)); } catch {}
-  }
+  prefetch.fetched.add(key);
+  paintThumbFrom(observation, document.getElementById('sky-canvas'));
   const current = state.frames[state.index];
   if (current && key === observationKey(current)) {
     setStatus(`Showing ${frameDate(current)} · D${current.detector}.`);

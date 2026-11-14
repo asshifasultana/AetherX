@@ -5,7 +5,7 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const frontend = path.join(root, 'frontend');
 const output = path.join(root, '.vercel', 'output');
-const publicFiles = ['index.html', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'timelapse.js', 'timelapse-core.js'];
+const publicFiles = ['index.html', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js'];
 // Emit Vercel's documented Build Output API, avoiding framework auto-detection.
 await mkdir(path.join(output, 'static'), { recursive: true });
 for (const file of publicFiles) await copyFile(path.join(frontend, file), path.join(output, 'static', file));
@@ -27,4 +27,4 @@ for (const [name, maxDuration] of [['observations', 120], ['observation-quality'
   await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: `api/${name}.js`, launcherType: 'Nodejs', maxDuration }, null, 2));
 }
 await writeFile(path.join(output, 'config.json'), JSON.stringify({ version: 3 }, null, 2));
-console.log('Vercel output ready: twelve public assets, five Node.js API functions, and the preset observation index.');
+console.log('Vercel output ready: thirteen public assets, five Node.js API functions, and the preset observation index.');

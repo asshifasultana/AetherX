@@ -158,6 +158,11 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
     const [science, flags, variance] = await Promise.all([
       read(url, scienceStart, scienceStart + rows * width * stride - 1, signal),
       (async () => {
+        // The FLAGS plane is the single largest read after the science rows, and
+        // it is only needed to mask bad pixels or to inspect them. When neither
+        // is requested, skip the heap entirely rather than transfer it and throw
+        // it away; masking will be unavailable and the caller must not assume it.
+        if (settings.hideBadPixels === false && settings.includeFlags !== true) return undefined;
         if (f.XTENSION === 'IMAGE' && f.BITPIX === 32 && f.NAXIS1 === width && f.NAXIS2 === height) {
           const start = info.flags.dataOffset + y0 * width * 4;
           const bytes = await read(url, start, start + rows * width * 4 - 1, signal), view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);

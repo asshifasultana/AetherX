@@ -297,7 +297,7 @@ function renderCase(summary) {
   const heading = document.createElement('div');
   heading.className = 'case-head';
   const title = document.createElement('strong');
-  title.textContent = `Spot ${summary.spot} · ${summary.radiusArcsec ? 'area ' : ''}case file`;
+  title.textContent = `${summary.radiusArcsec ? 'Area' : 'Spot'} ${summary.spot}`;
   const badge = document.createElement('span');
   badge.className = `case-verdict is-${summary.verdict.label.split(' ')[0].replace(/[^a-z]/g, '')}`;
   badge.textContent = summary.verdict.label;
@@ -460,6 +460,18 @@ async function askSceptic(summary, signal) {
   } catch { return null; }
 }
 
+// Tool errors carry hints meant for the model ("Call compare_frames … first").
+// The log shows people only the plain part; the model still gets the full text.
+function forPeople(error) {
+  const text = String(error || 'Something went wrong');
+  const mentionsTool = s => /\b[a-z]+_[a-z_]+\b/.test(s);
+  const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+  const kept = sentences.filter(s => !mentionsTool(s)).join('').trim();
+  if (kept) return kept;
+  const lead = text.split(':')[0].trim();
+  return mentionsTool(lead) ? 'Not possible right now.' : `${lead}.`;
+}
+
 async function runTool(call, signal, turnSources) {
   const checked = validateToolCall(call.function?.name, call.function?.arguments);
   if (!checked.ok) return { ok: false, error: checked.error };
@@ -468,7 +480,7 @@ async function runTool(call, signal, turnSources) {
   const line = addEntry('action', `↳ ${label}…`);
   const progress = text => { addEntry('progress', text); setActivity(text); };
   const result = await controller.execute(checked.name, checked.args, { signal, progress });
-  line.textContent = `↳ ${label}${result.ok === false ? ` — ${result.error}` : result.pending ? ' — still loading' : ''}`;
+  line.textContent = `↳ ${label}${result.ok === false ? ` — ${forPeople(result.error)}` : result.pending ? ' — still loading' : ''}`;
   line.classList.toggle('is-failed', result.ok === false);
   if (checked.name === 'make_share_link' && result.url) showShare(result.url, result.note);
   turnSources.push(JSON.stringify(result));
@@ -483,7 +495,7 @@ function drainInbox(turnSources) {
     const content = describeDone(job);
     history.push({ role: 'user', content });
     turnSources.push(content);
-    const line = addEntry('action', `↳ Background: ${job.label} ${job.ok ? 'finished' : `stopped — ${job.error}`}`);
+    const line = addEntry('action', `↳ Background: ${job.label} ${job.ok ? 'finished' : `stopped — ${forPeople(job.error)}`}`);
     line.classList.toggle('is-failed', !job.ok);
   }
   return done.length;

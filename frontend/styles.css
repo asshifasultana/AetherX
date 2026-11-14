@@ -1051,6 +1051,9 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .viewer-page .workspace[data-agent-open="true"] #ai-guide { transform:translateX(0); visibility:visible; pointer-events:auto; transition-delay:0s; }
 .viewer-page .ai-guide-head { position:sticky; top:-20px; z-index:2; padding:14px 0 12px; margin:-14px 0 14px; background:#0b0c0a; border-bottom:1px solid #28322e; }
 .viewer-page .ai-guide-head-actions { display:flex; align-items:center; gap:8px; }
+.viewer-page .ai-guide-new { flex:none; cursor:pointer; }
+.viewer-page .ai-guide-new[hidden] { display:none; }
+.viewer-page .ai-guide-new:hover { background:#1c2420; border-color:#80bfa8; }
 .viewer-page #ai-guide .ai-guide-log { max-height:none; }
 .viewer-page #ai-guide .ai-guide-form { margin-top:auto; padding-top:14px; }
 .is-embed .viewer-page :is(.workspace-sidebar,.sidebar-backdrop,#ai-guide,.header-icon-button) { display:none!important; }

@@ -513,6 +513,7 @@ function submit(text) {
   const value = text.trim();
   if (!value || running) return;
   $('ai-guide-input').value = '';
+  autosize($('ai-guide-input'));
   try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* storage unavailable */ }
   const chips = knownSpots.filter(spot => attached.has(spot.n));
   attached = new Set();
@@ -521,13 +522,31 @@ function submit(text) {
   void converse(value, chips);
 }
 
+// Grow the composer with its text (up to the CSS max-height), then scroll inside it.
+function autosize(input) {
+  input.style.height = 'auto';
+  const max = parseFloat(getComputedStyle(input).maxHeight) || Infinity;
+  const height = Math.min(input.scrollHeight, max);
+  input.style.height = `${height}px`;
+  input.style.overflowY = input.scrollHeight > max ? 'auto' : 'hidden';
+}
+
 function mount() {
   const section = $('ai-guide');
   if (!section) return;
   if (isEmbedded) { section.hidden = true; return; }
   const input = $('ai-guide-input');
   try { input.value = sessionStorage.getItem(DRAFT_KEY) || ''; } catch { /* storage unavailable */ }
-  input.addEventListener('input', () => { try { sessionStorage.setItem(DRAFT_KEY, input.value); } catch { /* storage unavailable */ } });
+  input.addEventListener('input', () => {
+    autosize(input);
+    try { sessionStorage.setItem(DRAFT_KEY, input.value); } catch { /* storage unavailable */ }
+  });
+  // The panel starts hidden, so size the restored draft once it can be measured.
+  new ResizeObserver(() => autosize(input)).observe(input.parentElement);
+  // Clicking the box's padding focuses the textarea, as in a chat composer.
+  $('ai-guide-form').addEventListener('mousedown', event => {
+    if (event.target === event.currentTarget) { event.preventDefault(); input.focus(); }
+  });
   input.addEventListener('keydown', event => {
     if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); submit(input.value); }
   });

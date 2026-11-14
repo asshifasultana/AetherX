@@ -96,6 +96,25 @@ function mount() {
       : 'Copying failed. Select the address bar to copy this view.', { error: !ok });
   });
 
+  // Header share button: always visible, copies a link that reopens this exact view.
+  let noticeTimer = null;
+  $('share-link')?.addEventListener('click', async () => {
+    const notice = $('share-link-notice');
+    const url = shareUrl({ embed: false });
+    // Phones get the native share sheet; desktops copy straight to the clipboard.
+    if (navigator.share && matchMedia('(pointer:coarse)').matches) {
+      try { await navigator.share({ title: document.title, url }); return; }
+      catch (error) { if (error?.name === 'AbortError') return; }
+    }
+    const ok = await copyText(url);
+    if (!ok) { window.prompt('Copy this link to share the view:', url); return; }
+    if (!notice) return;
+    notice.textContent = 'Link copied — it reopens this exact view.';
+    notice.hidden = false;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => { notice.hidden = true; }, 2500);
+  });
+
   $('copy-embed')?.addEventListener('click', async () => {
     const panel = $('embed-panel');
     const code = $('embed-code');

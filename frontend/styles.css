@@ -731,21 +731,20 @@ footer p,footer>span{font-size:15px;color:#59695e}
 .ai-guide-share-row a.share-button { display:inline-flex; align-items:center; white-space:nowrap; }
 .ai-guide-share-note { margin:8px 0 0; font-size:13px; color:var(--muted); }
 .ai-guide-share-note:empty { display:none; }
-.ai-guide-form { display:flex; gap:10px; align-items:flex-end; margin-top:14px; }
-.ai-guide-form textarea { flex:1; min-width:0; resize:vertical; min-height:48px; max-height:200px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:#15191d; color:var(--ink); font:inherit; font-size:14px; line-height:1.5; }
-.ai-guide-form textarea:focus-visible { outline:2px solid #9bdfc2; outline-offset:2px; }
-.ai-guide-actions { display:flex; gap:8px; }
-.ai-guide-actions .primary-button { margin-top:0; min-height:48px; }
+/* Composer: one box holding a textarea that grows with its text, actions bottom-right. */
+.ai-guide-form { display:flex; flex-direction:column; gap:6px; margin-top:14px; padding:10px 10px 8px 12px; border-radius:12px; border:1px solid var(--line); background:#15191d; cursor:text; }
+.ai-guide-form:focus-within { border-color:#5f9c86; box-shadow:0 0 0 1px #5f9c86; }
+.ai-guide-form #ai-guide-input { display:block; width:100%; min-width:0; resize:none; overflow-y:hidden; min-height:0; max-height:40vh; margin:0; padding:2px 0; border:0; outline:0; background:transparent; color:var(--ink); font:inherit; font-size:14px; line-height:1.5; }
+.ai-guide-form #ai-guide-input:focus-visible { outline:0; }
+.ai-guide-actions { display:flex; justify-content:flex-end; gap:8px; }
+.ai-guide-actions :is(.primary-button,.reset-settings) { margin-top:0; min-height:32px; padding:4px 14px; border-radius:8px; font-size:13px; }
 .viewer-page .ai-guide-actions .primary-button { background:#95d1ba; color:#13201c; font-weight:600; }
 .ai-guide-actions .primary-button[disabled] { opacity:.6; cursor:progress; transform:none; }
 .ai-guide-status { min-height:1.4em; margin:8px 0 0; font-size:13px; color:var(--muted); }
-.ai-guide-disclaimer { margin:4px 0 0; font-size:12px; color:var(--muted); }
 .share-notice .share-notice-note { color:#2f5a4c; }
 .viewer-page .share-notice .share-notice-note { color:#8a5a2b; }
 .is-embed .ai-guide { display:none!important; }
 @media (max-width:600px) {
-  .ai-guide-form { flex-direction:column; align-items:stretch; }
-  .ai-guide-actions { justify-content:flex-end; }
   .ai-guide-entry.is-user, .ai-guide-entry.is-guide { max-width:100%; }
   .ai-guide-share-row { flex-wrap:wrap; }
   .ai-guide-share-row input { flex-basis:100%; }
@@ -1042,7 +1041,7 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
   align-self:stretch;
   overflow-y:auto;
 }
-.viewer-page #ai-guide.has-conversation :is(.ai-guide-head,.ai-guide-share,.ai-guide-form,.ai-guide-status,.ai-guide-disclaimer,.ai-guide-activity,.ai-guide-spots) {
+.viewer-page #ai-guide.has-conversation :is(.ai-guide-head,.ai-guide-share,.ai-guide-form,.ai-guide-status,.ai-guide-activity,.ai-guide-spots) {
   width:100%;
   align-self:stretch;
 }
@@ -1081,11 +1080,10 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 
 /* ---- AI guide: capability cards ---- */
 .ai-guide-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0 0 14px; }
-.ai-guide-card { display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:9px; align-items:center; text-align:left; padding:10px 11px; border-radius:10px; border:1px solid #2f3b37; background:#141a19; color:#e6efe9; }
+.ai-guide-card { display:flex; flex-direction:column; justify-content:center; gap:2px; text-align:left; padding:8px 10px; border-radius:10px; border:1px solid #2f3b37; background:#141a19; color:#e6efe9; }
 .ai-guide-card:hover { border-color:#5f9c86; background:#18211f; }
-.ai-guide-card .card-icon { grid-row:1 / 3; font-size:20px; line-height:1; }
-.ai-guide-card strong { font-size:13px; font-weight:650; }
-.ai-guide-card small { font-size:12px; color:#9aa8a1; }
+.ai-guide-card strong { font-size:13px; font-weight:650; line-height:1.3; }
+.ai-guide-card small { font-size:12px; line-height:1.35; color:#9aa8a1; }
 .ai-guide-more { align-self:flex-start; margin:0 0 10px; padding:4px 0; border:0; background:none; color:#95d1ba; font-size:13px; text-decoration:underline; text-underline-offset:3px; }
 @media(max-width:380px) { .ai-guide-cards { grid-template-columns:1fr; } }
 
@@ -1132,3 +1130,9 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .ai-guide-entry.is-report dd { margin:0; }
 .ai-guide-entry.is-report .ai-guide-share-row { margin-top:10px; flex-wrap:wrap; }
 .ai-guide-entry.is-report .share-button.primary { background:#95d1ba; color:#13201c; border-color:#95d1ba; }
+
+/* ---- Header share-link button ---- */
+.share-link-wrap { position:relative; display:inline-flex; }
+.share-link-notice { position:absolute; top:calc(100% + 8px); right:0; z-index:90; width:max-content; max-width:240px; padding:7px 10px; border-radius:8px; border:1px solid #80bfa866; background:#16231ff2; color:#cdeee0; font-size:12px; line-height:1.4; box-shadow:0 6px 20px #0007; pointer-events:none; }
+.share-link-notice[hidden] { display:none; }
+.is-embed .share-link-wrap { display:none!important; }

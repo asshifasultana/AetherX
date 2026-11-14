@@ -16,6 +16,7 @@
     <a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a>
     <a class="viewer-new-search" href="/">New search</a>
     <button id="tour-restart" class="viewer-tour-button" type="button">How it works</button>
+    <span class="share-link-wrap"><button id="share-link" class="header-icon-button" type="button" aria-label="Copy a link to this view" title="Share link"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5.5 20.5 12 14 18.5v-3.7c-4.6 0-7.8 1.4-10.3 4.7.9-4.9 3.8-9.6 10.3-10.4V5.5Z"/></svg></button><span id="share-link-notice" class="share-link-notice" role="status" aria-live="polite" hidden></span></span>
     <span class="agent-toggle-wrap"><button id="agent-toggle" class="agent-toggle header-icon-button" type="button" aria-label="Open AI guide" aria-controls="ai-guide" aria-expanded="false" title="AI guide"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a7 7 0 0 0-7 7v2a7 7 0 0 0 7 7h1.5l3.8 2v-3.1A7 7 0 0 0 19 13v-3a7 7 0 0 0-7-7Z"/><path d="M9 10h.01M15 10h.01M9.5 14c1.6 1.1 3.4 1.1 5 0"/></svg></button><span id="agent-notice" class="agent-notice" role="status" aria-live="polite" hidden></span></span>
     <div id="target-picker" class="viewer-search" data-minimal="true" role="search" aria-label="Search the sky"></div>
   </header>
@@ -202,13 +203,13 @@
       </div>
       <p class="ai-guide-intro">Your sky detective. It works the viewer for you, <strong>investigates</strong> what changed — marking numbered spots, checking them against star and asteroid catalogs, and keeping a list of suspects — and only says what it measured. Click the image to mark a spot and ask about it.</p>
       <div id="ai-guide-suggestions" class="ai-guide-cards" role="group" aria-label="What the guide can do">
-        <button type="button" class="ai-guide-card" data-prompt="Investigate this field: compare dates six months apart, list what changed, and check each spot."><span class="card-icon" aria-hidden="true">🔍</span><strong>Investigate this field</strong><small>Find changes and check every spot</small></button>
-        <button type="button" class="ai-guide-card" data-prompt="Is anything moving here? Blink the frames and tell me what you see."><span class="card-icon" aria-hidden="true">✨</span><strong>Is anything moving?</strong><small>Blink and explain</small></button>
-        <button type="button" class="ai-guide-card" data-prompt="What is spot 1 made of? Measure its spectrum."><span class="card-icon" aria-hidden="true">🌈</span><strong>What is it made of?</strong><small>SPHEREx’s 102 colours</small></button>
-        <button type="button" class="ai-guide-card" data-prompt="Let me play Be Barnard."><span class="card-icon" aria-hidden="true">🎮</span><strong>Be Barnard (1916)</strong><small>Find the star that jumped</small></button>
-        <button type="button" class="ai-guide-card" data-prompt="Hide a fake planet in these photos and let me find it."><span class="card-icon" aria-hidden="true">🪐</span><strong>Find the hidden planet</strong><small>How faint can we see?</small></button>
-        <button type="button" class="ai-guide-card" data-prompt="Where could Planet Nine still be hiding? Patrol the top 3 cells of the predicted region."><span class="card-icon" aria-hidden="true">🛰️</span><strong>Search for Planet Nine</strong><small>Patrol the predicted region</small></button>
-        <button type="button" class="ai-guide-card" data-action="tour"><span class="card-icon" aria-hidden="true">🎬</span><strong>Take the tour</strong><small>One minute, hands-free</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="Investigate this field: compare dates six months apart, list what changed, and check each spot."><strong>Investigate this field</strong><small>Find changes and check every spot</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="Is anything moving here? Blink the frames and tell me what you see."><strong>Is anything moving?</strong><small>Blink and explain</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="What is spot 1 made of? Measure its spectrum."><strong>What is it made of?</strong><small>SPHEREx’s 102 colours</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="Let me play Be Barnard."><strong>Be Barnard (1916)</strong><small>Find the star that jumped</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="Hide a fake planet in these photos and let me find it."><strong>Find the hidden planet</strong><small>How faint can we see?</small></button>
+        <button type="button" class="ai-guide-card" data-prompt="Where could Planet Nine still be hiding? Patrol the top 3 cells of the predicted region."><strong>Search for Planet Nine</strong><small>Patrol the predicted region</small></button>
+        <button type="button" class="ai-guide-card" data-action="tour"><strong>Take the tour</strong><small>One minute, hands-free</small></button>
       </div>
       <button id="ai-guide-more" class="ai-guide-more" type="button" aria-controls="ai-guide-suggestions" aria-expanded="false" hidden>What can I do?</button>
       <ol id="ai-guide-log" class="ai-guide-log" role="log" aria-live="polite" aria-label="Conversation with the AI guide"></ol>
@@ -221,11 +222,10 @@
       <div id="ai-guide-spots" class="ai-guide-spots" aria-label="Spots attached to your next message" hidden></div>
       <form id="ai-guide-form" class="ai-guide-form">
         <label for="ai-guide-input" class="sr-only">Message the AI guide</label>
-        <textarea id="ai-guide-input" rows="2" maxlength="2000" placeholder="e.g. “What is spot 1?”, “Is anything moving here?” or “Let me play Be Barnard”" autocomplete="off"></textarea>
+        <textarea id="ai-guide-input" rows="1" maxlength="2000" placeholder="Ask anything, e.g. “Is anything moving here?”" autocomplete="off"></textarea>
         <div class="ai-guide-actions"><button id="ai-guide-stop" class="reset-settings" type="button" hidden>Stop</button><button id="ai-guide-send" class="primary-button" type="submit">Ask</button></div>
       </form>
       <p id="ai-guide-status" class="sr-only" role="status" aria-live="polite"></p>
-      <p class="ai-guide-disclaimer">Answers come from an AI model via OpenRouter and can be wrong. The images and numbers come from the SPHEREx archive.</p>
     </section>
     <section id="observations" class="observations-section" aria-labelledby="observations-heading">
       <details id="observation-disclosure"><summary><span id="observations-heading">Observations</span><span id="observation-overview" role="status" aria-live="polite">Waiting for observations.</span></summary>

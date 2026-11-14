@@ -77,15 +77,15 @@ export function createCropHandler({ load = createFitsRangeLoader(), gate = creat
         // Geometry failures are properties of the request, not of the archive.
         throw new CropError(error.message || 'Could not read this exposure.', /coverage/i.test(error.message) ? 422 : 502);
       }
-      const body = encodeCrop(image);
-      const gzip = /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''));
-      const payload = gzip ? gzipSync(body, { level: 2 }) : body;
+      // Always gzip and never send Vary: Vercel's CDN keys Vary on the exact
+      // Accept-Encoding string, so Chrome, Safari and Firefox would each fill
+      // their own cache. Every browser and Node fetch decodes gzip.
+      const payload = gzipSync(encodeCrop(image), { level: 2 });
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/octet-stream');
       res.setHeader('Cache-Control', cropCacheControl(input.revision));
       res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('Vary', 'Accept-Encoding');
-      if (gzip) res.setHeader('Content-Encoding', 'gzip');
+      res.setHeader('Content-Encoding', 'gzip');
       res.setHeader('Content-Length', String(payload.length));
       res.end(payload);
     } catch (error) {

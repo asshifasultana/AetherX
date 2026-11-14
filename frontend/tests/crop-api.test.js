@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer } from 'node:http';
+import { createServer, get } from 'node:http';
 import { once } from 'node:events';
 import { createCropHandler, cropCacheControl, encodeCrop, validateCrop } from '../api/crop.js';
 import { decodeCrop, loadViaProxy } from '../lib/crop-codec.js';
@@ -57,7 +57,14 @@ test('successful crops are CDN-cacheable, immutably when the revision is pinned'
     const unpinned = await fetch(`${endpoint}?${query()}`);
     assert.match(unpinned.headers.get('cache-control'), /^public, .*s-maxage=86400/);
     assert.doesNotMatch(unpinned.headers.get('cache-control'), /immutable/);
-    assert.equal(pinned.headers.get('vary'), 'Accept-Encoding');
+    // One cache entry for every browser: no Vary, and gzip whatever was asked for.
+    assert.equal(pinned.headers.get('vary'), null);
+    for (const encoding of ['gzip, deflate, br, zstd', 'gzip, deflate, br', 'identity']) {
+      const response = await new Promise((resolve, reject) => get(`${endpoint}?${query({ revision: 'r1' })}`, { headers: { 'Accept-Encoding': encoding } }, resolve).on('error', reject));
+      response.resume();
+      assert.equal(response.headers['content-encoding'], 'gzip');
+      assert.equal(response.headers.vary, undefined);
+    }
   });
 });
 

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_VIEW_STATE, FOV_OPTIONS, decodeViewState, encodeViewState,
-  isDefaultViewState, viewStateSignature
+  isDefaultViewState, viewStateSignature, linkViewSettings
 } from '../url-state.js';
 
 test('the default view encodes to an empty query string', () => {
@@ -140,8 +140,47 @@ test('an unknown target id is ignored without breaking the position', () => {
 
 test('the signature changes only when a shared field changes', () => {
   const base = { ...DEFAULT_VIEW_STATE, raDeg: 10, decDeg: 5 };
-  assert.equal(viewStateSignature(base), viewStateSignature({ ...base, contrast: 90, stretch: 'log' }));
+  assert.equal(viewStateSignature(base), viewStateSignature({ ...base, smoothing: 2, pixelView: 'smooth' }));
+  assert.notEqual(viewStateSignature(base), viewStateSignature({ ...base, contrast: 90, stretch: 'log' }));
+  assert.notEqual(viewStateSignature(base), viewStateSignature({ ...base, viewMode: 'blink' }));
   assert.notEqual(viewStateSignature(base), viewStateSignature({ ...base, band: 6 }));
   assert.notEqual(viewStateSignature(base), viewStateSignature({ ...base, markRaDeg: 10, markDecDeg: 5 }));
   assert.notEqual(viewStateSignature(base), viewStateSignature({ ...base, frameDate: '2025-07-01' }));
+});
+
+test('a guide link carries view mode, display, pinned reference date and a note', () => {
+  const query = encodeViewState({ ...DEFAULT_VIEW_STATE, viewMode: 'difference', referenceFrame: 'pinned', referenceDate: '2026-03-04', brightness: 70, colours: 'inferno', invert: true, note: 'Watch the dot in the middle.' });
+  const params = new URLSearchParams(query);
+  assert.equal(params.get('mode'), 'difference');
+  assert.equal(params.get('ref'), 'pinned');
+  assert.equal(params.get('refat'), '2026-03-04');
+  assert.equal(params.get('bright'), '70');
+  assert.equal(params.get('colours'), 'inferno');
+  assert.equal(params.get('invert'), '1');
+  assert.equal(params.get('note'), 'Watch the dot in the middle.');
+  const { state, issues } = decodeViewState(query);
+  assert.deepEqual(issues, []);
+  assert.equal(state.viewMode, 'difference');
+  assert.equal(state.referenceDate, '2026-03-04');
+  assert.equal(state.brightness, 70);
+  assert.equal(state.invert, true);
+  assert.deepEqual(linkViewSettings(state), { viewMode: 'difference', referenceFrame: 'pinned', look: 'natural', brightness: 70, contrast: 50, stretch: 'asinh', scaleMode: 'noise', colours: 'inferno', invert: true, maxStackFrames: 80, blinkIntervalMs: 600, differenceThreshold: 5 });
+});
+
+test('view settings at their defaults stay out of the link and carry no view', () => {
+  assert.equal(encodeViewState({ ...DEFAULT_VIEW_STATE, referenceDate: '2026-03-04' }), '');
+  assert.equal(linkViewSettings(DEFAULT_VIEW_STATE), null);
+});
+
+test('bad view settings are reported and notes are cleaned', () => {
+  const messy = 'Look' + String.fromCharCode(7) + '\nhere ' + 'x'.repeat(300);
+  const { state, issues } = decodeViewState('mode=sideways&bright=abc&invert=maybe&refat=2026-02-31&note=' + encodeURIComponent(messy));
+  assert.equal(state.viewMode, 'time-lapse');
+  assert.equal(state.brightness, 50);
+  assert.equal(state.invert, false);
+  assert.equal(state.referenceDate, '');
+  assert.equal(issues.length, 4);
+  assert.ok(state.note.startsWith('Look here x'));
+  assert.equal(state.note.length, 200);
+  assert.equal(decodeViewState('bright=500').state.brightness, 100);
 });

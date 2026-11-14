@@ -485,6 +485,88 @@ $('timeline').addEventListener('change', () => {
   void selectFrame(state.index);
 });
 
+// Read-only snapshot of the timeline for the AI guide.
+function publishPlaybackState() {
+  const frame = state.frames[state.index];
+  const pinnedIndex = state.pinnedKey ? state.frames.findIndex(item => observationKey(item) === state.pinnedKey) : -1;
+  window.dispatchEvent(new CustomEvent('sky:playback-state', { detail: {
+    count: state.frames.length,
+    frame: frame ? state.index + 1 : 0,
+    frameDate: frame ? new Date(frameTime(frame)).toISOString() : '',
+    firstDate: state.frames.length ? new Date(frameTime(state.frames[0])).toISOString().slice(0, 10) : '',
+    lastDate: state.frames.length ? new Date(frameTime(state.frames.at(-1))).toISOString().slice(0, 10) : '',
+    detector: frame ? Number(frame.detector) : null,
+    exposures: frame ? (frame.exposures || [frame]).length : 0,
+    wavelength: frame ? wavelength(frame) : '',
+    playing: state.playing,
+    speed: state.speed,
+    pinnedFrame: pinnedIndex >= 0 ? pinnedIndex + 1 : null,
+    referenceDate: pinnedIndex >= 0 ? new Date(frameTime(state.frames[pinnedIndex])).toISOString().slice(0, 10) : ''
+  } }));
+}
+function setSpeed(speed) {
+  state.speed = speed;
+  $('speed-value').textContent = `${state.speed}×`;
+  $('speed-button').setAttribute('aria-label', `Playback speed, ${state.speed} times`);
+  if (state.playing) { pausePlayback(); void playPlayback(); }
+}
+window.addEventListener('sky:agent-playback', async event => {
+  const detail = event.detail || {};
+  const reply = result => { detail.respond?.(result); publishPlaybackState(); };
+  if (!state.frames.length) { reply({ ok: false, error: 'No observations are loaded yet.' }); return; }
+  const last = state.frames.length - 1;
+  try {
+    switch (detail.action) {
+      case 'play':
+        if (state.frames.length < 2) { reply({ ok: false, error: 'Only one frame is available, so there is nothing to play.' }); return; }
+        state.userPaused = false; void playPlayback(); break;
+      case 'pause': pausePlayback({ manual: true }); break;
+      case 'step_forward': pausePlayback({ manual: true }); await selectFrame(Math.min(last, state.index + 1)); break;
+      case 'step_back': pausePlayback({ manual: true }); await selectFrame(Math.max(0, state.index - 1)); break;
+      case 'first_frame': pausePlayback({ manual: true }); await selectFrame(0); break;
+      case 'last_frame': pausePlayback({ manual: true }); await selectFrame(last); break;
+      case 'go_to_frame': {
+        if (!(detail.frame >= 1 && detail.frame <= state.frames.length)) { reply({ ok: false, error: `Frame must be between 1 and ${state.frames.length}.` }); return; }
+        pausePlayback({ manual: true }); await selectFrame(detail.frame - 1); break;
+      }
+      case 'go_to_date': {
+        const index = frameIndexForDate(detail.date);
+        if (index < 0) { reply({ ok: false, error: 'That date is not valid.' }); return; }
+        pausePlayback({ manual: true }); await selectFrame(index); break;
+      }
+      case 'set_speed': setSpeed(detail.speed); break;
+      case 'pin_reference': {
+        const frame = state.frames[state.index];
+        window.dispatchEvent(new CustomEvent('sky:reference-frame-pinned', { detail: { key: observationKey(frame) } }));
+        break;
+      }
+      default: reply({ ok: false, error: `Unknown playback action ${detail.action}.` }); return;
+    }
+    reply({ ok: true });
+  } catch (error) { reply({ ok: false, error: error?.message || 'Playback failed.' }); }
+});
+window.addEventListener('sky:agent-state-requested', publishPlaybackState);
+// A YYYY-MM-DD date names the frame observed that UTC day; without one, the
+// nearest frame to midday wins.
+function frameIndexForDate(date) {
+  const time = Date.parse(`${date}T12:00:00Z`);
+  if (!Number.isFinite(time) || !state.frames.length) return -1;
+  const sameDay = state.frames.findIndex(frame => new Date(frameTime(frame)).toISOString().slice(0, 10) === date
+    || (frame.observedStartUtc || '').slice(0, 10) === date);
+  return sameDay >= 0 ? sameDay : nearestFrameIndexByTime(state.frames, time);
+}
+// A link from the guide can name a pinned reference date; pin it once frames exist.
+let pendingReferenceDate = '';
+window.addEventListener('sky:reference-date-requested', event => { pendingReferenceDate = event.detail?.date || ''; });
+function applyPendingReference() {
+  if (!pendingReferenceDate || !state.frames.length) return;
+  const index = frameIndexForDate(pendingReferenceDate);
+  pendingReferenceDate = '';
+  if (index < 0) return;
+  const frame = state.frames[index];
+  window.dispatchEvent(new CustomEvent('sky:reference-frame-pinned', { detail: { key: observationKey(frame) } }));
+}
+
 document.addEventListener('keydown', event => {
   if (!state.frames.length || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
   if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes(event.target?.tagName)) return;
@@ -505,6 +587,7 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   if (detail.pinnedReferenceKey !== undefined && detail.pinnedReferenceKey !== state.pinnedKey) {
     state.pinnedKey = detail.pinnedReferenceKey || '';
     updateCurrent({ keepSlider: true });
+    publishPlaybackState();
   }
   const fov = detail.fovArcmin === undefined ? prefetch.fov : Number(detail.fovArcmin);
   if (fov !== prefetch.fov) {
@@ -562,12 +645,13 @@ window.addEventListener('sky:observations-loaded', event => {
   if (event.detail?.failed) { setStatus('The archive search did not complete. Adjust the filters and try again.'); return; }
   const pending = takePendingFrameDate();
   if (pending && state.frames.length) {
-    const time = Date.parse(pending + 'T00:00:00Z');
-    if (Number.isFinite(time)) {
-      state.index = nearestFrameIndexByTime(state.frames, time);
+    const index = frameIndexForDate(pending);
+    if (index >= 0) {
+      state.index = index;
       window.dispatchEvent(new CustomEvent('sky:frame-date-restored'));
     }
   }
+  applyPendingReference();
   void activateTimeline();
 });
 

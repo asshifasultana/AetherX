@@ -987,7 +987,7 @@ function commitComposite(observation, entry, composed, { announce = true } = {})
   canvas.dataset.deepStack = 'false';
   const date = frameLabel(observation), wave = formatWavelength(observation);
   if (composed.kind === 'difference') {
-    shown = { values: composed.values, flags: null, width: source.width, unit: composed.unit, kind: 'difference', sigma: composed.sigma, threshold: composed.threshold, significant: composed.significant };
+    shown = { values: composed.values, flags: null, width: source.width, unit: composed.unit, kind: 'difference', sigma: composed.sigma, threshold: composed.threshold, significant: composed.significant, brighter: composed.brighter, fainter: composed.fainter, referenceLabel: composed.referenceLabel };
     caption.textContent = `Difference · ${date} − ${composed.referenceLabel} · noise σ = ${formatValue(composed.sigma)}${composed.unit ? ` ${composed.unit}` : ''} · ${composed.brighter} pixels brighter and ${composed.fainter} fainter beyond ±${composed.threshold}σ · ${wave}`;
     setCacheState('Difference image · orange brighter, blue fainter');
   } else if (composed.kind === 'trail') {
@@ -996,6 +996,7 @@ function commitComposite(observation, entry, composed, { announce = true } = {})
     setCacheState('Motion trail · moving sources leave streaks');
   } else {
     setShown(source, entry.image);
+    shown.kind = 'blink'; shown.referenceLabel = composed.referenceLabel;
     caption.textContent = `Blink · ${date} ⇄ ${composed.referenceLabel} every ${(settings.blinkIntervalMs / 1000).toFixed(2)} s · ${wave}${settings.consistentBrightness ? '' : ' · tip: turn on Consistent brightness so both frames share one scale'}`;
     setCacheState('Blinking · A is this frame, B the reference');
     startBlink(composed, date);
@@ -1151,7 +1152,34 @@ function updateLegend(counts, note = '') {
   qualityLegend.replaceChildren?.(...items);
 }
 
+// A plain-data summary of what is on screen, for the AI guide. Deferred one
+// tick so the caption written right after a render is included.
+let summaryTimer = null;
+function publishViewSummary() {
+  if (summaryTimer) return;
+  summaryTimer = setTimeout(() => {
+    summaryTimer = null;
+    if (!shown) return;
+    const record = activeObservation?.image?.stackRecord;
+    const detail = {
+      kind: canvas.dataset.deepStack === 'true' ? 'deep-stack' : shown.kind,
+      mode: settings.viewMode,
+      caption: caption.textContent,
+      unit: shown.unit || '',
+      detector: activeObservation?.detector ?? null,
+      date: activeObservation?.observedStartUtc || '',
+      limits: shown.limits ? { low: shown.limits.low, high: shown.limits.high } : null
+    };
+    if (shown.kind === 'difference') Object.assign(detail, { sigma: shown.sigma, threshold: shown.threshold, brighterPixels: shown.brighter, fainterPixels: shown.fainter, reference: shown.referenceLabel });
+    if (shown.kind === 'blink') detail.reference = shown.referenceLabel;
+    if (record?.deepStack) Object.assign(detail, { usedFrames: record.usedFrameCount, availableFrames: record.availableFrameCount, usedExposures: record.usedExposureCount, exposureSeconds: Math.round(record.exposureSeconds), skippedExposures: record.failedObservationIds?.length || 0 });
+    else if (record) Object.assign(detail, { stackedExposures: record.usedExposureCount });
+    window.dispatchEvent(new CustomEvent('sky:view-summary', { detail }));
+  }, 0);
+}
+
 function updateColourBar() {
+  publishViewSummary();
   const bar = document.getElementById('colour-bar');
   if (!bar) return;
   if (!shown) { bar.hidden = true; return; }

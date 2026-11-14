@@ -163,6 +163,34 @@
         <p class="context-source-note">Accounts belong to specific communities and sources; no community endorsement is implied. <a href="/cultural-sources.json">Source manifest and coverage ↗</a></p>
       </details>
       </section>
+    <section id="ai-guide" class="observations-section ai-guide" aria-labelledby="ai-guide-heading">
+      <div class="ai-guide-head">
+        <div><p class="eyebrow">ASK THE SKY GUIDE</p><h2 id="ai-guide-heading">AI guide</h2></div>
+        <button id="ai-guide-reset" class="share-button" type="button" hidden>New chat</button>
+      </div>
+      <p class="ai-guide-intro">Ask in plain words. The guide works the viewer for you — brightness, blinking, comparing dates, playback and deep stacks — and explains what it finds using the measurements the viewer reports.</p>
+      <div id="ai-guide-suggestions" class="ai-guide-suggestions" role="group" aria-label="Suggested questions">
+        <button type="button" class="share-button" data-prompt="Blink this field so I can see if anything moves.">Blink to find what moves</button>
+        <button type="button" class="share-button" data-prompt="Compare the first and the latest observation and tell me what changed.">Compare first and latest</button>
+        <button type="button" class="share-button" data-prompt="Make the faint stars easier to see.">Bring out faint stars</button>
+        <button type="button" class="share-button" data-prompt="Build a deep stack to reveal faint sources.">Build a deep stack</button>
+        <button type="button" class="share-button" data-prompt="Play the time-lapse at 2x speed.">Play the time-lapse</button>
+        <button type="button" class="share-button" data-prompt="Make me a link to share this view with a friend.">Make a share link</button>
+      </div>
+      <ol id="ai-guide-log" class="ai-guide-log" role="log" aria-live="polite" aria-label="Conversation with the AI guide"></ol>
+      <div id="ai-guide-share" class="ai-guide-share" hidden>
+        <label for="ai-guide-share-url">Shareable link to this view</label>
+        <div class="ai-guide-share-row"><input id="ai-guide-share-url" type="url" readonly><button id="ai-guide-share-copy" class="share-button" type="button">Copy</button><a id="ai-guide-share-open" class="share-button" href="#" target="_blank" rel="noopener">Open ↗</a></div>
+        <p id="ai-guide-share-note" class="ai-guide-share-note"></p>
+      </div>
+      <form id="ai-guide-form" class="ai-guide-form">
+        <label for="ai-guide-input" class="sr-only">Message the AI guide</label>
+        <textarea id="ai-guide-input" rows="2" maxlength="2000" placeholder="e.g. “Is anything moving here?” or “Show me WISE 0855”" autocomplete="off"></textarea>
+        <div class="ai-guide-actions"><button id="ai-guide-stop" class="reset-settings" type="button" hidden>Stop</button><button id="ai-guide-send" class="primary-button" type="submit">Ask</button></div>
+      </form>
+      <p id="ai-guide-status" class="ai-guide-status" role="status" aria-live="polite"></p>
+      <p class="ai-guide-disclaimer">Answers come from an AI model (via Groq) and can be wrong; the images and numbers come from the SPHEREx archive.</p>
+    </section>
     <section id="observations" class="observations-section" aria-labelledby="observations-heading">
       <details id="observation-disclosure"><summary><span id="observations-heading">Observations</span><span id="observation-overview" role="status" aria-live="polite">Waiting for observations.</span></summary>
       <div class="observation-search-title"><div><p class="eyebrow">NASA / IPAC INFRARED SCIENCE ARCHIVE</p><p id="search-target" class="search-target">Barnard’s Star · 269.4521°, +4.6934° · ICRS</p></div><span id="archive-mode-label" class="archive-badge">IRSA archive</span></div>
@@ -230,5 +258,6 @@
   <script type="module" src="moving-target.js"></script>
   <script type="module" src="sky-context.js"></script>
   <script type="module" src="gaia-overlay.js"></script>
+  <script type="module" src="agent-ui.js"></script>
 </body>
 </html>

@@ -26,6 +26,9 @@
       "maxDuration": 10,
       "includeFiles": "data/**"
     },
+    "api/agent.js": {
+      "maxDuration": 30
+    },
     "api/resolve-object.js": {
       "maxDuration": 15
     }

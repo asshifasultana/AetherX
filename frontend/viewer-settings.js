@@ -138,6 +138,21 @@ function normalizeValue(rule, value, fallback) {
   }
 }
 
+/** Rule metadata (kind, values, min/max) for one setting, or null. */
+export function settingRule(key) {
+  return Object.hasOwn(RULES, key) ? RULES[key] : null;
+}
+
+/** Validate one value without silently falling back: { ok, value } or { ok: false }. */
+export function checkSetting(key, value) {
+  const rule = settingRule(key);
+  if (!rule) return { ok: false, error: `Unknown setting ${key}.` };
+  const invalid = Symbol('invalid');
+  const result = normalizeValue(rule, value, invalid);
+  if (result === invalid) return { ok: false, error: `${JSON.stringify(value)} is not a valid ${key}.` };
+  return { ok: true, value: result };
+}
+
 /** Validate every known key; unknown keys are dropped, bad values fall back. */
 export function normalizeSettings(raw = {}, base = DEFAULT_SETTINGS) {
   const result = {};

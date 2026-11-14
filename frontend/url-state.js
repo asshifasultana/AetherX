@@ -9,6 +9,18 @@
 export const FOV_OPTIONS = Array.from({ length: 30 }, (_, index) => index + 1);
 export const BAND_OPTIONS = [1, 2, 3, 4, 5, 6];
 export const CULTURE_OPTIONS = ['all','arabic-al-sufi','hawaiian','kamilaroi','vedic','bengali','lakota'];
+import { checkSetting, DEFAULT_SETTINGS } from './viewer-settings.js';
+
+// View and display settings a link can carry, as [state key, URL parameter].
+// They are validated with the same rules as the viewer controls.
+export const VIEW_SETTING_PARAMS = Object.freeze([
+  ['viewMode', 'mode'], ['referenceFrame', 'ref'], ['look', 'look'], ['brightness', 'bright'],
+  ['contrast', 'contrast'], ['stretch', 'stretch'], ['scaleMode', 'scale'], ['colours', 'colours'],
+  ['invert', 'invert'], ['maxStackFrames', 'stack'], ['blinkIntervalMs', 'blink'], ['differenceThreshold', 'thresh']
+]);
+export const NOTE_MAX_LENGTH = 200;
+const cleanNote = text => [...String(text ?? '')].map(char => { const code = char.codePointAt(0); return code < 32 || code === 127 || code === 0x2028 || code === 0x2029 ? ' ' : char; }).join('').replace(/\s+/g, ' ').trim().slice(0, NOTE_MAX_LENGTH);
+
 // Precision of the shared position. Six decimal places is 0.0036 arcsec, far
 // finer than a SPHEREx pixel (6.15 arcsec), so a shared link lands on the same
 // patch of sky that the sender was looking at.
@@ -27,7 +39,10 @@ export const DEFAULT_VIEW_STATE = Object.freeze({
   targetId: null,
   embed: false,
   culture: 'all',
-  gaia: false
+  gaia: false,
+  ...Object.fromEntries(VIEW_SETTING_PARAMS.map(([key]) => [key, DEFAULT_SETTINGS[key]])),
+  referenceDate: '',
+  note: ''
 });
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -82,6 +97,14 @@ export function encodeViewState(state = {}) {
   if (merged.embed) params.set('embed', '1');
   if (CULTURE_OPTIONS.includes(merged.culture) && merged.culture !== 'all') params.set('culture',merged.culture);
   if (merged.gaia) params.set('gaia','1');
+  for (const [key, param] of VIEW_SETTING_PARAMS) {
+    const value = merged[key];
+    if (value === DEFAULT_VIEW_STATE[key] || !checkSetting(key, value).ok) continue;
+    params.set(param, typeof value === 'boolean' ? (value ? '1' : '0') : String(value));
+  }
+  if (merged.referenceFrame === 'pinned' && isRealDate(merged.referenceDate || '')) params.set('refat', merged.referenceDate);
+  const note = cleanNote(merged.note);
+  if (note) params.set('note', note);
   return params.toString();
 }
 
@@ -181,6 +204,22 @@ export function decodeViewState(input) {
     if(params.getAll('gaia').length===1&&['0','1'].includes(params.get('gaia')))state.gaia=params.get('gaia')==='1';
     else issues.push('The Gaia option in this link is invalid. Markers are off.');
   }
+  for (const [key, param] of VIEW_SETTING_PARAMS) {
+    if (!params.has(param)) continue;
+    const raw = params.get(param);
+    const value = typeof DEFAULT_SETTINGS[key] === 'boolean' ? (raw === '1' ? true : raw === '0' ? false : raw)
+      : typeof DEFAULT_SETTINGS[key] === 'number' ? parseNumber(raw) : raw;
+    const checked = checkSetting(key, value);
+    // Integers are clamped by the settings rules; only an unusable value is reported.
+    if (checked.ok && value !== null) state[key] = checked.value;
+    else issues.push(`The ${param} setting in this link is not valid, so the default was used.`);
+  }
+  if (params.has('refat')) {
+    const text = (params.get('refat') || '').trim();
+    if (isRealDate(text)) state.referenceDate = text;
+    else issues.push('The reference date in this link is not a valid calendar date, so it was ignored.');
+  }
+  if (params.has('note')) state.note = cleanNote(params.get('note'));
   return { state, issues };
 }
 
@@ -193,7 +232,8 @@ export function viewStateSignature(state = {}) {
   return [
     merged.raDeg, merged.decDeg, merged.fovArcmin, merged.band,
     merged.startDate, merged.endDate, merged.frameDate,
-    merged.markRaDeg ?? '', merged.markDecDeg ?? '', merged.targetId ?? '', merged.embed ? 1 : 0, merged.culture, merged.gaia ? 1 : 0
+    merged.markRaDeg ?? '', merged.markDecDeg ?? '', merged.targetId ?? '', merged.embed ? 1 : 0, merged.culture, merged.gaia ? 1 : 0,
+    ...VIEW_SETTING_PARAMS.map(([key]) => merged[key]), merged.referenceDate, cleanNote(merged.note)
   ].join('|');
 }
 
@@ -203,4 +243,15 @@ export function viewStateSignature(state = {}) {
  */
 export function isDefaultViewState(state = {}) {
   return encodeViewState(state) === '';
+}
+
+/**
+ * The view and display settings a link carries, or null when it carries none.
+ * When any is present, all of them apply, so the recipient sees exactly the
+ * sender's view rather than a mix with their own remembered settings.
+ */
+export function linkViewSettings(state = {}) {
+  const merged = { ...DEFAULT_VIEW_STATE, ...state };
+  const carried = VIEW_SETTING_PARAMS.some(([key]) => merged[key] !== DEFAULT_VIEW_STATE[key]);
+  return carried ? Object.fromEntries(VIEW_SETTING_PARAMS.map(([key]) => [key, merged[key]])) : null;
 }

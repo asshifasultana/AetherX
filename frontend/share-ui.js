@@ -1,7 +1,7 @@
 // Share and embed controls. Keeps the summary line in step with the live view
 // state and owns the clipboard plumbing, so app.js stays a settings controller.
 
-import { currentViewState, embedSnippet, initialViewIssues, isEmbedded, shareUrl } from './share.js';
+import { currentViewState, embedSnippet, initialViewIssues, initialViewState, isEmbedded, shareUrl } from './share.js';
 
 const $ = id => document.getElementById(id);
 const BAND_RANGES = ['0.75 – 1.09', '1.10 – 1.62', '1.63 – 2.41', '2.42 – 3.82', '3.83 – 4.41', '4.42 – 5.00'];
@@ -43,7 +43,7 @@ function refresh() {
   if (clear) clear.hidden = !(Number.isFinite(state.markRaDeg) && Number.isFinite(state.markDecDeg));
 }
 
-async function copyText(text) {
+export async function copyText(text) {
   try {
     if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(text); return true; }
   } catch { /* Falls through to the selection-based path. */ }
@@ -63,12 +63,22 @@ async function copyText(text) {
 function renderNotice() {
   const notice = $('share-notice');
   if (!notice) return;
-  if (!initialViewIssues.length) { notice.hidden = true; return; }
-  notice.replaceChildren(...initialViewIssues.map(text => {
+  const lines = [];
+  if (initialViewState.note) {
+    const line = document.createElement('p');
+    const label = document.createElement('strong');
+    label.textContent = 'From the SphereX guide: ';
+    line.className = 'share-notice-note';
+    line.append(label, initialViewState.note);
+    lines.push(line);
+  }
+  for (const text of initialViewIssues) {
     const line = document.createElement('p');
     line.textContent = text;
-    return line;
-  }));
+    lines.push(line);
+  }
+  if (!lines.length) { notice.hidden = true; return; }
+  notice.replaceChildren(...lines);
   notice.hidden = false;
 }
 

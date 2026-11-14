@@ -3,7 +3,7 @@ import { readSearchEntry } from './search-route.js';
 import { presets } from './presets.js';
 import { mountObjectLookup } from './object-lookup.js';
 import { initialViewState, isEmbedded } from './share.js';
-import { encodeViewState } from './url-state.js';
+import { encodeViewState, linkViewSettings } from './url-state.js';
 import { MODE_DESCRIPTIONS, SETTINGS_SCHEMA, DISPLAY_KEYS, OBSERVATION_KEYS, normalizeSettings, applyLook, reconcileLook, resetKeys, loadStoredSettings, storeSettings } from './viewer-settings.js';
 ensureSearchForm();
 const initialEntry = readSearchEntry(typeof location === 'undefined' ? '' : location.search);
@@ -23,7 +23,9 @@ let position = {
 };
 // Remembered display and processing choices; a shared link's band and field
 // of view always win over what this browser last used.
-let viewerSettings = { ...normalizeSettings({ ...loadStoredSettings(), band: initialViewState.band, fovArcmin: initialViewState.fovArcmin }), pinnedReferenceKey: '' };
+// A link that carries a view (mode, look, brightness…) applies all of it.
+const linkedView = linkViewSettings(initialViewState) || {};
+let viewerSettings = { ...normalizeSettings({ ...loadStoredSettings(), ...linkedView, band: initialViewState.band, fovArcmin: initialViewState.fovArcmin }), pinnedReferenceKey: '' };
 const ranges = ['0.75 – 1.09', '1.10 – 1.62', '1.63 – 2.41', '2.42 – 3.82', '3.83 – 4.41', '4.42 – 5.00'];
 const signed = n => `${n < 0 ? '' : '+'}${n.toFixed(4)}`;
 function updateSelection() { document.querySelectorAll('[data-target]').forEach(b => { const active = b.dataset.target === selected; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); }); }
@@ -176,6 +178,40 @@ for (const radio of optionLists('input[name="look"]')) radio.addEventListener('c
     update({ look: looked.look, stretch: looked.stretch, scaleMode: looked.scaleMode, contrast: looked.contrast, brightness: looked.brightness });
   }
 });
+// The AI guide changes settings through the same validated path as the controls.
+window.addEventListener('sky:agent-settings-requested', event => {
+  const changes = event.detail?.changes;
+  if (!changes || typeof changes !== 'object') return;
+  let next = { ...changes };
+  if (next.look && next.look !== 'custom') {
+    const looked = applyLook(viewerSettings, next.look);
+    next = { look: looked.look, stretch: looked.stretch, scaleMode: looked.scaleMode, contrast: looked.contrast, brightness: looked.brightness, ...next, look: looked.look };
+    // Explicit tone values alongside a look turn it into a custom look.
+    if (['stretch', 'scaleMode', 'contrast', 'brightness'].some(key => key in changes)) delete next.look;
+  }
+  update(next, { announce: typeof event.detail.announce === 'string' ? event.detail.announce : '' });
+});
+window.addEventListener('sky:agent-navigate', event => {
+  const detail = event.detail || {};
+  if (detail.preset && presets[detail.preset]) {
+    const target = presets[detail.preset];
+    objectLookup.invalidate();
+    targetSearch.setEntry({ type: 'object', query: target.name });
+    window.dispatchEvent(new CustomEvent('sky:search-entry', { detail: { type: 'object', query: target.name } }));
+    selected = detail.preset; position = { raDeg: target.raDeg, decDeg: target.decDeg, frame: 'icrs', targetId: detail.preset };
+    updateSelection(); showPosition(target);
+  } else if (typeof detail.name === 'string' && detail.name && !Number.isFinite(detail.raDeg)) {
+    targetSearch.setEntry({ type: 'object', query: detail.name });
+    window.dispatchEvent(new CustomEvent('sky:search-entry', { detail: { type: 'object', query: detail.name } }));
+    objectLookup.resolve(detail.name);
+  } else if (Number.isFinite(detail.raDeg) && Number.isFinite(detail.decDeg)) {
+    objectLookup.invalidate();
+    position = { raDeg: detail.raDeg, decDeg: detail.decDeg, frame: 'icrs' }; selected = null; updateSelection();
+    targetSearch.setMode('coordinates'); targetSearch.setPosition(position, 'degrees');
+    window.dispatchEvent(new CustomEvent('sky:search-entry', { detail: { type: 'coordinates', query: '', format: 'degrees', resolved: true } }));
+    showPosition({ name: detail.name || 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Chosen by the AI guide.' });
+  }
+});
 window.addEventListener('sky:reference-frame-pinned', event => {
   if (!event.detail?.key) return;
   update({ referenceFrame: 'pinned', pinnedReferenceKey: event.detail.key }, { announce: 'This frame is now the comparison reference.' });
@@ -223,6 +259,9 @@ function restoredTarget() {
 // Publish the initial UI settings, then restore the shared destination, after the
 // other page modules have attached their listeners. A bare page loads the default target.
 window.addEventListener('load', () => {
+  if (viewerSettings.referenceFrame === 'pinned' && initialViewState.referenceDate) {
+    window.dispatchEvent(new CustomEvent('sky:reference-date-requested', { detail: { date: initialViewState.referenceDate } }));
+  }
   emitSettings();
   if (initialEntry.type === 'moving') {
     document.getElementById('target-search-form').requestSubmit();

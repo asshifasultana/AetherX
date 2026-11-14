@@ -5,7 +5,7 @@
 // events. Writes go through history.replaceState so sharing never adds history
 // entries the back button has to fight through.
 
-import { decodeViewState } from './url-state.js';
+import { decodeViewState, VIEW_SETTING_PARAMS } from './url-state.js';
 import { readSearchEntry, encodeSearchView } from './search-route.js';
 
 const hasLocation = typeof location !== 'undefined' && typeof location.search === 'string';
@@ -17,7 +17,8 @@ export const initialViewState = initial;
 /** Human-readable problems found in the incoming URL, if any. */
 export const initialViewIssues = Object.freeze([...decoded.issues]);
 
-const live = { ...initial };
+// A guide note is shown once on arrival; it is not carried into later links.
+const live = { ...initial, note: '' };
 let entry = hasLocation ? readSearchEntry(location.search) : null;
 let lastWritten = encodeSearchView(live, entry);
 let timer = null;
@@ -85,6 +86,7 @@ if (typeof window !== 'undefined') {
     const patch = {};
     if (Number.isFinite(detail.band)) patch.band = detail.band;
     if (Number.isFinite(detail.fovArcmin)) patch.fovArcmin = detail.fovArcmin;
+    for (const [key] of VIEW_SETTING_PARAMS) if (detail[key] !== undefined) patch[key] = detail[key];
     if (Object.keys(patch).length) update(patch);
   });
 
@@ -112,6 +114,12 @@ if (typeof window !== 'undefined') {
     update({ frameDate: date });
   });
 
+  // The pinned comparison frame travels as a date, since frame keys are local.
+  window.addEventListener('sky:playback-state', event => {
+    const date = typeof event.detail?.referenceDate === 'string' ? event.detail.referenceDate : '';
+    update({ referenceDate: date });
+  });
+
   // A shared frame date is spent once the timeline has used it.
   window.addEventListener('sky:frame-date-restored', () => { pendingFrameDate = ''; });
 }
@@ -130,8 +138,8 @@ export function currentViewState() {
  * Absolute URL for the current view. `embed` forces the compact layout, which is
  * what an iframe should point at.
  */
-export function shareUrl({ embed = isEmbedded, absolute = true } = {}) {
-  const state = { ...live, embed };
+export function shareUrl({ embed = isEmbedded, absolute = true, note = '' } = {}) {
+  const state = { ...live, embed, note };
   const query = encodeSearchView(state, entry);
   if (!hasLocation) return query ? `?${query}` : '';
   const base = `${location.origin}/viewer.html`;

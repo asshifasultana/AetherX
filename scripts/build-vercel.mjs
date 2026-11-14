@@ -10,6 +10,7 @@ const publicFiles = ['index.html', 'viewer.html', 'workspace-ui.js', 'home.js', 
 // Emit Vercel's documented Build Output API, avoiding framework auto-detection.
 publicFiles.push('moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js',
   'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js');
+publicFiles.push('agent-ui.js', 'agent-controller.js', 'lib/agent-tools.js');
 publicFiles.push(...CONTEXT_PUBLIC_FILES);
 await mkdir(path.join(output, 'static'), { recursive: true });
 for (const file of publicFiles) {
@@ -44,5 +45,16 @@ for (const [name, maxDuration] of [['observations', 120], ['moving-observations'
   await writeFile(path.join(directory, 'package.json'), JSON.stringify({ type: 'module' }));
   await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: `api/${name}.js`, launcherType: 'Nodejs', maxDuration, ...(name === 'crop' ? { regions: ['iad1'] } : {}) }, null, 2));
 }
+// The AI guide proxy only needs its tool schemas and the settings rules they use.
+{
+  const directory = path.join(output, 'functions', 'api', 'agent.func');
+  await mkdir(path.join(directory, 'api'), { recursive: true });
+  await mkdir(path.join(directory, 'lib'), { recursive: true });
+  await copyFile(path.join(frontend, 'api', 'agent.js'), path.join(directory, 'api', 'agent.js'));
+  await copyFile(path.join(frontend, 'lib', 'agent-tools.js'), path.join(directory, 'lib', 'agent-tools.js'));
+  await copyFile(path.join(frontend, 'viewer-settings.js'), path.join(directory, 'viewer-settings.js'));
+  await writeFile(path.join(directory, 'package.json'), JSON.stringify({ type: 'module' }));
+  await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: 'api/agent.js', launcherType: 'Nodejs', maxDuration: 30 }, null, 2));
+}
 await writeFile(path.join(output, 'config.json'), JSON.stringify({ version: 3 }, null, 2));
-console.log(`Vercel output ready: ${publicFiles.length} public assets, nine Node.js API functions, and the preset observation index.`);
+console.log(`Vercel output ready: ${publicFiles.length} public assets, ten Node.js API functions, and the preset observation index.`);

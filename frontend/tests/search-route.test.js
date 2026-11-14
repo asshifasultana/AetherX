@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { readSearchEntry, hasSavedPosition, encodeSearchView, viewerUrl, legacyViewerDestination } from '../search-route.js';
-import { DEFAULT_VIEW_STATE, decodeViewState } from '../url-state.js';
+import { DEFAULT_VIEW_STATE, decodeViewState, VIEW_SETTING_PARAMS } from '../url-state.js';
 
 const shareSource = (await readFile(new URL('../share.js', import.meta.url), 'utf8'))
   .replace(/^import[\s\S]*?from '[^']+';\r?\n/gm, '').replace(/^export /gm, '');
@@ -11,7 +11,7 @@ function mountShare(search) {
   const listeners = new Map(), writes = [], timers = [];
   const location = { origin: 'https://atlas.example', pathname: '/viewer.html', search, hash: '#explorer' };
   const context = {
-    location, readSearchEntry, encodeSearchView, decodeViewState,
+    location, readSearchEntry, encodeSearchView, decodeViewState, VIEW_SETTING_PARAMS,
     window: { addEventListener: (type, listener) => listeners.set(type, listener) },
     history: { state: null, replaceState: (_state, _title, url) => writes.push(url) },
     setTimeout: callback => { timers.push(callback); return timers.length; }

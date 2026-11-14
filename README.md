@@ -107,6 +107,12 @@ Every part of a view that describes *where and when* you are looking can travel 
 | `mra`, `mdec` | Marked candidate source position | no source marked |
 | `target` | Curated target id, for the highlighted card | custom or resolved position |
 | `embed` | `1` renders the compact, embeddable layout | not embedded |
+| `mode`, `ref`, `refat` | View mode, comparison reference, and the pinned reference frame's date | defaults (`time-lapse`, `previous`) |
+| `look`, `bright`, `contrast`, `stretch`, `scale`, `colours`, `invert` | Display settings | defaults |
+| `stack`, `blink`, `thresh` | Deep-stack day limit, blink interval (ms), difference threshold (σ) | defaults |
+| `note` | One-line note from the AI guide, shown in a banner on arrival (≤200 chars) | no note |
+
+When a link carries any view or display setting, all of them apply, so the recipient sees the sender's exact view instead of a mix with their own remembered settings. `at` and `refat` pick the frame observed on that UTC date, or the nearest one.
 
 `url-state.js` owns the encoding and validation, and is the only module that decides what a link means. It is DOM-free and unit tested, so a truncated or hand-edited link degrades field by field: an impossible declination, an unoffered field of view, or a date such as `2026-02-31` falls back to the default for that field and is reported in a notice at the top of the page rather than failing the whole view. Right ascension wraps into 0–360° because it is cyclic; a mark with only one of its two coordinates is dropped rather than half-applied. A reversed date range is cleared instead of inverted.
 
@@ -117,6 +123,16 @@ Opening a link restores the position, the field of view, the detector band, the 
 **Embedding.** `?embed=1`, or simply being inside an iframe, switches to a compact layout that keeps the viewer and its timeline, hides the page chrome, settings and observation table, and adds `is-embed` on the document element before first paint to avoid a flash of the full page. The **Embed this view** button produces an `<iframe>` snippet for the current position, field of view, band, dates and marked source. The app sets no `X-Frame-Options` or `frame-ancestors` restriction, so the snippet works as-is.
 
 Both `frontend/server.mjs` and `scripts/build-vercel.mjs` keep an explicit list of public assets. `url-state.js`, `sky-projection.js`, `share.js` and `share-ui.js` are registered in both; add any new frontend module to both lists or it will 404 in production while working locally.
+
+## AI guide (Groq)
+
+The **AI guide** section under the viewer lets visitors ask in plain words ("is anything moving here?", "compare the first and latest frame", "make the faint stars brighter", "show me WISE 0855"). The guide works the real viewer through tools and answers from what the viewer reports (difference σ and brighter/fainter pixel counts, deep-stack records, frame dates), and it can make a share link that reopens its view with a short note.
+
+- `frontend/api/agent.js` is a stateless proxy to Groq's OpenAI-compatible chat completions API. It holds the key, the system prompt and the tool schemas, sanitises the history, and rate-limits each client (30 requests a minute).
+- `frontend/lib/agent-tools.js` defines the tools (`get_view_state`, `set_display`, `set_view_mode`, `compare_frames`, `playback`, `set_band`, `set_field_of_view`, `set_overlays`, `go_to_target`, `make_share_link`) and validates their arguments against the viewer-settings rules. The server and the browser share it.
+- `frontend/agent-ui.js` runs the tool-calling loop in the browser; `frontend/agent-controller.js` carries out each call through the same window events the controls use, then waits for the viewer to report what it rendered.
+
+Set `GROQ_API_KEY` in `.env` for local development (`npm run dev` loads it), and in the Vercel and Railway environments. `GROQ_MODEL` optionally overrides the default model (`openai/gpt-oss-120b`); use a Groq model that supports tool calling. Without a key, the section explains that the guide is not set up.
 
 ## Documentation
 

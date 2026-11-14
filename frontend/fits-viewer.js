@@ -504,6 +504,7 @@ function resizeHandle(spot, mark, center, size) {
 // drag outward marks a circular area whose centre is where the drag began.
 // Select: click a spot to select it (its close button and resize handle
 // appear), press inside it and drag to move it; clicking empty sky deselects.
+// In Mark, pressing on an existing spot behaves like Select without leaving Mark.
 const DRAG_THRESHOLD_PX = 6;
 const EDGE_GRAB_PX = 7;
 let drawing = null, suppressClick = false;
@@ -552,7 +553,7 @@ window.addEventListener('keydown', event => {
   const key = event.key;
   if (key === 'v' || key === 'V') setTool('select');
   else if (key === 'm' || key === 'M') setTool('mark');
-  else if (key === 'Escape') { if (tool === 'mark') setTool('select'); else if (selectedSpot !== null) selectSpot(null); else return; }
+  else if (key === 'Escape') { if (selectedSpot !== null) selectSpot(null); else if (tool === 'mark') setTool('select'); else return; }
   else if ((key === 'Delete' || key === 'Backspace') && selectedSpot !== null) { event.preventDefault(); spots.remove(selectedSpot); publishSpots(); }
 });
 
@@ -560,15 +561,17 @@ canvas.addEventListener('pointerdown', event => {
   if (event.button !== 0 || settings.inspectPixels || !activeObservation?.image) return;
   const start = canvasPoint(event);
   if (!start) return;
-  if (tool === 'mark') { drawing = { start, clientX: event.clientX, clientY: event.clientY, pointerId: event.pointerId, draft: null }; return; }
+  // In Mark, a press on an existing spot acts like Select (select / drag it)
+  // instead of drawing a spot inside a spot; the tool itself stays on Mark.
   const grab = spotUnder(event);
+  if (tool === 'mark' && !grab) { selectSpot(null); drawing = { start, clientX: event.clientX, clientY: event.clientY, pointerId: event.pointerId, draft: null }; return; }
   if (!grab) return;
   selectSpot(grab.spot.n);
   drawing = { start, clientX: event.clientX, clientY: event.clientY, pointerId: event.pointerId, draft: null,
     move: grab.spot, offset: { x: start.x - grab.center.x, y: start.y - grab.center.y } };
 });
 canvas.addEventListener('pointermove', event => {
-  if (!drawing) { canvas.classList.toggle('sky-canvas-grab', tool === 'select' && !settings.inspectPixels && Boolean(activeObservation?.image && spotUnder(event))); return; }
+  if (!drawing) { canvas.classList.toggle('sky-canvas-grab', !settings.inspectPixels && Boolean(activeObservation?.image && spotUnder(event))); return; }
   if (event.pointerId !== drawing.pointerId) return;
   if (!drawing.draft) {
     if (Math.hypot(event.clientX - drawing.clientX, event.clientY - drawing.clientY) < DRAG_THRESHOLD_PX) return;

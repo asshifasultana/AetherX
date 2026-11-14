@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080d18">
+  <meta name="description" content="A PlanetX suspicion case file: one patch of sky where the Planet Nine model concentrates, with community votes.">
+  <title>PlanetX · Case file</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>@view-transition{navigation:auto}</style><!-- Opt in to the SPHEREx ↔ PlanetX slide (see styles.css). -->
+</head>
+<body class="home-page planetx-page">
+  <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a>
+    <nav class="project-tabs" aria-label="Project sections"><a href="/">SPHEREx</a><a href="/planetx.html" aria-current="page">PlanetX</a></nav>
+  </header>
+  <main class="px-main px-case-main">
+    <a class="px-back" href="/planetx.html">← All suspicion case files</a>
+    <section class="px-intro">
+      <div><p class="px-kicker"><span></span> PLANETX · SUSPICION CASE FILE</p><h1 id="case-title">Loading case…</h1><p id="case-lede" class="px-lede">Reading the Planet Nine model.</p></div>
+      <div class="px-status"><span class="px-status-dot"></span><span id="case-state">MODEL PATCH</span></div>
+    </section>
+
+    <div id="case-body" hidden>
+      <section class="px-case-grid">
+        <article class="px-detail-card">
+          <p class="px-kicker">WHAT THE MODEL SAYS</p>
+          <h2>Why this patch was flagged</h2>
+          <p class="px-rank-copy" id="case-why"></p>
+          <dl class="px-stats">
+            <div><dt>CENTRE RA</dt><dd id="case-ra">—</dd></div>
+            <div><dt>CENTRE DEC</dt><dd id="case-dec">—</dd></div>
+            <div><dt>MODEL SHARE</dt><dd id="case-share">—</dd></div>
+            <div><dt>TILES</dt><dd id="case-tiles">—</dd></div>
+            <div><dt>DISTANCE</dt><dd id="case-distance">—</dd></div>
+            <div><dt>EST. VISUAL MAG.</dt><dd id="case-mag">—</dd></div>
+          </dl>
+          <a id="case-spherex" class="px-open-link" href="/">Inspect and file it in SPHEREx <span>↗</span></a>
+        </article>
+        <figure class="px-detail-card px-case-figure">
+          <p class="px-kicker">PATCH TILES</p>
+          <div class="px-case-canvas-wrap"><canvas id="case-map" role="img" aria-label="The tiles in this patch, coloured by model probability"></canvas></div>
+          <figcaption>Each square is a 5° × 5° tile, brighter where more of the model’s still-allowed orbits fall. RA increases to the left; north is up.</figcaption>
+        </figure>
+      </section>
+
+      <section class="px-detail-card px-vote" aria-labelledby="vote-title">
+        <div>
+          <p class="px-kicker">COMMUNITY EVIDENCE</p>
+          <h2 id="vote-title">Is anything here worth following up?</h2>
+          <p class="px-rank-copy">Look through the SPHEREx frames and the survey map for this patch, then give your read. Patches people back grow brighter on the community map; patches they dismiss dim. You can change your vote at any time.</p>
+        </div>
+        <div class="px-vote-actions">
+          <button type="button" class="px-vote-button is-something" data-verdict="something" aria-pressed="false"><strong>Something here</strong><small>Worth a closer look</small></button>
+          <button type="button" class="px-vote-button is-nothing" data-verdict="nothing" aria-pressed="false"><strong>Nothing here</strong><small>Only ordinary sky</small></button>
+        </div>
+        <div class="px-vote-tally">
+          <div class="px-vote-bar" aria-hidden="true"><span id="vote-bar-something"></span></div>
+          <p id="vote-summary" role="status" aria-live="polite">Loading votes…</p>
+          <p id="vote-note" class="px-vote-note"></p>
+        </div>
+      </section>
+
+      <details id="planetx-aladin-context" class="aladin-context px-aladin-context"><summary>Open this patch in Aladin Lite · real survey context</summary><p class="aladin-context-copy">This zoomable survey map shows accumulated sky context around the patch centre. The probability patch is the model; this is not a Planet Nine detection, and Aladin’s merged maps do not replace dated SPHEREx exposures.</p><div id="planetx-aladin-map" class="aladin-context-map" role="region" aria-label="Patch centre in Aladin Lite"></div><p id="planetx-aladin-status" role="status">Open this panel to load the survey map.</p></details>
+
+      <section class="px-honesty" aria-label="What a vote means"><article><p class="px-kicker">REALISTIC EXPECTATIONS</p><h2>Can SPHEREx see Planet Nine here?</h2><p><strong>Probably not.</strong> The model puts the planet around visual magnitude <span id="case-mag-copy">21–24</span>, fainter than SPHEREx’s approximate point-source depth of 19.5–19.9 AB per channel. A “something here” vote flags a patch for a closer look; it is not a discovery claim.</p></article><article><p class="px-kicker">HOW VOTES COUNT</p><h2>One voice per browser</h2><p>Each browser keeps an anonymous random id and only its latest vote per case counts. No names or contact details are stored. If the shared vote store is not set up on this server, votes stay in your browser.</p></article></section>
+    </div>
+
+    <section id="case-missing" class="px-detail-card" hidden><p class="px-kicker">CASE NOT FOUND</p><h2>This case file does not exist</h2><p class="px-rank-copy">The link may be from an older version of the model. Pick a current suspicion patch from the map.</p><a class="px-open-link" href="/planetx.html">Back to the PlanetX map <span>→</span></a></section>
+
+    <footer class="px-footer"><span>SPHEREx sky tools</span><span>Hypothesis map · not a discovery claim</span></footer>
+  </main>
+  <script type="module" src="planetx-case.js"></script>
+  <script type="module" src="aladin-context.js"></script>
+</body>
+</html>

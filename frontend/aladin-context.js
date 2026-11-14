@@ -11,19 +11,22 @@ function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = src; script.async = true;
-    script.onload = resolve; script.onerror = () => reject(new Error('Aladin Lite could not be loaded.'));
+    script.onload = () => resolve();
+    script.onerror = () => { script.remove(); reject(new Error(`Aladin Lite could not be loaded from ${src}`)); };
     document.head.append(script);
   });
 }
 async function loadAladin() {
   if (window.A?.aladin) return;
   if (!loadPromise) loadPromise = (async () => {
-    if (!window.jQuery) await loadScript('https://code.jquery.com/jquery-1.12.1.min.js');
     try { await loadScript('https://aladin.u-strasbg.fr/AladinLite/api/v3/latest/aladin.js'); }
     catch { await loadScript('https://aladin.cds.unistra.fr/aladin_3.9.0-beta.js'); }
     if (!window.A?.init) throw new Error('Aladin Lite did not initialize.');
     await window.A.init;
-  })();
+  })().catch(error => {
+    loadPromise = undefined;
+    throw error;
+  });
   return loadPromise;
 }
 function setTarget(raDeg, decDeg) {
@@ -38,7 +41,9 @@ async function openPanel(panel) {
   try {
     await loadAladin();
     panel.aladin = window.A.aladin(`#${panel.map.id}`, {
-      survey: 'P/DSS2/color', target: `${target.raDeg} ${target.decDeg}`,
+      // Use ESA's mirror directly: the CDS registry currently resolves DSS2
+      // to an unavailable host, leaving the viewer stuck on "loading".
+      survey: 'https://skies.esac.esa.int/DSSColor', target: `${target.raDeg} ${target.decDeg}`,
       fov: panel.fov, cooFrame: 'ICRS', showLayersControl: true,
       showCooGridControl: true, showReticle: true
     });

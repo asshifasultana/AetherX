@@ -15,6 +15,8 @@ const state = {
   fractions: [],
   index: 0,
   playing: false,
+  userPaused: false,
+  viewMode: 'time-lapse',
   speed: 1,
   band: null,
   combineExposures: true,
@@ -111,7 +113,7 @@ function prefetchFinished() {
   prefetchNote = false;
   const total = state.frames.length, done = prefetch.fetched.size;
   setStatus(done >= total
-    ? `All ${total} frames preloaded — press play for smooth playback.`
+    ? `All ${total} frames preloaded.`
     : `${done} of ${total} frames preloaded. The rest will load on demand.`);
 }
 
@@ -234,7 +236,7 @@ function renderFilmstrip() {
       button.append(meta);
     }
     button.addEventListener('click', () => {
-      pausePlayback();
+      pausePlayback({ manual: true });
       void selectFrame(index);
     });
     state.thumbs.set(key, { button, canvas });
@@ -299,12 +301,7 @@ function updateCurrent({ keepSlider = false } = {}) {
 
 function render() {
   const count = state.frames.length;
-  const releaseInfo = [...new Set(state.observations.map(frame => frame.release).filter(Boolean))];
-  const releaseNote = $('release-calibration-note');
-  releaseNote.hidden = releaseInfo.length < 2;
-  releaseNote.textContent = releaseInfo.length > 1
-    ? `Comparing ${releaseInfo.join(' and ')} products. Release and processing versions are shown per frame; cross-release calibration offsets are not corrected here.`
-    : '';
+  $('release-calibration-note').hidden = true;
   $('frame-count').textContent = count
     ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
     : 'NO IMAGES LOADED';
@@ -356,7 +353,7 @@ function rebuild({ keepTime = false, announce = true } = {}) {
   } else if (fallbackBand !== null) {
     setStatus(`No D${requestedBand} frames in these results. Showing D${fallbackBand} instead; choose a detector band above to change the sequence.`);
   } else if (announce) {
-    setStatus(`${state.frames.length} dated ${state.frames.length === 1 ? 'frame' : 'frames'} ready. Press play, step with the arrow buttons, or choose a thumbnail. Uneven tick spacing shows real gaps in time.`);
+    setStatus(`${state.frames.length} dated ${state.frames.length === 1 ? 'frame' : 'frames'} ready. Frames are ordered by UTC observation date.`);
   }
   resetPrefetch();
   if (state.frames.length > 1) {
@@ -374,8 +371,10 @@ async function selectFrame(index, { playback = false } = {}) {
   state.index = Math.max(0, Math.min(state.frames.length - 1, index));
   updateCurrent();
   const frame = state.frames[state.index];
+  const token = state.token;
+  let loaded = false;
   window.dispatchEvent(new CustomEvent('sky:frame-exposure-group', { detail: { exposures: frame.exposures || [frame], frame } }));
-  const deepStackSelected = document.querySelector('[data-mode="deep-stack"]')?.classList.contains('selected');
+  const deepStackSelected = state.viewMode === 'deep-stack';
   if (deepStackSelected && document.getElementById('sky-canvas')?.dataset.deepStack === 'true') {
     setStatus(`Deep median remains displayed · timeline selection ${state.index + 1} of ${state.frames.length} changed.`);
     return;
@@ -387,11 +386,13 @@ async function selectFrame(index, { playback = false } = {}) {
     // Playback stays quiet: the previous frame remains on screen until the next
     // one is ready, so there is no "loading cutout" flash between frames.
     const result = await showCutout(frame, { quiet: playback, keepImage: playback });
+    if (token !== state.token || state.frames[state.index] !== frame) return;
+    loaded = Boolean(result);
     if (!result?.stackRecord?.deepStack) frame.stackRecord = result?.stackRecord || null;
     updateCurrent({ keepSlider: true });
   } finally {
     if (!playback) prefetch.paused = Math.max(0, prefetch.paused - 1);
-    if (state.frames[state.index] === frame) {
+    if (loaded && token === state.token && state.frames[state.index] === frame) {
       setStatus(playback
         ? `Playing · frame ${state.index + 1} of ${state.frames.length} · ${frameDate(frame)}`
         : `Frame ${state.index + 1} of ${state.frames.length} · ${frameDate(frame)}. Use ← → or the timeline to scrub.`);
@@ -400,7 +401,8 @@ async function selectFrame(index, { playback = false } = {}) {
   }
 }
 
-function pausePlayback() {
+function pausePlayback({ manual = false } = {}) {
+  if (manual) state.userPaused = true;
   playbackController?.abort();
   playbackController = null;
   state.playing = false;
@@ -445,20 +447,21 @@ async function playPlayback() {
   // Keep a bounded lookahead running while the selected frame has priority.
   state.playing = true;
   state.token++;
+  const token = state.token;
   updatePlayButton();
   const frame = state.frames[state.index];
   if (state.shownKey !== observationKey(frame)) await selectFrame(state.index);
-  if (state.playing) { schedulePrefetch(0); scheduleNext(frameDelayMs(state.speed)); }
+  if (state.playing && token === state.token) { schedulePrefetch(0); scheduleNext(frameDelayMs(state.speed)); }
 }
 
 function togglePlayback() {
-  if (state.playing) pausePlayback();
-  else void playPlayback();
+  if (state.playing) pausePlayback({ manual: true });
+  else { state.userPaused = false; void playPlayback(); }
 }
 
 $('play-button').addEventListener('click', togglePlayback);
-$('step-back').addEventListener('click', () => { pausePlayback(); void selectFrame(state.index - 1); });
-$('step-forward').addEventListener('click', () => { pausePlayback(); void selectFrame(state.index + 1); });
+$('step-back').addEventListener('click', () => { pausePlayback({ manual: true }); void selectFrame(state.index - 1); });
+$('step-forward').addEventListener('click', () => { pausePlayback({ manual: true }); void selectFrame(state.index + 1); });
 $('speed-button').addEventListener('click', () => {
   state.speed = nextSpeed(state.speed);
   $('speed-value').textContent = `${state.speed}×`;
@@ -467,7 +470,7 @@ $('speed-button').addEventListener('click', () => {
 });
 $('timeline').addEventListener('input', event => {
   if (!state.frames.length) return;
-  pausePlayback();
+  pausePlayback({ manual: true });
   state.index = nearestFrameIndex(state.frames, Number(event.target.value) / 1000);
   updateCurrent({ keepSlider: true });
   clearTimeout(state.scrubTimer);
@@ -482,13 +485,18 @@ $('timeline').addEventListener('change', () => {
 document.addEventListener('keydown', event => {
   if (!state.frames.length || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
   if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes(event.target?.tagName)) return;
-  if (event.key === 'ArrowLeft') { event.preventDefault(); pausePlayback(); void selectFrame(state.index - 1); }
-  else if (event.key === 'ArrowRight') { event.preventDefault(); pausePlayback(); void selectFrame(state.index + 1); }
+  if (event.key === 'ArrowLeft') { event.preventDefault(); pausePlayback({ manual: true }); void selectFrame(state.index - 1); }
+  else if (event.key === 'ArrowRight') { event.preventDefault(); pausePlayback({ manual: true }); void selectFrame(state.index + 1); }
   else if (event.code === 'Space') { event.preventDefault(); togglePlayback(); }
 });
 
 window.addEventListener('sky:viewer-settings-changed', event => {
   const detail = event.detail || {};
+  const modeChanged = detail.viewMode && detail.viewMode !== state.viewMode;
+  if (modeChanged) {
+    state.viewMode = detail.viewMode;
+    if (state.viewMode !== 'time-lapse') pausePlayback();
+  }
   const fov = detail.fovArcmin === undefined ? prefetch.fov : Number(detail.fovArcmin);
   if (fov !== prefetch.fov) {
     prefetch.fov = fov;
@@ -502,7 +510,10 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   }
   const band = detail.band === undefined ? state.band : Number(detail.band);
   const combine = detail.combineExposures === undefined ? state.combineExposures : Boolean(detail.combineExposures);
-  if (band === state.band && combine === state.combineExposures) return;
+  if (band === state.band && combine === state.combineExposures) {
+    if (modeChanged && state.viewMode === 'time-lapse') void activateTimeline();
+    return;
+  }
   // Playing a cutout syncs the viewer to its detector. If the timeline already
   // holds that band (including a fallback band), keep playback running.
   const framesMatchBand = state.frames.length > 0 && state.frames.every(frame => Number(frame.detector) === band);
@@ -510,9 +521,15 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   state.band = band;
   state.combineExposures = combine;
   rebuild({ keepTime: true });
+  void activateTimeline();
 });
 
 window.addEventListener('sky:target-selected', () => {
+  pausePlayback();
+  state.userPaused = false;
+  state.observations = [];
+  state.frames = [];
+  state.token++;
   state.shownKey = null;
   prefetchNote = false;
   resetPrefetch();
@@ -524,20 +541,25 @@ window.addEventListener('sky:observations-loading', () => {
   setStatus('Searching the archive for dated observations…');
 });
 
+async function activateTimeline() {
+  if (!state.frames.length || state.viewMode !== 'time-lapse') return;
+  if (state.frames.length > 1 && !state.userPaused) await playPlayback();
+  else await selectFrame(state.index);
+}
+
 window.addEventListener('sky:observations-loaded', event => {
   state.observations = Array.isArray(event.detail?.observations) ? event.detail.observations : [];
   rebuild();
-  if (event.detail?.failed) setStatus('The archive search did not complete. Adjust the filters and try again.');
-  // A shared link names the frame it was looking at. Jump to the closest dated
-  // frame once, so the recipient lands on the same moment in the sequence.
+  if (event.detail?.failed) { setStatus('The archive search did not complete. Adjust the filters and try again.'); return; }
   const pending = takePendingFrameDate();
   if (pending && state.frames.length) {
-    const time = Date.parse(`${pending}T00:00:00Z`);
+    const time = Date.parse(pending + 'T00:00:00Z');
     if (Number.isFinite(time)) {
-      void selectFrame(nearestFrameIndexByTime(state.frames, time));
+      state.index = nearestFrameIndexByTime(state.frames, time);
       window.dispatchEvent(new CustomEvent('sky:frame-date-restored'));
     }
   }
+  void activateTimeline();
 });
 
 function paintThumbFrom(observation, source) {

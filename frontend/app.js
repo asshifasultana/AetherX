@@ -20,16 +20,21 @@ let position = {
   frame: 'icrs',
   ...(restoredTargetId ? { targetId: restoredTargetId } : {})
 };
-const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, maxStackFrames: 80, combineExposures: true, hideBadPixels: true, rejectVisitGlitches: true, qualityOverlay: false, inspectPixels: false, consistentBrightness: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: true, labelAsteroids: false, asteroidMagnitude: 20 };
+const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, maxStackFrames: 80, combineExposures: true, hideBadPixels: true, rejectVisitGlitches: true, qualityOverlay: false, inspectPixels: false, consistentBrightness: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: false, labelAsteroids: false, asteroidMagnitude: 20 };
 let viewerSettings = { ...defaultSettings, band: initialViewState.band, fovArcmin: initialViewState.fovArcmin };
 const ranges = ['0.75 – 1.09', '1.10 – 1.62', '1.63 – 2.41', '2.42 – 3.82', '3.83 – 4.41', '4.42 – 5.00'];
 const signed = n => `${n < 0 ? '' : '+'}${n.toFixed(4)}`;
 function updateSelection() { document.querySelectorAll('[data-target]').forEach(b => { const active = b.dataset.target === selected; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); }); }
-function showPosition(data) {
+let fixedTargetData = { name: 'Barnard’s Star', type: '', description: '' };
+function renderTarget(data) {
   $('object-name').textContent = data.name;
   $('object-type').textContent = data.type; $('object-description').textContent = data.description;
   $('display-ra').innerHTML = `${position.raDeg.toFixed(4)}<span>°</span>`;
   $('display-dec').innerHTML = `${signed(position.decDeg)}<span>°</span>`;
+}
+function showPosition(data) {
+  fixedTargetData = data; renderTarget(data);
+  $('target-coordinates').hidden = false; $('moving-position-note').hidden = true;
   $('announcement').textContent = `${data.name} selected. The observation search has been updated.`;
   window.dispatchEvent(new CustomEvent('sky:target-selected', { detail: { ...position } }));
 }
@@ -53,6 +58,17 @@ const targetSearch = mountTargetSearch({
   },
   onMoving: () => window.dispatchEvent(new CustomEvent('sky:moving-search-requested'))
 });
+function renderEntryMode(mode, query = $('lookup-name').value) {
+  const moving = mode === 'moving';
+  $('moving-target').hidden = !moving;
+  $('observations').hidden = moving;
+  $('target-coordinates').hidden = moving; $('moving-position-note').hidden = !moving;
+  if (moving) { $('object-name').textContent = query || 'Moving object'; $('object-type').textContent = 'MOVING OBJECT'; }
+  else renderTarget(fixedTargetData);
+}
+window.addEventListener('sky:entry-mode-changed', event => renderEntryMode(event.detail.mode));
+window.addEventListener('sky:search-entry', event => { if (event.detail.type === 'moving') renderEntryMode('moving', event.detail.query); });
+$('lookup-name').addEventListener('input', () => { if ($('target-type').value === 'moving') renderEntryMode('moving'); });
 // The search area shows progress visually; only actionable failures get text.
 window.addEventListener('sky:observations-loading', () => {
   setSearchLoading('observations', true);
@@ -70,8 +86,8 @@ const modeDescriptions = {
   'motion-trail': 'Trace how sources move across successive observations.',
   'deep-stack': 'Per-pixel median across up to the selected number of UTC-day frames. Masked, missing and uncovered pixels do not count as zeros.'
 };
-const checkboxes = { 'combine-exposures': 'combineExposures', 'hide-bad-pixels': 'hideBadPixels', 'reject-visit-glitches': 'rejectVisitGlitches', 'consistent-brightness': 'consistentBrightness', 'quality-overlay': 'qualityOverlay', 'inspect-pixels': 'inspectPixels', invert: 'invert', 'crosshair-toggle': 'showTargetMarker', 'label-asteroids': 'labelAsteroids' };
-const selects = { stretch: 'stretch', colours: 'colours', 'asteroid-magnitude': 'asteroidMagnitude' };
+const checkboxes = { 'combine-exposures': 'combineExposures', 'hide-bad-pixels': 'hideBadPixels', 'reject-visit-glitches': 'rejectVisitGlitches', 'consistent-brightness': 'consistentBrightness', 'inspect-pixels': 'inspectPixels', invert: 'invert' };
+const selects = { stretch: 'stretch', colours: 'colours' };
 function emitSettings(source) {
   window.dispatchEvent(new CustomEvent('sky:viewer-settings-changed', { detail: { ...viewerSettings, source } }));
 }
@@ -90,14 +106,12 @@ window.addEventListener('sky:coverage-stack-requested', event => {
   renderSettings();
   emitSettings('coverage-stack'); // FITS viewer stacks the newly selected band
 });
-function updateButtons(attribute, value) {
-  document.querySelectorAll('[data-' + attribute + ']').forEach(button => {
-    const active = button.dataset[attribute] === String(value);
-    button.classList.toggle('selected', active); button.setAttribute('aria-pressed', String(active));
-  });
-}
 function renderSettings() {
-  updateButtons('band', viewerSettings.band); updateButtons('mode', viewerSettings.viewMode); updateButtons('fov', viewerSettings.fovArcmin);
+  $('detector-array').value = String(viewerSettings.band);
+  $('view-mode').value = viewerSettings.viewMode;
+  $('field-of-view').value = viewerSettings.fovArcmin;
+  $('field-of-view-value').value = viewerSettings.fovArcmin + '′';
+  $('field-of-view').setAttribute('aria-valuetext', viewerSettings.fovArcmin + ' arcminutes');
   $('band-range').textContent = ranges[viewerSettings.band - 1] + ' μm';
   $('mode-description').textContent = modeDescriptions[viewerSettings.viewMode];
   for (const [id, key] of Object.entries(checkboxes)) $(id).checked = viewerSettings[key];
@@ -106,12 +120,18 @@ function renderSettings() {
   $('max-stack-frames').value = viewerSettings.maxStackFrames;
   $('max-stack-frames-value').value = `${viewerSettings.maxStackFrames} frames`;
 }
-for (const [attribute, key] of [['band','band'],['mode','viewMode'],['fov','fovArcmin']]) {
-  document.querySelectorAll('[data-' + attribute + ']').forEach(button => button.addEventListener('click', () => {
-    viewerSettings[key] = attribute === 'mode' ? button.dataset[attribute] : Number(button.dataset[attribute]);
-    renderSettings(); emitSettings();
-  }));
+for (const [id, key] of [['detector-array', 'band'], ['view-mode', 'viewMode']]) {
+  $(id).addEventListener('change', () => { viewerSettings[key] = key === 'band' ? Number($(id).value) : $(id).value; renderSettings(); emitSettings(); });
 }
+$('field-of-view').addEventListener('input', () => {
+  $('field-of-view-value').value = $('field-of-view').value + '′';
+  $('field-of-view').setAttribute('aria-valuetext', $('field-of-view').value + ' arcminutes');
+});
+$('field-of-view').addEventListener('change', () => {
+  const next = Number($('field-of-view').value);
+  if (next === viewerSettings.fovArcmin) return;
+  viewerSettings.fovArcmin = next; renderSettings(); emitSettings();
+});
 for (const [id, key] of Object.entries(checkboxes)) $(id).addEventListener('change', () => { viewerSettings[key] = $(id).checked; emitSettings(); });
 for (const [id, key] of Object.entries(selects)) $(id).addEventListener('change', () => { viewerSettings[key] = key === 'asteroidMagnitude' ? Number($(id).value) : $(id).value; emitSettings(); });
 $('contrast').addEventListener('input', () => { viewerSettings.contrast = Number($('contrast').value); $('contrast-value').value = viewerSettings.contrast + '%'; emitSettings(); });
@@ -135,8 +155,7 @@ function restoredTarget() {
   };
 }
 // Publish the initial UI settings, then restore the shared destination, after the
-// other page modules have attached their listeners. A bare page still waits for
-// the visitor to choose a target.
+// other page modules have attached their listeners. A bare page loads the default target.
 window.addEventListener('load', () => {
   emitSettings();
   if (initialEntry.type === 'moving') {
@@ -145,11 +164,16 @@ window.addEventListener('load', () => {
     showPosition(restoredTarget());
   } else if (initialEntry.query) {
     document.getElementById('target-search-form').requestSubmit();
+  } else {
+    selected = 'barnard';
+    position = { ...position, targetId: selected };
+    updateSelection();
+    showPosition(presets.barnard);
   }
 }, { once: true });
 $('expand-button').addEventListener('click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
-    else await document.querySelector('.viewer').requestFullscreen();
+    else await document.querySelector('.viewer-shell').requestFullscreen();
   } catch { $('announcement').textContent = 'Fullscreen is unavailable in this browser.'; }
 });

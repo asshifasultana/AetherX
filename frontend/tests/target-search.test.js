@@ -272,3 +272,26 @@ test('Back navigation reconciles restored native form values with visible fields
   assert.equal(ui.get('moving-fields').hidden, false);
   assert.equal(ui.get('lookup-name').value, '4 Vesta');
 });
+
+test('FOV dragging only updates the readout and commits one viewer-settings event', () => {
+  const ui = mount();
+  const changes = () => ui.events.filter(event => event.type === 'sky:viewer-settings-changed');
+  for (const value of ['17', '18', '19']) { ui.get('field-of-view').value = value; ui.get('field-of-view').dispatchEvent({ type: 'input' }); }
+  assert.equal(changes().length, 0); assert.equal(ui.get('field-of-view-value').value, '19′');
+  ui.get('field-of-view').dispatchEvent({ type: 'change' });
+  assert.equal(changes().length, 1); assert.equal(changes()[0].detail.fovArcmin, 19);
+  ui.get('field-of-view').dispatchEvent({ type: 'change' }); assert.equal(changes().length, 1);
+  ui.get('reset-button').click(); assert.equal(ui.get('field-of-view').value, 16);
+});
+
+test('sidebar dropdowns retain detector and view-mode behavior and moving targets never show fixed coordinates', () => {
+  const ui = mount();
+  ui.get('detector-array').value = '3'; ui.get('detector-array').dispatchEvent({ type: 'change' });
+  ui.get('view-mode').value = 'deep-stack'; ui.get('view-mode').dispatchEvent({ type: 'change' });
+  const changes = ui.events.filter(event => event.type === 'sky:viewer-settings-changed');
+  assert.equal(changes.at(-1).detail.band, 3); assert.equal(changes.at(-1).detail.viewMode, 'deep-stack');
+  ui.mode('moving'); assert.equal(ui.get('target-coordinates').hidden, true); assert.equal(ui.get('moving-position-note').hidden, false);
+  ui.get('lookup-name').value = '4 Vesta'; ui.get('lookup-name').dispatchEvent({ type: 'input' });
+  assert.equal(ui.get('object-name').textContent, '4 Vesta');
+  ui.mode('object'); assert.equal(ui.get('target-coordinates').hidden, false);
+});

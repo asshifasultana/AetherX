@@ -71,6 +71,7 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
     $('preset-panel').hidden = mode !== 'object'; $('lookup-feedback').hidden = mode !== 'object';
     $('moving-feedback').hidden = !moving; $('target-search-status').hidden = moving;
     clearErrors();
+    window.dispatchEvent(new CustomEvent('sky:entry-mode-changed', { detail: { mode } }));
   }
   function readCoordinates(format = coordinateFormat) {
     clearErrors(); const position = {}; let firstInvalid;

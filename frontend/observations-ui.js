@@ -10,7 +10,7 @@ const formatTime = value => value ? value.replace('T', ' ').replace(/\.\d+Z$/, '
 const pageSize = 25;
 let position = { raDeg: 269.4521, decDeg: 4.6934, frame: 'icrs' };
 let targetName = 'Barnard’s Star', result = null, page = 0, controller, requestNumber = 0;
-let submittedParams, searchFailed = false;
+let submittedParams, searchFailed = false, hasTarget = false, filterTimer;
 const qualityCache = new Map();
 const sourceLabel = data => data.source.kind === 'scheduled-index' ? (data.source.fallback ? 'Preset index fallback' : 'Scheduled preset index') : data.cached ? 'Cached IRSA search' : 'Live IRSA search';
 const emit = (type, detail) => {
@@ -23,15 +23,21 @@ function updateTarget() {
     : `${targetName} · ${position.raDeg.toFixed(6)}°, ${position.decDeg >= 0 ? '+' : ''}${position.decDeg.toFixed(6)}° · ICRS`;
 }
 window.addEventListener('sky:target-selected', event => {
+  hasTarget = true; clearTimeout(filterTimer);
   position = { ...event.detail }; targetName = $('object-name').textContent;
   updateTarget(); search();
 });
 function setBusy(busy) {
   $('observations').setAttribute('aria-busy', String(busy));
-  $('find-observations').textContent = searchFailed ? 'Retry observations' : 'Find observations ↗';
-  $('find-observations').disabled = busy; $('cancel-search').hidden = !busy;
+  if (busy) $('observation-overview').textContent = 'Searching archive…';
+  else if (searchFailed) $('observation-overview').textContent = $('search-error').textContent || 'Archive search failed. Expand to retry.';
+  else if (!result) $('observation-overview').textContent = $('search-error').hidden ? $('search-status').textContent : $('search-error').textContent;
+  $('retry-observations').hidden = busy || !searchFailed;
+  $('retry-observations').disabled = busy; $('cancel-search').hidden = !busy;
 }
 async function search() {
+  clearTimeout(filterTimer);
+  if (!hasTarget) return;
   controller?.abort(); const current = ++requestNumber; controller = new AbortController(); const activeController = controller;
   searchFailed = false;
   result = null; page = 0; $('observation-results').hidden = true; $('search-error').hidden = true;
@@ -69,20 +75,48 @@ async function search() {
   } finally { clearTimeout(timeout); if (current === requestNumber) setBusy(false); }
 }
 $('observation-search-form').addEventListener('submit', event => { event.preventDefault(); search(); });
+$('retry-observations').addEventListener('click', () => search());
 // A shared link can carry a date range. Seed the inputs before the restored
 // target triggers its first search, then publish later edits to the link state.
 if (initialViewState.startDate) $('search-start').value = initialViewState.startDate;
 if (initialViewState.endDate) $('search-end').value = initialViewState.endDate;
-for (const id of ['search-start', 'search-end']) {
+function scheduleFilterSearch() {
+  clearTimeout(filterTimer);
+  if (!hasTarget) return;
+  // Reject late responses as soon as the filters change, before the debounce.
+  controller?.abort(); requestNumber++;
+  result = null; $('observation-results').hidden = true;
+  const start = $('search-start'), end = $('search-end');
+  if (start.validity?.valid === false || end.validity?.valid === false || start.value && end.value && start.value > end.value) {
+    searchFailed = false; setBusy(false);
+    $('search-error').textContent = 'Enter a valid UTC date range with the through date on or after the from date.';
+    $('search-error').hidden = false;
+    emit('sky:observations-loaded', { observations: [], targetName, position: { ...position }, failed: true });
+    return;
+  }
+  filterTimer = setTimeout(() => search(), 300);
+}
+for (const id of ['search-start', 'search-end', 'search-release', 'search-detector']) {
   $(id).addEventListener('change', () => {
-    emit('sky:search-filters-changed', { startDate: $('search-start').value, endDate: $('search-end').value });
+    if (id === 'search-start' || id === 'search-end') emit('sky:search-filters-changed', { startDate: $('search-start').value, endDate: $('search-end').value });
+    scheduleFilterSearch();
   });
 }
-$('cancel-search').addEventListener('click', () => controller?.abort());
+$('cancel-search').addEventListener('click', () => {
+  clearTimeout(filterTimer); controller?.abort(); requestNumber++;
+  searchFailed = false; setBusy(false); $('search-error').hidden = true;
+  $('search-status').textContent = 'Search cancelled.';
+  emit('sky:observations-loaded', { observations: [], targetName, position: { ...position }, failed: true });
+});
 $('result-sort').addEventListener('change', () => { page = 0; renderRows(); });
 $('results-previous').addEventListener('click', () => { page--; renderRows(); });
 $('results-next').addEventListener('click', () => { page++; renderRows(); });
 function renderResults() {
+  const dates = result.observations.map(item => item.observedStartUtc?.slice(0, 10)).filter(Boolean).sort();
+  const detectors = [...new Set(result.observations.map(item => 'D' + item.detector))].sort();
+  $('observation-overview').textContent = result.count
+    ? result.count.toLocaleString() + ' images · ' + detectors.join(', ') + (dates.length ? ' · ' + dates[0] + '–' + dates.at(-1) + ' UTC' : '')
+    : 'No observations match these filters.';
   $('observation-results').hidden = false;
   $('results-summary').textContent = `${result.count.toLocaleString()} detector images loaded · ${new Set(result.observations.map(o => o.observationId)).size.toLocaleString()} pointings${result.nextCursor ? ' · more available' : ''}`;
   $('load-more-observations').hidden = !result.nextCursor; $('load-more-observations').disabled = false; $('load-more-observations').textContent = 'Load more observations ↓';
@@ -123,12 +157,8 @@ function renderResults() {
     }
     $('detector-summary').append(card);
   }
-  const coverageNote = make('p', result.nextCursor
-    ? 'Counts and ranges summarize products loaded so far; more archive results remain. Load more to update coverage.'
-    : 'Coverage reflects the loaded archive products. Wavelength bounds are product ranges, not the exact wavelength at each pixel.', 'coverage-note');
-  $('detector-summary').append(coverageNote);
   $('results-warnings').replaceChildren();
-  for (const warning of result.warnings || []) $('results-warnings').append(make('p', warning));
+  for (const warning of (result.warnings || []).filter(text => !text.startsWith('Wavelength bounds describe each image'))) $('results-warnings').append(make('p', warning));
   renderRows();
 }
 $('load-more-observations').addEventListener('click', async () => {

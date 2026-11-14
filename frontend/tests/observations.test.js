@@ -156,7 +156,7 @@ test('local server serves the UI and routes API errors without exposing private 
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
     assert.equal((await fetch(base + '/')).status, 200);
-    for (const asset of ['/index.html', '/viewer.html', '/home.js', '/target-search.js', '/search-route.js']) {
+    for (const asset of ['/index.html', '/viewer.html', '/workspace-ui.js', '/home.js', '/target-search.js', '/search-route.js']) {
       assert.equal((await fetch(base + asset)).status, 200, asset);
     }
     assert.equal((await fetch(base + '/observations-ui.js')).status, 200);

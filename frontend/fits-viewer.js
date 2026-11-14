@@ -1,6 +1,6 @@
-import { canvasToSky, skyToCanvas } from './sky-projection.js';
+import { canvasToSky } from './sky-projection.js';
 import { initialViewState } from './share.js';
-import { FLAG_CATEGORIES, MASKED_FLAG_BITS, QUALITY_FLAGS } from './lib/pixel-quality.js';
+import { MASKED_FLAG_BITS } from './lib/pixel-quality.js';
 import { matrixFor, projectSkyToPixel, projectionKey } from './lib/fits-engine.js';
 import { imagePipeline } from './image-pipeline.js';
 import { ByteCache, assertStackBudget } from './lib/image-resources.js';
@@ -12,7 +12,6 @@ const context = canvas.getContext('2d', { alpha: false });
 const status = document.getElementById('cutout-status');
 const caption = document.getElementById('cutout-caption');
 const sourceMark = document.getElementById('source-mark');
-const sourceMarkLabel = document.getElementById('source-mark-label');
 const pixelInspector = document.getElementById('pixel-inspector');
 const pixelInspectorResult = document.getElementById('pixel-inspector-result');
 let target = { raDeg: 269.4521, decDeg: 4.6934 }, settings = { fovArcmin: 16, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false };
@@ -39,10 +38,9 @@ const renderedFrames = new ByteCache();
 
 // The backend publishes this mask policy and applies the same policy to pixel inspection.
 const BAD_PIXEL_MASK = MASKED_FLAG_BITS.reduce((mask, bit) => mask | (1 << bit), 0) >>> 0;
-const FLAGS_BY_BIT = new Map(QUALITY_FLAGS.map(flag => [flag.bit, flag]));
 
 const cards = text => { status.textContent = text; };
-window.addEventListener('sky:target-selected', event => { dataGeneration++; target = { ...event.detail }; comparisonScale = null; activeObservation = null; activeTimelineFrame = null; activeFrameExposures = []; timelineFrames = []; activeSequence++; cutoutController?.abort(); resetViewer('This target is selected. Scroll down past the timeline and settings to Find your observations. Open Details + on a result, then choose View aligned cutout.'); });
+window.addEventListener('sky:target-selected', event => { dataGeneration++; target = { ...event.detail }; comparisonScale = null; activeObservation = null; activeTimelineFrame = null; activeFrameExposures = []; timelineFrames = []; activeSequence++; cutoutController?.abort(); resetViewer('Loading observations…'); });
 window.addEventListener('sky:frame-exposure-group', event => { activeFrameExposures = Array.isArray(event.detail?.exposures) ? event.detail.exposures : []; activeTimelineFrame = event.detail?.frame || activeTimelineFrame; });
 window.addEventListener('sky:timeline-frames-changed', event => {
   timelineFrames = Array.isArray(event.detail?.frames) ? event.detail.frames : [];
@@ -58,7 +56,7 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   const previousBand = settings.band, previousConsistent = settings.consistentBrightness;
   const previousMode = settings.viewMode, previousStackLimit = settings.maxStackFrames;
   const previousGlitchRejection = settings.rejectVisitGlitches;
-  settings = { ...settings, ...event.detail };
+  settings = { ...settings, ...event.detail, qualityOverlay: false, showTargetMarker: false, labelAsteroids: false };
   const changed = previousDisplay !== displaySignature() || previousBand !== settings.band;
   if (changed) { dataGeneration++; activeSequence++; cutoutController?.abort(); }
   if (pixelInspector) pixelInspector.hidden = !settings.inspectPixels;
@@ -124,7 +122,6 @@ function colorize(value, low, high) {
   return [255 * t, 255 * t, 255 * t];
 }
 
-function hexRgb(hex) { return [1, 3, 5].map(start => Number.parseInt(hex.slice(start, start + 2), 16)); }
 
 function paintCanvas(element, image) {
   const projected = image.stackRecord
@@ -141,16 +138,8 @@ function paintCanvas(element, image) {
   const paintContext = element.getContext('2d', { alpha: false });
   const pixels = paintContext.createImageData(element.width, element.height);
   for (let i = 0; i < projected.values.length; i++) {
-    const value = projected.values[i], flag = projected.flags[i];
-    let rgb = Number.isFinite(value) ? colorize(value, limits.low, limits.high) : [15, 12, 22];
-    if (settings.qualityOverlay && !image.stackRecord) {
-      if (!projected.covered[i]) rgb = hexRgb(FLAG_CATEGORIES.uncovered.colour);
-      else if ((flag & (1 << 9)) || !Number.isFinite(value)) rgb = hexRgb(FLAG_CATEGORIES.missing.colour);
-      else if (flag) {
-        const category = ['transient', 'detector', 'correction', 'artifact', 'caution'].find(name => QUALITY_FLAGS.some(item => item.category === name && (flag & (2 ** item.bit)) !== 0));
-        rgb = hexRgb(FLAG_CATEGORIES[category || 'caution'].colour);
-      }
-    }
+    const value = projected.values[i];
+    const rgb = Number.isFinite(value) ? colorize(value, limits.low, limits.high) : [15, 12, 22];
     pixels.data.set([...rgb, 255], i * 4);
   }
   paintContext.putImageData(pixels, 0, 0);
@@ -214,7 +203,7 @@ function applyChrome(coverage) {
   coverageNote.textContent = coverageNote.hidden ? '' : `Partial coverage · ${Math.round(coverage * 100)}%`;
   coverageNote.title = 'The remaining area falls outside this exposure’s detector footprint and has no image data.';
   document.getElementById('target-marker').hidden = !settings.showTargetMarker;
-  document.getElementById('quality-legend').hidden = !settings.qualityOverlay && !activeObservation?.image?.derivedTransientPixels?.size;
+  document.getElementById('quality-legend').hidden = true;
 }
 
 async function drawImage(image) {
@@ -231,7 +220,6 @@ async function drawImage(image) {
   return coverage;
 }
 
-const formatMark = sky => `${sky.raDeg.toFixed(4)}°, ${sky.decDeg >= 0 ? '+' : ''}${sky.decDeg.toFixed(4)}°`;
 
 function setMarkedSource(sky) {
   markedSource = sky && Number.isFinite(sky.raDeg) && Number.isFinite(sky.decDeg)
@@ -246,31 +234,7 @@ function setMarkedSource(sky) {
 // even though the canvas has a fixed pixel grid and a fluid CSS size.
 function positionMark() {
   if (!sourceMark) return;
-  const size = canvas.width;
-  if (!markedSource || !size || !document.querySelector('.viewer')?.classList.contains('has-image')) {
-    sourceMark.hidden = true;
-    return;
-  }
-  const point = skyToCanvas({
-    raDeg: markedSource.raDeg, decDeg: markedSource.decDeg, size,
-    centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg
-  });
-  if (!point) { sourceMark.hidden = true; return; }
-  // Clamp to the frame so a source outside the current field of view is still
-  // visible at the edge and clearly marked as out of frame, rather than vanishing.
-  const clamp = value => Math.max(0, Math.min(size - 1, value));
-  const x = clamp(point.x), y = clamp(point.y);
-  const offscreen = x !== point.x || y !== point.y;
-  sourceMark.hidden = false;
-  sourceMark.classList.toggle('is-offscreen', offscreen);
-  sourceMark.style.left = `${((x + 0.5) / size) * 100}%`;
-  sourceMark.style.top = `${((y + 0.5) / size) * 100}%`;
-  sourceMark.title = offscreen
-    ? `Marked source ${formatMark(markedSource)} lies outside this field of view. Widen the field to see it.`
-    : `Marked source ${formatMark(markedSource)}`;
-  if (sourceMarkLabel) {
-    sourceMarkLabel.textContent = offscreen ? `${formatMark(markedSource)} · outside field` : formatMark(markedSource);
-  }
+  sourceMark.hidden = true;
 }
 
 canvas.addEventListener('click', event => {
@@ -288,32 +252,6 @@ canvas.addEventListener('click', event => {
   if (sky) setMarkedSource(sky);
 });
 
-canvas.addEventListener('pointermove', event => {
-  const readout = document.getElementById('quality-hover-readout');
-  if (!activeObservation?.image || (!settings.qualityOverlay && !settings.inspectPixels)) { readout.hidden = true; return; }
-  const rect = canvas.getBoundingClientRect();
-  if (!rect.width || !rect.height) return;
-  const size = canvas.width, x = (event.clientX - rect.left) * size / rect.width, y = (event.clientY - rect.top) * size / rect.height;
-  const sky = canvasToSky({ x, y, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
-  readout.textContent = formatHoveredPixel(activeObservation.image, sky);
-  const viewerRect = document.querySelector('.viewer').getBoundingClientRect();
-  readout.style.left = `${Math.max(10, Math.min(viewerRect.width - 300, event.clientX - viewerRect.left + 12))}px`;
-  readout.style.top = `${Math.max(10, Math.min(viewerRect.height - 90, event.clientY - viewerRect.top + 12))}px`;
-  readout.hidden = false;
-});
-canvas.addEventListener('pointerleave', () => { document.getElementById('quality-hover-readout').hidden = true; });
-
-function formatHoveredPixel(image, sky) {
-  const point = sky && projectSkyToPixel(image, sky.raDeg, sky.decDeg);
-  if (!point || point[0] < 0 || point[1] < 0 || point[0] >= image.width || point[1] >= image.height) return `Outside detector coverage · RA ${sky?.raDeg.toFixed(5)}°, Dec ${sky?.decDeg.toFixed(5)}°`;
-  const x = Math.min(image.width - 1, Math.round(point[0])), y = Math.min(image.height - 1, Math.round(point[1])), index = y * image.width + x;
-  const value = image.values[index], flags = image.flags?.[index] >>> 0;
-  const names = image.flags ? [...FLAGS_BY_BIT.values()].filter(flag => (flags & (2 ** flag.bit)) !== 0).map(flag => flag.name) : [];
-  if (image.derivedTransientPixels?.has(index)) return `Possible one-exposure transient rejected · FITS pixel ${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)}`;
-  if ((flags & (1 << 9)) || !Number.isFinite(value)) return `Missing pixel data · FITS pixel ${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)} · not a fading measurement`;
-  if (names.length) return `${names.join(' + ')} · FITS pixel ${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)} · ${Number.isFinite(value) ? value.toPrecision(4) : 'no value'} ${image.header.BUNIT || ''}`;
-  return `${image.flags ? 'Valid' : 'Quality flags unavailable'} pixel ${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)} · ${value.toPrecision(4)} ${image.header.BUNIT || ''}`;
-}
 
 canvas.addEventListener('keydown', event => {
   if (!settings.inspectPixels || !activeObservation?.image || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
@@ -379,7 +317,7 @@ async function inspectPixel(image, sky) {
           : assessment.state === 'flagged_included'
             ? `${assessment.label} because Hide unreliable pixels is off.`
             : assessment.state === 'suspected_transient'
-              ? `${assessment.label} within this observation; the rejected sample is marked in the image.`
+              ? `${assessment.label} within this observation; the sample is excluded from the image.`
             : assessment.state === 'unassessed'
               ? `${assessment.label}; treat changes cautiously.`
             : `${assessment.label} — a low value is image data, not a coverage gap.`;
@@ -818,27 +756,9 @@ export function observeCutout(observation) { void showCutout(observation); }
 
 document.getElementById('export-sky-png').addEventListener('click', () => {
   if (!activeObservation?.image || !canvas.width) return;
-  const record = activeObservation.image.stackRecord;
-  const ids = record?.contributors.map(item => item.observationId).filter(Boolean) || [];
-  const idLines = [];
-  for (const id of ids) {
-    const previous = idLines.at(-1);
-    if (previous && `${previous}, ${id}`.length <= 44) idLines[idLines.length - 1] += `, ${id}`;
-    else idLines.push(id);
-  }
-  const scale = 2, footerHeight = record ? 58 + idLines.length * 20 : 52, output = document.createElement('canvas');
-  output.width = canvas.width * scale; output.height = canvas.height * scale + footerHeight;
-  const out = output.getContext('2d');
-  out.fillStyle = '#101b20'; out.fillRect(0, 0, output.width, output.height);
-  out.drawImage(canvas, 0, 0, canvas.width * scale, canvas.height * scale);
-  const imageBottom = canvas.height * scale;
-  out.fillStyle = '#e6ede2'; out.font = '20px sans-serif';
-  out.fillText(caption.textContent.slice(0, 100), 16, imageBottom + 25);
-  if (record) {
-    out.fillStyle = '#bdcbbd'; out.font = '17px sans-serif';
-    out.fillText(`${record.deepStack ? 'Deep median across UTC-day frames' : 'Daily per-pixel median'} · ${record.usedExposureCount}/${record.requestedExposureCount} exposures · ${record.validPixelContributions.toLocaleString()} pixel contributions · ${Math.round(record.exposureSeconds)} s`, 16, imageBottom + 49);
-    idLines.forEach((line, index) => out.fillText(`${index === 0 ? 'Observation IDs: ' : '                 '}${line}`, 16, imageBottom + 72 + index * 20));
-  }
+  const output = document.createElement('canvas');
+  output.width = canvas.width; output.height = canvas.height;
+  output.getContext('2d').drawImage(canvas, 0, 0);
   output.toBlob(blob => {
     if (!blob) return;
     const url = URL.createObjectURL(blob), link = document.createElement('a');
@@ -851,4 +771,4 @@ document.getElementById('export-sky-png').addEventListener('click', () => {
 if (Number.isFinite(initialViewState.markRaDeg) && Number.isFinite(initialViewState.markDecDeg)) {
   setMarkedSource({ raDeg: initialViewState.markRaDeg, decDeg: initialViewState.markDecDeg });
 }
-resetViewer('Scroll down past the timeline and settings to Find your observations. Choose Details + on a result, then View aligned cutout. Click the sky image to mark a candidate source.');
+resetViewer('Waiting for observations.');

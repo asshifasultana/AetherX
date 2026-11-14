@@ -6,7 +6,7 @@
 // the way in and normalised on the way out, so a hand-edited or truncated link
 // still opens a usable view instead of throwing.
 
-export const FOV_OPTIONS = [5, 10, 16, 25];
+export const FOV_OPTIONS = Array.from({ length: 30 }, (_, index) => index + 1);
 export const BAND_OPTIONS = [1, 2, 3, 4, 5, 6];
 // Precision of the shared position. Six decimal places is 0.0036 arcsec, far
 // finer than a SPHEREx pixel (6.15 arcsec), so a shared link lands on the same

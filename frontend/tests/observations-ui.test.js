@@ -9,7 +9,7 @@ import { presetMotion } from '../presets.js';
 const source = (await readFile(new URL('../observations-ui.js', import.meta.url), 'utf8')).replace(/^import .*\r?\n/gm, '');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
-function mount(initialViewState = { startDate: '', endDate: '' }) {
+function mount(initialViewState = { startDate: '', endDate: '' }, clock = { setTimeout, clearTimeout }) {
   function element() {
     return { textContent: '', value: '', hidden: false, disabled: false, children: [], listeners: {},
       setAttribute() {}, append(...items) { this.children.push(...items); }, replaceChildren(...items) { this.children = items; },
@@ -31,7 +31,7 @@ function mount(initialViewState = { startDate: '', endDate: '' }) {
   get('object-name').textContent = '* alf CMa';
   runInNewContext(source, {
     document: { getElementById: get, createElement: element, addEventListener() {} }, window,
-    AbortController, URLSearchParams, setTimeout, clearTimeout, setInterval() {}, CustomEvent,
+    AbortController, URLSearchParams, setTimeout: clock.setTimeout, clearTimeout: clock.clearTimeout, setInterval() {}, CustomEvent,
     // The module reads the validated share state at import time; the VM harness
     // strips imports, so the decoded state is supplied the same way the page does.
     initialViewState, summarizeDetectorCoverage, presetMotion,
@@ -49,7 +49,7 @@ const emptyResult = (source = { kind: 'live', name: 'NASA/IPAC IRSA', retrievedA
 test('Sirius outage preserves target and filters and supports a successful retry', async () => {
   const { get, requests, select, submit } = mount();
   select();
-  assert.equal(get('find-observations').textContent, 'Find observations ↗');
+  assert.equal(get('retry-observations').hidden, true);
   assert.equal(get('search-status').textContent, '');
   const target = get('search-target').textContent;
   const params = new URL(requests[0].url, 'http://localhost').searchParams;
@@ -58,15 +58,15 @@ test('Sirius outage preserves target and filters and supports a successful retry
   await flush();
   assert.equal(get('search-error').textContent, 'IRSA’s observation service is temporarily unavailable. Your target is selected. Retry shortly.');
   assert.equal(get('search-error').hidden, false);
-  assert.equal(get('find-observations').textContent, 'Retry observations');
-  assert.equal(get('find-observations').disabled, false);
+  assert.equal(get('retry-observations').hidden, false);
+  assert.equal(get('retry-observations').disabled, false);
   assert.equal(get('search-target').textContent, target);
   submit();
   assert.equal(requests[1].url, requests[0].url);
-  assert.equal(get('find-observations').textContent, 'Find observations ↗');
+  assert.equal(get('retry-observations').hidden, true);
   requests[1].resolve(json(emptyResult()));
   await flush();
-  assert.equal(get('find-observations').textContent, 'Find observations ↗');
+  assert.equal(get('retry-observations').hidden, true);
   assert.equal(get('search-error').hidden, true);
   assert.equal(get('observation-results').hidden, false);
   assert.match(get('search-status').textContent, /^No observations cover this position/);
@@ -75,13 +75,13 @@ test('Sirius outage preserves target and filters and supports a successful retry
 test('a new target clears retry state and preset fallback retains its outage warning', async () => {
   const { get, requests, select } = mount();
   select(); requests[0].resolve(json({ error: 'Search failed.' }, 502)); await flush();
-  assert.equal(get('find-observations').textContent, 'Retry observations');
+  assert.equal(get('retry-observations').hidden, false);
   select(269.4521, 4.6934);
-  assert.equal(get('find-observations').textContent, 'Find observations ↗');
+  assert.equal(get('retry-observations').hidden, true);
   const data = emptyResult({ kind: 'scheduled-index', fallback: true, name: 'NASA/IPAC IRSA' });
   data.warnings = ['Live IRSA search was unavailable. Showing the last successful preset index; newer observations or revisions may be missing.'];
   requests[1].resolve(json(data)); await flush();
-  assert.equal(get('find-observations').textContent, 'Find observations ↗');
+  assert.equal(get('retry-observations').hidden, true);
   assert.equal(get('archive-mode-label').textContent, 'Preset index fallback');
   assert.match(get('search-status').textContent, /Live IRSA search was unavailable/);
   assert.equal(get('results-warnings').children[0].textContent, data.warnings[0]);
@@ -113,4 +113,44 @@ test('editing a date publishes the complete range for the shareable link', () =>
   const latest = published.at(-1).detail;
   assert.equal(latest.startDate, '2026-01-05');
   assert.equal(latest.endDate, '2026-02-10');
+});
+
+function fakeClock() {
+  let time = 0, id = 0; const timers = new Map();
+  return {
+    setTimeout(callback, delay) { timers.set(++id, { callback, at: time + delay }); return id; },
+    clearTimeout(id) { timers.delete(id); },
+    advance(ms) { time += ms; for (const [id, item] of [...timers]) if (item.at <= time) { timers.delete(id); item.callback(); } }
+  };
+}
+
+test('archive filter changes debounce, cancel old requests, and search once with the newest filters', async () => {
+  const clock = fakeClock(), ui = mount(undefined, clock);
+  ui.select(); assert.equal(ui.requests.length, 1);
+  ui.get('search-detector').value = '2'; ui.get('search-detector').listeners.change();
+  assert.equal(ui.requests[0].options.signal.aborted, true);
+  clock.advance(200); ui.get('search-release').value = 'qr3'; ui.get('search-release').listeners.change();
+  clock.advance(299); assert.equal(ui.requests.length, 1);
+  clock.advance(1); assert.equal(ui.requests.length, 2);
+  const params = new URL(ui.requests[1].url, 'http://localhost').searchParams;
+  assert.equal(params.get('detector'), '2'); assert.equal(params.get('release'), 'qr3');
+  ui.requests[0].resolve(json(emptyResult())); await flush();
+  assert.equal(ui.get('observation-results').hidden, true);
+  ui.requests[1].resolve(json(emptyResult())); await flush();
+  assert.equal(ui.get('observation-results').hidden, false);
+});
+
+test('invalid archive dates cancel the current request and never schedule an invalid query', async () => {
+  const clock = fakeClock(), ui = mount(undefined, clock); ui.select();
+  ui.get('search-start').value = '2025-06-01'; ui.get('search-end').value = '2025-05-01';
+  ui.get('search-start').listeners.change(); clock.advance(1000);
+  assert.equal(ui.requests.length, 1); assert.equal(ui.requests[0].options.signal.aborted, true);
+  assert.equal(ui.get('search-error').hidden, false); assert.equal(ui.get('retry-observations').hidden, true);
+  ui.requests[0].resolve(json(emptyResult())); await flush();
+  assert.equal(ui.get('observation-results').hidden, true);
+});
+
+test('changing filters before target selection does not start a default-target search', () => {
+  const clock = fakeClock(), ui = mount(undefined, clock);
+  ui.get('search-detector').listeners.change(); clock.advance(300); assert.equal(ui.requests.length, 0);
 });

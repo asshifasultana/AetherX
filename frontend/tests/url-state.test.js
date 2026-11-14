@@ -93,7 +93,10 @@ test('out-of-range and non-numeric values fall back with an explanation', () => 
 
 test('only offered field-of-view and band values are accepted', () => {
   for (const fov of FOV_OPTIONS) assert.equal(decodeViewState(`fov=${fov}`).state.fovArcmin, fov);
-  assert.equal(decodeViewState('fov=7').state.fovArcmin, DEFAULT_VIEW_STATE.fovArcmin);
+  assert.equal(decodeViewState('fov=7').state.fovArcmin, 7);
+  assert.equal(decodeViewState('fov=1').state.fovArcmin, 1);
+  assert.equal(decodeViewState('fov=30').state.fovArcmin, 30);
+  for (const invalid of [0, 31, -1]) assert.equal(decodeViewState('fov=' + invalid).state.fovArcmin, DEFAULT_VIEW_STATE.fovArcmin);
   assert.equal(decodeViewState('fov=16.5').state.fovArcmin, DEFAULT_VIEW_STATE.fovArcmin);
   assert.equal(decodeViewState('band=7').state.band, DEFAULT_VIEW_STATE.band);
   assert.equal(decodeViewState('band=0').state.band, DEFAULT_VIEW_STATE.band);

@@ -16,7 +16,17 @@ export function mountWorkspace() {
   const $ = id => document.getElementById(id);
   const workspace = $('workspace'), sidebar = $('workspace-sidebar'), content = $('sidebar-content');
   const header = document.querySelector('.viewer-header');
+  // All settings live in the same drawer, including on phones where the
+  // modal backdrop prevents interacting with the image workspace.
+  const displayPanel = $('display-panel');
+  if (displayPanel) content.append(displayPanel);
   const sizeHeader = () => document.documentElement.style.setProperty('--workspace-header-height', header.getBoundingClientRect().height + 'px');
+  const playback = document.querySelector('.timeline-panel');
+  if (playback) {
+    const sizePlayback = () => document.documentElement.style.setProperty('--playback-height', playback.getBoundingClientRect().height + 'px');
+    sizePlayback();
+    new ResizeObserver(sizePlayback).observe(playback);
+  }
   sizeHeader();
   new ResizeObserver(sizeHeader).observe(header);
   const toolbar = document.querySelector('.viewer-toolbar');
@@ -27,7 +37,7 @@ export function mountWorkspace() {
   }
   const mobile = window.matchMedia('(max-width: 900px)');
   const toggles = [$('sidebar-toggle'), $('sidebar-rail-toggle'), $('sidebar-collapse')];
-  let open = !mobile.matches, returnFocus = $('sidebar-toggle');
+  let open = false, returnFocus = $('sidebar-toggle');
   function setOpen(next, { focus = false, trigger } = {}) {
     open = next;
     if (trigger && open) returnFocus = trigger;
@@ -42,12 +52,12 @@ export function mountWorkspace() {
     $('sidebar-toggle').setAttribute('aria-label', open ? 'Close settings sidebar' : 'Open settings sidebar');
     if (focus) {
       if (open) $('sidebar-collapse').focus();
-      else (mobile.matches ? returnFocus : $('sidebar-rail-toggle')).focus();
+      else (mobile.matches ? returnFocus : $('sidebar-toggle')).focus();
     }
   }
   for (const toggle of toggles) toggle.addEventListener('click', () => setOpen(!open, { focus: true, trigger: toggle }));
   $('sidebar-backdrop').addEventListener('click', () => setOpen(false, { focus: true }));
-  mobile.addEventListener('change', () => { help.dismiss(); setOpen(!mobile.matches); });
+  mobile.addEventListener('change', () => { help.dismiss(); setOpen(false); });
 
   const tooltip = $('settings-tooltip');
   let active;

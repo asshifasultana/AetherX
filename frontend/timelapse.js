@@ -85,7 +85,7 @@ function nextPrefetchFrame(excluded = new Set()) {
 function schedulePrefetch(delay = 0) {
   clearTimeout(prefetch.timer);
   prefetch.timer = null;
-  if (!state.frames.length || prefetch.paused) return;
+  if (!state.frames.length || prefetch.paused || document.documentElement?.classList.contains('is-tour-preview')) return;
   prefetch.timer = setTimeout(() => { void runPrefetch(); }, delay);
 }
 
@@ -635,8 +635,8 @@ window.addEventListener('sky:observations-loading', () => {
 
 async function activateTimeline() {
   if (!state.frames.length || state.viewMode === 'deep-stack') return;
-  if (state.viewMode === 'time-lapse' && state.frames.length > 1 && !state.userPaused) await playPlayback();
-  else await selectFrame(state.index);
+  // Loading results, changing bands, or restoring a link never starts playback.
+  await selectFrame(state.index);
 }
 
 window.addEventListener('sky:observations-loaded', event => {

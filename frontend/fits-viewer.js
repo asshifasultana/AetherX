@@ -6,6 +6,7 @@ const status = document.getElementById('cutout-status');
 const caption = document.getElementById('cutout-caption');
 let target = { raDeg: 269.4521, decDeg: 4.6934 }, settings = { fovArcmin: 16, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false };
 let activeObservation = null, activeSequence = 0, cutoutController = null;
+let comparisonScale = null;
 const PIXEL_ARCSEC = 6.15;
 // Decoded frames and their rendered canvases live in memory so playback can swap
 // frames with a single draw instead of re-fetching and re-parsing FITS.
@@ -16,10 +17,12 @@ const MAX_CACHED_FRAMES = 160;
 const BAD_PIXEL_MASK = [0, 2, 6, 7, 9, 10, 11, 14, 17, 19].reduce((mask, bit) => mask | (1 << bit), 0) >>> 0;
 
 const cards = text => { status.textContent = text; };
-window.addEventListener('sky:target-selected', event => { target = { ...event.detail }; activeObservation = null; activeSequence++; cutoutController?.abort(); resetViewer('This target is selected. Scroll down past the timeline and settings to Find your observations. Open Details + on a result, then choose View aligned cutout.'); });
+window.addEventListener('sky:target-selected', event => { target = { ...event.detail }; comparisonScale = null; activeObservation = null; activeSequence++; cutoutController?.abort(); resetViewer('This target is selected. Scroll down past the timeline and settings to Find your observations. Open Details + on a result, then choose View aligned cutout.'); });
 window.addEventListener('sky:viewer-settings-changed', event => {
   const previousFov = settings.fovArcmin, previousDisplay = displaySignature();
+  const previousBand = settings.band, previousConsistent = settings.consistentBrightness;
   settings = { ...settings, ...event.detail };
+  if (settings.fovArcmin !== previousFov || settings.band !== previousBand || settings.consistentBrightness !== previousConsistent) comparisonScale = null;
   if (activeObservation?.image && activeObservation.detector !== settings.band) {
     status.hidden = false; status.classList.remove('is-error');
     cards(`The loaded image is D${activeObservation.detector}. Choose a D${settings.band} observation in the archive results to view this wavelength band.`);
@@ -178,7 +181,9 @@ function paintCanvas(element, image) {
   // Remove the image-wide sky pedestal for display only; preserve archive pixel values.
   const sky = percentile(valid, .5);
   const residuals = valid.map(value => value - sky);
-  const low = percentile(residuals, .02), high = percentile(residuals, .995);
+  const automaticScale = { low: percentile(residuals, .02), high: percentile(residuals, .995) };
+  if (settings.consistentBrightness && !comparisonScale) comparisonScale = automaticScale;
+  const { low, high } = settings.consistentBrightness ? comparisonScale : automaticScale;
   if (!(high > low)) throw new Error('The cutout has no usable image contrast.');
   const matrix = image.matrix || (image.matrix = matrixFor(image.header));
   const canvasWidth = Math.max(1, Math.round(settings.fovArcmin * 60 / PIXEL_ARCSEC));
@@ -242,7 +247,8 @@ export function cutoutRequestUrl(observation) {
 // pixels are shared by URL.
 function displaySignature() {
   return [
-    target.raDeg, target.decDeg, settings.fovArcmin,
+    target.raDeg, target.decDeg, settings.fovArcmin, settings.consistentBrightness ? 1 : 0,
+    settings.consistentBrightness && comparisonScale ? comparisonScale.low : '', settings.consistentBrightness && comparisonScale ? comparisonScale.high : '',
     settings.stretch, settings.colours, settings.contrast, settings.invert, settings.hideBadPixels ? 1 : 0
   ].join('|');
 }

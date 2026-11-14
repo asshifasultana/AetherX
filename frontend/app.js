@@ -4,7 +4,7 @@ import { mountObjectLookup } from './object-lookup.js';
 const $ = id => document.getElementById(id);
 let selected = 'barnard';
 let position = { raDeg: presets.barnard.raDeg, decDeg: presets.barnard.decDeg, frame: 'icrs', targetId: 'barnard' };
-const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, combineExposures: true, hideBadPixels: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: true, labelAsteroids: false, asteroidMagnitude: 20 };
+const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, combineExposures: true, hideBadPixels: true, consistentBrightness: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: true, labelAsteroids: false, asteroidMagnitude: 20 };
 let viewerSettings = { ...defaultSettings };
 const ranges = ['0.75 – 1.09', '1.10 – 1.62', '1.63 – 2.41', '2.42 – 3.82', '3.83 – 4.41', '4.42 – 5.00'];
 const signed = n => `${n < 0 ? '' : '+'}${n.toFixed(4)}`;
@@ -64,7 +64,7 @@ const modeDescriptions = {
   'motion-trail': 'Trace how sources move across successive observations.',
   'deep-stack': 'Combine observations into a deeper view of faint sources.'
 };
-const checkboxes = { 'combine-exposures': 'combineExposures', 'hide-bad-pixels': 'hideBadPixels', invert: 'invert', 'crosshair-toggle': 'showTargetMarker', 'label-asteroids': 'labelAsteroids' };
+const checkboxes = { 'combine-exposures': 'combineExposures', 'hide-bad-pixels': 'hideBadPixels', 'consistent-brightness': 'consistentBrightness', invert: 'invert', 'crosshair-toggle': 'showTargetMarker', 'label-asteroids': 'labelAsteroids' };
 const selects = { stretch: 'stretch', colours: 'colours', 'asteroid-magnitude': 'asteroidMagnitude' };
 function emitSettings(source) {
   window.dispatchEvent(new CustomEvent('sky:viewer-settings-changed', { detail: { ...viewerSettings, source } }));

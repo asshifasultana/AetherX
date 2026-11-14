@@ -40,7 +40,6 @@ export const DEFAULT_VIEW_STATE = Object.freeze({
   embed: false,
   culture: 'all',
   gaia: false,
-  wise: false,
   ...Object.fromEntries(VIEW_SETTING_PARAMS.map(([key]) => [key, DEFAULT_SETTINGS[key]])),
   referenceDate: '',
   note: ''
@@ -98,7 +97,6 @@ export function encodeViewState(state = {}) {
   if (merged.embed) params.set('embed', '1');
   if (CULTURE_OPTIONS.includes(merged.culture) && merged.culture !== 'all') params.set('culture',merged.culture);
   if (merged.gaia) params.set('gaia','1');
-  if (merged.wise) params.set('wise','1');
   for (const [key, param] of VIEW_SETTING_PARAMS) {
     const value = merged[key];
     if (value === DEFAULT_VIEW_STATE[key] || !checkSetting(key, value).ok) continue;
@@ -202,10 +200,6 @@ export function decodeViewState(input) {
     if(params.getAll('culture').length===1&&CULTURE_OPTIONS.includes(params.get('culture')))state.culture=params.get('culture');
     else issues.push('The cultural tradition in this link is invalid. Showing all traditions.');
   }
-  if (params.has('wise')) {
-    if (params.getAll('wise').length === 1 && ['0', '1'].includes(params.get('wise'))) state.wise = params.get('wise') === '1';
-    else issues.push('The WISE option in this link is invalid. Markers are off.');
-  }
   if(params.has('gaia')) {
     if(params.getAll('gaia').length===1&&['0','1'].includes(params.get('gaia')))state.gaia=params.get('gaia')==='1';
     else issues.push('The Gaia option in this link is invalid. Markers are off.');
@@ -238,7 +232,7 @@ export function viewStateSignature(state = {}) {
   return [
     merged.raDeg, merged.decDeg, merged.fovArcmin, merged.band,
     merged.startDate, merged.endDate, merged.frameDate,
-    merged.markRaDeg ?? '', merged.markDecDeg ?? '', merged.targetId ?? '', merged.embed ? 1 : 0, merged.culture, merged.gaia ? 1 : 0, merged.wise ? 1 : 0,
+    merged.markRaDeg ?? '', merged.markDecDeg ?? '', merged.targetId ?? '', merged.embed ? 1 : 0, merged.culture, merged.gaia ? 1 : 0,
     ...VIEW_SETTING_PARAMS.map(([key]) => merged[key]), merged.referenceDate, cleanNote(merged.note)
   ].join('|');
 }

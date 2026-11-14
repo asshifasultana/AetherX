@@ -92,9 +92,7 @@ frame, query field, retrieval time, attribution, and motion-margin metadata.
 Each process uses a separate eight-entry/2 MiB cache for 24 hours, coalesces
 identical requests, and admits one distinct upstream request. The shared work-gate
 implementation declines new work at 320 MiB RSS. Response bodies are capped at
-2 MiB per response. The primary archive has five seconds for headers and body
-reads, followed by up to eight seconds for the same catalog at the IDIA VizieR
-mirror if the primary request fails. AllWISE uses the same timeout policy. Cache size is
+2 MiB and the eight-second deadline covers headers and body reads. Cache size is
 serialized data, not total process memory. Busy responses are 503 with Retry-After;
 archive errors are 502 and timeouts 504. Failures are not cached.
 

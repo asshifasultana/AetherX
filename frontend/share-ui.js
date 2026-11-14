@@ -29,7 +29,6 @@ function summaryText() {
   if (state.frameDate) parts.push(`frame ${state.frameDate}`);
   if(state.culture!=='all')parts.push(`culture: ${state.culture}`);
   if(state.gaia)parts.push('Gaia markers');
-  if (state.wise) parts.push('AllWISE markers');
   if (Number.isFinite(state.markRaDeg) && Number.isFinite(state.markDecDeg)) {
     parts.push(`marked source ${state.markRaDeg.toFixed(4)}°, ${signed(state.markDecDeg)}°`);
   }

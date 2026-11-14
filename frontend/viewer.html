@@ -200,7 +200,9 @@
           <div id="culture-results"></div>
         </section>
       </details>
+      <details id="aladin-context" class="aladin-context"><summary>Wide-field context · Aladin Lite</summary><div class="aladin-context-copy"><p><strong>Context view, not the dated-exposure viewer.</strong> Aladin shows pre-built survey maps that combine observations; the viewer above blinks individual SPHEREx exposures aligned to a common grid.</p><p>Use this wider view to compare DSS, 2MASS, unWISE, Pan-STARRS and other hosted surveys. Survey availability depends on the remote archive.</p></div><div id="aladin-context-map" class="aladin-context-map" role="region" aria-label="Aladin Lite wide-field context map"></div><p id="aladin-context-status" role="status">Open to load the context map.</p></details>
       </section>
+    <section id="challenge-launchpad" class="challenge-launchpad observations-section" aria-labelledby="challenge-heading"><p class="eyebrow">NO MODEL REQUIRED</p><h2 id="challenge-heading">Play the discovery challenges</h2><p>These games and answer checks run directly on the viewer’s measured data, even if the AI guide is slow or unavailable.</p><div class="challenge-buttons"><button type="button" class="ai-guide-card" data-direct-quest="be-barnard"><strong>Be Barnard (1916)</strong><small>Find the star that jumped</small></button><button type="button" class="ai-guide-card" data-direct-quest="be-tombaugh"><strong>Be Tombaugh (1930)</strong><small>Find a moving dot</small></button><button type="button" class="ai-guide-card" data-direct-quest="hidden-planet"><strong>Find the hidden planet</strong><small>How faint can we see?</small></button><button type="button" class="ai-guide-card" data-direct-quest="be-leverrier"><strong>Search for Planet Nine</strong><small>Explore a predicted region</small></button></div><div class="direct-case-action"><button id="check-answer-direct" class="reset-settings" type="button">Check my marked answer</button><button id="open-case-direct" class="primary-button" type="button">Open latest case file</button><span>Mark a spot first to check an answer or open its case.</span></div><p id="direct-action-status" role="status" aria-live="polite"></p><article id="direct-case-card" class="ai-guide-entry is-case" hidden></article></section>
     <section id="ai-guide" class="observations-section ai-guide" aria-labelledby="ai-guide-heading">
       <div class="ai-guide-head">
         <div><p class="eyebrow">ASK THE SKY GUIDE</p><h2 id="ai-guide-heading">AI guide</h2></div>
@@ -211,9 +213,10 @@
         <button type="button" class="ai-guide-card" data-prompt="Investigate this field: compare dates six months apart, list what changed, and check each spot."><strong>Investigate this field</strong><small>Find changes and check every spot</small></button>
         <button type="button" class="ai-guide-card" data-prompt="Is anything moving here? Blink the frames and tell me what you see."><strong>Is anything moving?</strong><small>Blink and explain</small></button>
         <button type="button" class="ai-guide-card" data-prompt="What is spot 1 made of? Measure its spectrum."><strong>What is it made of?</strong><small>SPHEREx’s 102 colours</small></button>
-        <button type="button" class="ai-guide-card" data-prompt="Let me play Be Barnard."><strong>Be Barnard (1916)</strong><small>Find the star that jumped</small></button>
-        <button type="button" class="ai-guide-card" data-prompt="Hide a fake planet in these photos and let me find it."><strong>Find the hidden planet</strong><small>How faint can we see?</small></button>
-        <button type="button" class="ai-guide-card" data-prompt="Where could Planet Nine still be hiding? Patrol the top 3 cells of the predicted region."><strong>Search for Planet Nine</strong><small>Patrol the predicted region</small></button>
+        <button type="button" class="ai-guide-card" data-direct-quest="be-barnard"><strong>Be Barnard (1916)</strong><small>Find the star that jumped · starts without AI</small></button>
+        <button type="button" class="ai-guide-card" data-direct-quest="be-tombaugh"><strong>Be Tombaugh (1930)</strong><small>Find a moving dot · starts without AI</small></button>
+        <button type="button" class="ai-guide-card" data-direct-quest="hidden-planet"><strong>Find the hidden planet</strong><small>How faint can we see? · starts without AI</small></button>
+        <button type="button" class="ai-guide-card" data-direct-quest="be-leverrier"><strong>Search for Planet Nine</strong><small>Patrol the predicted region · starts without AI</small></button>
         <button type="button" class="ai-guide-card" data-action="tour"><strong>Take the tour</strong><small>One minute, hands-free</small></button>
       </div>
       <button id="ai-guide-more" class="ai-guide-more" type="button" aria-controls="ai-guide-suggestions" aria-expanded="false" hidden>What can I do?</button>
@@ -238,7 +241,7 @@
       <div class="index-update-status" aria-labelledby="index-update-heading"><div><h3 id="index-update-heading">Automatic archive updates</h3><p id="index-update-summary" role="status" aria-live="polite">Checking index status…</p><p id="index-update-changes"></p></div><p class="index-update-scope">Fresh daily snapshots serve fixed preset positions. Moving targets and custom coordinates use cached live IRSA searches; older snapshots remain available during archive outages.</p></div>
       <form id="observation-search-form" class="observation-filters">
         <label for="search-detector">Archive detector<select id="search-detector"><option value="all">All detectors</option><option value="1">D1 · 0.75–1.09 μm</option><option value="2">D2 · 1.10–1.62 μm</option><option value="3">D3 · 1.63–2.41 μm</option><option value="4">D4 · 2.42–3.82 μm</option><option value="5">D5 · 3.83–4.41 μm</option><option value="6">D6 · 4.42–5.00 μm</option></select></label>
-        <label for="search-release">Archive release<select id="search-release"><option value="all">All public releases · prefer latest</option><option value="qr3">QR3 only</option><option value="qr2">QR2 only</option></select></label>
+        <label for="search-release">Archive release<select id="search-release"><option value="all">All public releases · prefer latest</option></select></label>
         <label for="search-start">From date (UTC)<input id="search-start" type="date" min="2025-03-01"></label>
         <label for="search-end">Through date (UTC)<input id="search-end" type="date" min="2025-03-01"></label>
         <button id="retry-observations" class="primary-button" type="button" hidden>Retry</button>
@@ -368,5 +371,6 @@
   <script type="module" src="gaia-overlay.js"></script>
   <script type="module" src="mark-target.js"></script>
   <script type="module" src="agent-ui.js"></script>
+  <script type="module" src="aladin-context.js"></script>
 </body>
 </html>

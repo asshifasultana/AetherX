@@ -165,7 +165,16 @@ window.addEventListener('sky:moving-search-requested', async () => {
       throw new Error(data.error || 'Moving-object search failed.');
     }
     search = data;
-    if (!data.exposures.length) { status.setAttribute('data-error', 'true'); status.textContent = emptyMovingMessage(data); return; }
+    if (!data.exposures.length) {
+      status.setAttribute('data-error', 'true');
+      status.textContent = emptyMovingMessage(data);
+      const link = document.createElement('a');
+      link.href = 'https://irsa.ipac.caltech.edu/applications/MOST/';
+      link.target = '_blank'; link.rel = 'noopener noreferrer';
+      link.textContent = ' Check IRSA’s Moving Object Search Tool.';
+      $('choices').append(link);
+      return;
+    }
     const detectors = [...new Set(data.exposures.map(e => e.detector))].sort();
     detector.replaceChildren(...detectors.map(d => new Option('D' + d, d)));
     $('selection').hidden = false;

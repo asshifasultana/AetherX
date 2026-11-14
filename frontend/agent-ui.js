@@ -345,6 +345,12 @@ function renderCase(summary) {
   item.replaceChildren(...parts);
   $('ai-guide-log').append(item);
   revealEntry(item);
+  const direct = $('direct-case-card');
+  if (direct) {
+    direct.replaceChildren(...[...item.childNodes].map(node => node.cloneNode(true)));
+    direct.querySelector('.case-next')?.remove();
+    direct.hidden = false;
+  }
 }
 
 function renderReport(report) {
@@ -698,6 +704,33 @@ async function playTour() {
   }
 }
 
+async function runDirectTool(name, args, label) {
+  if (running) return;
+  const abort = new AbortController();
+  running = abort;
+  setStarted(true);
+  $('ai-guide-send').disabled = true;
+  $('ai-guide-stop').hidden = false;
+  addEntry('action', `↳ ${label}…`);
+  try {
+    const result = await controller.execute(name, args, {
+      signal: abort.signal,
+      progress: text => addEntry(text.startsWith('(') ? 'note' : 'progress', text)
+    });
+    if (result.ok === false) { addEntry('guide', forPeople(result.error)); $('direct-action-status').textContent = forPeople(result.error); }
+    else if (name === 'start_quest') { const message = `${result.title}: ${result.goal} Use Mark on the image, click your answer, then press Ask to request an answer check. This game is running directly; no model is needed to start it.`; addEntry('guide', message); $('direct-action-status').textContent = message; }
+    else if (name === 'check_answer') { const message = result.correct ? `Correct — ${result.story || 'you found it.'} ${result.lesson || ''}` : result.correct === false ? `Not yet. ${result.hint || 'Try another marked spot.'}` : result.note || 'The answer needs more evidence.'; addEntry('guide', message); $('direct-action-status').textContent = message; }
+    else { const message = `Case file opened for Spot ${args.spot}. Verdict: ${result.verdict?.label || 'evidence recorded'}.`; addEntry('guide', message); $('direct-action-status').textContent = message; }
+  } catch (error) {
+    const message = forPeople(error?.message); addEntry('guide', message); $('direct-action-status').textContent = message;
+  } finally {
+    if (running === abort) running = null;
+    $('ai-guide-send').disabled = false;
+    $('ai-guide-stop').hidden = true;
+    setActivity('');
+  }
+}
+
 function setStarted(value) {
   started = value;
   const section = $('ai-guide');
@@ -754,8 +787,30 @@ function mount() {
   $('ai-guide-form').addEventListener('submit', event => { event.preventDefault(); submit(input.value); });
   $('ai-guide-stop').addEventListener('click', () => running?.abort());
   for (const chip of section.querySelectorAll('[data-prompt]')) chip.addEventListener('click', () => submit(chip.dataset.prompt));
+  for (const card of section.querySelectorAll('[data-direct-quest]')) card.addEventListener('click', () => runDirectTool('start_quest', { id: card.dataset.directQuest }, describe.start_quest({ id: card.dataset.directQuest })));
+  for (const card of document.querySelectorAll('#challenge-launchpad [data-direct-quest]')) card.addEventListener('click', () => runDirectTool('start_quest', { id: card.dataset.directQuest }, describe.start_quest({ id: card.dataset.directQuest })));
+  $('open-case-direct')?.addEventListener('click', () => {
+    const spot = [...knownSpots].reverse().find(item => item.origin === 'user') || knownSpots.at(-1);
+    if (!spot) { $('direct-action-status').textContent = 'Choose Mark beside the image and click a source first. Then open this case file directly.'; return; }
+    void runDirectTool('get_case', { spot: spot.n }, `Open case file for Spot ${spot.n}`);
+  });
+  $('check-answer-direct')?.addEventListener('click', () => {
+    const spot = [...knownSpots].reverse().find(item => item.origin === 'user');
+    if (!spot) { $('direct-action-status').textContent = 'Mark your answer on the image first. The check runs directly and does not call the AI model.'; return; }
+    void runDirectTool('check_answer', { spot: spot.n }, `Check Spot ${spot.n}`);
+  });
   // The tour is scripted: it runs without the model, so it cannot stall on stage.
   section.querySelector('[data-action="tour"]')?.addEventListener('click', () => { void playTour(); });
+  const launch = new URLSearchParams(location.search).get('launch');
+  if (launch) {
+    if (launch === 'tour') { $('agent-toggle')?.click(); setTimeout(() => { void playTour(); }, 120); }
+    else if (launch === 'games') $('challenge-launchpad')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else {
+      const quests = { hidden: 'hidden-planet', tombaugh: 'be-tombaugh', barnard: 'be-barnard', planetnine: 'be-leverrier' };
+      if (quests[launch]) setTimeout(() => runDirectTool('start_quest', { id: quests[launch] }, `Started ${quests[launch]}`), 180);
+      else if (launch === 'case') { $('challenge-launchpad')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); $('direct-action-status').textContent = 'Mark a source on the image, then use Open latest case file. No model request is made.'; }
+    }
+  }
   $('ai-guide-more')?.addEventListener('click', event => {
     const cards = $('ai-guide-suggestions'), open = cards.hidden;
     cards.hidden = !open;

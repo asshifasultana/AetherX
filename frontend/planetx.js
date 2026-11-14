@@ -98,6 +98,7 @@ function selectCell(cell) {
   document.querySelector('#cell-distance').textContent = `${Math.round(cell.medianDistanceAu).toLocaleString()} AU`;
   document.querySelector('#cell-magnitude').textContent = `V ${format(cell.medianVMag, 1)}`;
   document.querySelector('#open-spherex').href = `/?ra=${cell.raDeg}&dec=${cell.decDeg}`;
+  window.dispatchEvent(new CustomEvent('sky:planetx-region-selected', { detail: { raDeg: cell.raDeg, decDeg: cell.decDeg } }));
   tooltip.hidden = false;
   tooltip.innerHTML = `<strong>RA ${format(cell.raDeg)}° · Dec ${cell.decDeg < 0 ? '−' : '+'}${format(Math.abs(cell.decDeg))}°</strong><br>${pct(cell.share)} model share`;
   tooltip.style.left = `${Math.min(82, Math.max(4, 100 * (cell._rect.x + cell._rect.w / 2) / canvas.clientWidth))}%`;

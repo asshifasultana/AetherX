@@ -16,8 +16,6 @@ const MAX_ROUNDS = 16;
 const MAX_HISTORY = 40;
 const MAX_RESULT_CHARS = 3000;
 const OLD_RESULT_CHARS = 300;
-const TIGHT_HISTORY = 20;
-const SLOW_RETRIES = 2;
 const DRAFT_KEY = 'spherex-guide-draft-v1';
 
 const $ = id => document.getElementById(id);
@@ -49,14 +47,12 @@ const describe = {
   take_snapshot: () => 'Took a snapshot of the viewer',
   compare_side_by_side: args => 'Put ' + args.panels.length + ' views side by side',
   find_changes: () => 'Listed the changes in the difference image',
-  mark_target: () => 'Marked the target star where it is on this date',
   mark_spot: args => args.radiusArcsec ? 'Marked an area' : 'Marked a spot',
   resize_spot: args => args.radiusArcsec ? `Resized spot ${args.spot}` : `Made spot ${args.spot} a point`,
   remove_spots: args => args.all ? 'Removed all spots' : args.keep ? `Kept only spot${args.keep.length > 1 ? 's' : ''} ${args.keep.join(', ')}` : `Removed spot${args.spots.length > 1 ? 's' : ''} ${args.spots.join(', ')}`,
   measure_source: args => `Measured spot ${args.spot} on each date`,
   get_spectrum: args => `Measured spot ${args.spot} across wavelengths`,
-  crossmatch: args => `Checked spot ${args.spot} against star catalogues (Gaia, CatWISE, SIMBAD) and JPL`,
-  confirm_motion: args => `Checked whether spot ${args.spot} moves in a straight line across dates`,
+  crossmatch: args => `Checked spot ${args.spot} against Gaia and JPL`,
   get_case: args => `Opened the case file for spot ${args.spot}`,
   pick_epochs: args => `Compared frames about ${args.gap_days} days apart`,
   predict_parallax_pair: args => `Predicted where spot ${args.spot} would be at ${args.distance_au} AU`,
@@ -83,14 +79,12 @@ const ACTIVITY = {
   take_snapshot: 'Taking a snapshot…',
   compare_side_by_side: 'Photographing each view…',
   find_changes: 'Squinting at pixels…',
-  mark_target: 'Finding the star on this date…',
   mark_spot: 'Placing a marker…',
   resize_spot: 'Resizing the marker…',
   remove_spots: 'Tidying up the markers…',
   measure_source: 'Measuring brightness on each date…',
   get_spectrum: 'Splitting the light into colours…',
-  crossmatch: 'Asking Gaia, CatWISE, SIMBAD and JPL who lives here…',
-  confirm_motion: 'Following it across the dates…',
+  crossmatch: 'Asking Gaia and JPL who lives here…',
   get_case: 'Opening the case file…',
   pick_epochs: 'Finding photos six months apart…',
   predict_parallax_pair: 'Working out the parallax…',
@@ -331,18 +325,7 @@ function renderCase(summary) {
   const detail = document.createElement('p');
   detail.className = 'case-detail';
   detail.textContent = summary.verdict.detail;
-  const parts = [heading, list, detail];
-  // The case's own suggestion for the next check, sent like a prompt chip.
-  const next = summary.verdict.suggest?.[0];
-  if (next?.why) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'case-next';
-    button.textContent = `Next: ${next.why}`;
-    button.addEventListener('click', () => submit(`Spot ${summary.spot}: ${next.why}`));
-    parts.push(button);
-  }
-  item.replaceChildren(...parts);
+  item.replaceChildren(heading, list, detail);
   $('ai-guide-log').append(item);
   revealEntry(item);
 }
@@ -424,17 +407,13 @@ function renderChips() {
 }
 
 // Every round resends the conversation, so shorten older results to limit token use.
-// `tight` (used when the model was too slow) keeps fewer messages and also
-// shortens this question's earlier results, keeping only the latest round whole.
-function trimmedHistory({ tight = false } = {}) {
-  const userFrom = from => { let i = Math.max(0, from); while (i < history.length && history[i].role !== 'user') i++; return i; };
-  let start = userFrom(history.length - MAX_HISTORY);
-  if (tight) { const tighter = userFrom(history.length - TIGHT_HISTORY); if (tighter < history.length) start = tighter; }
+function trimmedHistory() {
+  let start = Math.max(0, history.length - MAX_HISTORY);
+  while (start < history.length && history[start].role !== 'user') start++;
   // Background results and guide checks arrive as user turns; only a real
   // visitor message starts a new question.
   const lastUser = history.findLastIndex(message => message.role === 'user' && !/^\[(Background result|Guide check|Sceptic)/.test(message.content));
-  const cutBefore = tight ? Math.max(lastUser, history.findLastIndex(message => message.role === 'assistant' && message.tool_calls?.length)) : lastUser;
-  return history.slice(start).map((message, offset) => message.role === 'tool' && start + offset < cutBefore && message.content.length > OLD_RESULT_CHARS
+  return history.slice(start).map((message, offset) => message.role === 'tool' && start + offset < lastUser && message.content.length > OLD_RESULT_CHARS
     ? { ...message, content: message.content.slice(0, OLD_RESULT_CHARS) + '…' } : message);
 }
 
@@ -451,19 +430,14 @@ function unavailableReason(status) {
   return `The guide is unavailable right now (HTTP ${status}). Please retry.`;
 }
 
-// The model (not a data lookup) ran past the server's time budget, or a proxy cut it off.
-const tooSlow = (status, data) => data.code === 'AGENT_TIMEOUT' || data.code === 'AGENT_UPSTREAM' || (!data.error && [408, 502, 503, 504].includes(status));
-
-// A slow answer is retried with a shorter history, then with the server's fast
-// model (OPENROUTER_FAST_MODEL; the server ignores `fast` when none is set).
-async function ask(signal, { final = false, fast = false } = {}) {
-  for (let attempt = 0, slow = 0; ; attempt++) {
+async function ask(signal, { final = false } = {}) {
+  for (let attempt = 0; ; attempt++) {
     let response;
     try {
       response = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: trimmedHistory({ tight: slow > 0 }), ...(final ? { final: true } : {}), ...(fast || slow >= SLOW_RETRIES ? { fast: true } : {}) }),
+        body: JSON.stringify({ messages: trimmedHistory(), ...(final ? { final: true } : {}) }),
         signal
       });
     } catch (error) {
@@ -478,13 +452,6 @@ async function ask(signal, { final = false, fast = false } = {}) {
         setActivity(`The AI guide is rate limited. Retrying in ${left} s…`);
         await wait(1000, signal);
       }
-      if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
-      continue;
-    }
-    if (!response.ok && tooSlow(response.status, data) && slow < SLOW_RETRIES) {
-      slow++;
-      setActivity('The guide is slow to answer — retrying…');
-      await wait(1000, signal);
       if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
       continue;
     }
@@ -604,8 +571,7 @@ async function converse(text, chips) {
       setActivity(round ? 'Reading the results…' : THINKING[0], { thinking: true });
       const final = round === MAX_ROUNDS - 1;
       if (final) history.push({ role: 'user', content: '[Guide check] Step budget reached: stop calling tools and summarise briefly what was measured, what was ruled out and what is still open.' });
-      // A background-only turn needs just 1-2 sentences: use the fast model.
-      const { message, flagged } = await ask(abort.signal, { final, fast: text === null });
+      const { message, flagged } = await ask(abort.signal, { final });
       history.push(message);
       const plan = /^\s*plan:/i.test(message.content || '');
       if (!message.tool_calls?.length) {
@@ -659,10 +625,7 @@ async function converse(text, chips) {
     addEntry('guide', 'I took several steps and stopped there. Ask me to continue if you want more.');
   } catch (error) {
     if (abort.signal.aborted) { addEntry('note', 'Stopped.'); return; }
-    // The background result is already in the spot's case file, so a failed
-    // comment on it is not worth a red error.
-    if (text === null) addEntry('note', 'The background result is in the spot\'s case file. The guide couldn\'t comment on it just now.');
-    else addEntry('error', error.message || 'Something went wrong. Please try again.');
+    addEntry('error', error.message || 'Something went wrong. Please try again.');
     // Drop an unanswered tool request so the next question starts cleanly.
     const last = history.at(-1);
     if (last?.role === 'assistant' && last.tool_calls?.length) history.pop();

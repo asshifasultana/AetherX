@@ -1,4 +1,5 @@
-// Names and aliases only: every selection still requires live catalog resolution.
+// Curated fixed-sky search names and aliases. Most positions are resolved live;
+// entries with coordinates provide an explicitly labelled representative point.
 export const objectNames = [
   { name: 'Barnard’s Star', query: 'Barnard star', aliases: ['Barnards Star', 'GJ 699', 'HIP 87937'] },
   { name: 'Epsilon Indi B', query: 'eps Ind B', aliases: ['Epsilon Indi B', 'eps Indi B'] },
@@ -16,6 +17,9 @@ export const objectNames = [
   { name: 'Altair', query: 'Altair', aliases: ['Alpha Aquilae', 'HD 187642'] },
   { name: 'Deneb', query: 'Deneb', aliases: ['Alpha Cygni', 'HD 197345'] },
   { name: 'Andromeda Galaxy', query: 'M 31', aliases: ['Andromeda', 'M31', 'NGC 224'] },
+  // A name resolver cannot return the entire extended galaxy as one point.
+  // Use the Galactic Center as the representative sky position for this search.
+  { name: 'Milky Way', query: 'Milky Way', aliases: ['Milky Way Galaxy', 'The Milky Way'], raDeg: 266.4051, decDeg: -28.936175, positionLabel: 'Milky Way center' },
   { name: 'Orion Nebula', query: 'M 42', aliases: ['M42', 'NGC 1976'] },
   { name: 'Pleiades', query: 'M 45', aliases: ['M45', 'Melotte 22'] },
   { name: 'Crab Nebula', query: 'M 1', aliases: ['M1', 'NGC 1952'] },

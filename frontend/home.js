@@ -9,33 +9,6 @@ if (starfield) mountStarfield(starfield, {
   avoid: ['.site-header', '.home-search .eyebrow', '#home-title', '.home-description', '#target-picker']
 });
 
-// Pointer launches fade the homepage chrome out over the still-running
-// starfield before the viewer document takes over. Keyboard launches and
-// reduced-motion visitors keep the instant navigation they expect.
-const FADE_MS = 170;
-const POINTER_WINDOW_MS = 1000;
-const canFade = typeof window.matchMedia === 'function' && Boolean(document.body);
-let lastPointerAt = -Infinity;
-let leaving = false;
-const now = () => (typeof performance !== 'undefined' ? performance.now() : 0);
-window.addEventListener('pointerdown', () => { lastPointerAt = now(); }, { capture: true, passive: true });
-window.addEventListener('pageshow', () => {
-  leaving = false;
-  document.body?.classList.remove('is-leaving');
-});
-
-function go(url) {
-  const reduced = typeof window.matchMedia === 'function'
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!canFade || reduced || leaving || now() - lastPointerAt > POINTER_WINDOW_MS) {
-    location.assign(url);
-    return;
-  }
-  leaving = true;
-  document.body.classList.add('is-leaving');
-  setTimeout(() => location.assign(url), FADE_MS);
-}
-
 const destination = legacyViewerDestination(location, window.self !== window.top);
 if (destination) location.replace(destination);
 else {

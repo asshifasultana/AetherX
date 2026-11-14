@@ -64,12 +64,43 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
     barnardsstar: 'Nearby star · proper motion', epsilonindib: 'Brown dwarf pair', wise0855: 'Brown dwarf · fast moving',
     rwaurigae: 'Young variable star', rdraconis: 'Variable star', sirius: 'Star', vega: 'Star', polaris: 'Star', betelgeuse: 'Star', rigel: 'Star',
     proximacentauri: 'Nearby star', alphacentauri: 'Star system', arcturus: 'Star', altair: 'Star', deneb: 'Star',
-    andromedagalaxy: 'Galaxy', orionnebula: 'Nebula', pleiades: 'Star cluster', crabnebula: 'Nebula', whirlpoolgalaxy: 'Galaxy'
+    andromedagalaxy: 'Galaxy', milkyway: 'Galaxy · our home galaxy', orionnebula: 'Nebula', pleiades: 'Star cluster', crabnebula: 'Nebula', whirlpoolgalaxy: 'Galaxy'
   };
-  const popularNames = ['WISE 0855', 'Barnard’s Star', 'Epsilon Indi B', 'Sirius', 'RW Aurigae', 'Andromeda Galaxy'];
+  const popularNames = ['WISE 0855', 'Barnard’s Star', 'Epsilon Indi B', 'Sirius', 'Milky Way', 'Andromeda Galaxy'];
+  const movingTargets = [
+    { name: 'Mercury', query: 'Mercury', aliases: ['Mercury barycenter'], detail: 'Planet · solar system' },
+    { name: 'Venus', query: 'Venus', aliases: ['Venus barycenter'], detail: 'Planet · solar system' },
+    { name: 'Mars', query: 'Mars', aliases: ['Mars barycenter'], detail: 'Planet · solar system' },
+    { name: 'Jupiter', query: 'Jupiter', aliases: ['Jupiter barycenter'], detail: 'Planet · solar system' },
+    { name: 'Saturn', query: 'Saturn', aliases: ['Saturn barycenter'], detail: 'Planet · solar system' },
+    { name: 'Uranus', query: 'Uranus', aliases: ['Uranus barycenter'], detail: 'Planet · solar system' },
+    { name: 'Neptune', query: 'Neptune barycenter', aliases: ['Neptune'], detail: 'Planet · solar system' },
+    { name: 'Pluto', query: 'Pluto barycenter', aliases: ['Pluto'], detail: 'Dwarf planet · solar system' },
+    { name: '1 Ceres', query: '1 Ceres', aliases: ['Ceres'], detail: 'Dwarf planet · asteroid' },
+    { name: '136199 Eris', query: '136199 Eris', aliases: ['Eris'], detail: 'Dwarf planet' },
+    { name: '136472 Makemake', query: '136472 Makemake', aliases: ['Makemake'], detail: 'Dwarf planet' },
+    { name: '136108 Haumea', query: '136108 Haumea', aliases: ['Haumea'], detail: 'Dwarf planet' },
+    { name: '4 Vesta', query: '4 Vesta', aliases: ['Vesta'], detail: 'Asteroid' },
+    { name: '99942 Apophis', query: '99942 Apophis', aliases: ['Apophis'], detail: 'Near-Earth asteroid' },
+    { name: '101955 Bennu', query: '101955 Bennu', aliases: ['Bennu'], detail: 'Near-Earth asteroid' },
+    { name: '162173 Ryugu', query: '162173 Ryugu', aliases: ['Ryugu'], detail: 'Near-Earth asteroid' },
+    { name: '3I/ATLAS', query: '3I/ATLAS', aliases: ['3I ATLAS'], detail: 'Interstellar comet' },
+    { name: '2I/Borisov', query: '2I/Borisov', aliases: ['2I Borisov'], detail: 'Interstellar comet' },
+    { name: '1I/ʻOumuamua', query: '1I/2017 U1', aliases: ['1I Oumuamua', 'ʻOumuamua'], detail: 'Interstellar object' },
+    { name: 'C/2023 A3 (Tsuchinshan–ATLAS)', query: 'C/2023 A3', aliases: ['Tsuchinshan-ATLAS'], detail: 'Comet' },
+    { name: '1P/Halley', query: '1P/Halley', aliases: ['Halley'], detail: 'Periodic comet' },
+    { name: 'C/2020 F3 (NEOWISE)', query: 'C/2020 F3', aliases: ['Comet NEOWISE'], detail: 'Comet' },
+    { name: '433 Eros', query: '433 Eros', aliases: ['Eros'], detail: 'Near-Earth asteroid' },
+    { name: '25143 Itokawa', query: '25143 Itokawa', aliases: ['Itokawa'], detail: 'Near-Earth asteroid' }
+  ];
+  const popularMovingNames = ['Neptune', 'Pluto', '3I/ATLAS', 'C/2023 A3 (Tsuchinshan–ATLAS)', '1P/Halley', '4 Vesta', '99942 Apophis'];
+  const isMovingTargetQuery = query => {
+    const normalized = normalizeName(query);
+    return normalized.length >= 2 && movingTargets.some(item => [item.name, item.query, ...item.aliases].some(field => normalizeName(field).startsWith(normalized)));
+  };
   const modeSuggestions = [
     { name: 'Stars and deep-sky objects', detail: 'Search a star, galaxy, nebula, or catalog name', mode: 'object', terms: ['star', 'stars', 'object', 'galaxy', 'nebula', 'spherex'] },
-    { name: 'Moving objects', detail: 'Search comets and asteroids by designation and date', mode: 'moving', terms: ['moving', 'comet', 'comets', 'asteroid', 'asteroids', 'planet x'] },
+    { name: 'Moving objects', detail: 'Search comets and asteroids by name, designation, and dates', mode: 'moving', terms: ['moving', 'comet', 'comets', 'asteroid', 'asteroids'] },
     { name: 'Search by coordinates', detail: 'Enter right ascension and declination', mode: 'coordinates', terms: ['coordinates', 'coordinate', 'ra', 'dec', 'position', 'sky location'] }
   ];
   function closeAutocomplete() {
@@ -78,10 +109,22 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
   }
   function chooseTarget(item) {
     closeAutocomplete(); invalidate(); nameInput.value = item.name;
+    if (movingTargets.includes(item)) { chooseMovingTarget(item); return; }
+    if (Number.isFinite(item.raDeg) && Number.isFinite(item.decDeg)) {
+      publish({ type: 'coordinates', query: item.positionLabel || item.name, format: 'degrees' });
+      onCoordinates({ raDeg: item.raDeg, decDeg: item.decDeg }, { name: item.positionLabel || item.name, type: 'GALACTIC CENTER · ICRS', description: 'Representative search position at the center of the Milky Way; the Milky Way is an extended galaxy, not a single point.' });
+      return;
+    }
     const preset = presetFor(item);
     if (preset) {
       const [targetId, target] = preset; publish({ type: 'object', query: target.name }); onPreset(targetId, target);
     } else { publish({ type: 'object', query: item.query }); onObject(item.query); }
+  }
+  function chooseMovingTarget(item) {
+    closeAutocomplete(); invalidate();
+    if (mode !== 'moving') setMode('moving');
+    nameInput.value = item.query;
+    form.requestSubmit();
   }
   function appendOption({ id, titleText, detailText, onSelect }) {
     const button = document.createElement('button'); button.type = 'button'; button.role = 'option';
@@ -95,14 +138,19 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
   function heading(text) {
     const label = document.createElement('div'); label.className = 'target-autocomplete-heading'; label.textContent = text; autocomplete.append(label);
   }
-  function kindFor(item) { return targetKinds[normalizeName(item.name)] || 'Astronomical target'; }
+  function kindFor(item) { return item.detail || targetKinds[normalizeName(item.name)] || 'Astronomical target'; }
   function renderAutocomplete() {
     closeAutocomplete();
-    if (mode !== 'object') return;
+    if (mode === 'coordinates') return;
     const query = nameInput.value.trim(), normalized = normalizeName(query), isEmpty = !normalized;
+    const movingMode = mode === 'moving';
+    // Keep moving targets in the same type-ahead catalog as stars and galaxies.
+    const sourceNames = movingMode ? movingTargets : [...objectNames, ...movingTargets];
     const targetMatches = isEmpty
-      ? (showAllTargets ? objectNames : popularNames.map(name => objectNames.find(item => item.name === name)).filter(Boolean))
-      : objectNames.map(item => {
+      ? (movingMode
+        ? (showAllTargets ? movingTargets : popularMovingNames.map(name => movingTargets.find(item => item.name === name)).filter(Boolean))
+        : (showAllTargets ? sourceNames : popularNames.map(name => sourceNames.find(item => item.name === name)).filter(Boolean)))
+      : sourceNames.map(item => {
           const nameFields = [item.name, item.query];
           const aliasFields = item.aliases || [];
           const fields = [...nameFields, ...aliasFields, kindFor(item)];
@@ -118,31 +166,52 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
           const score = namePrefix ? 0 : nameWordPrefix ? 1 : aliasPrefix ? 2 : kindPrefix ? 3 : 4;
           return { item, score, contains };
         }).filter(match => match.contains).sort((a, b) => a.score - b.score || a.item.name.localeCompare(b.item.name)).map(match => match.item);
-    const corrected = !isEmpty ? suggestNames(query, objectNames).filter(item => !targetMatches.some(match => match.name === item.name)) : [];
+    const corrected = !isEmpty ? suggestNames(query, sourceNames).filter(item => !targetMatches.some(match => match.name === item.name)) : [];
     const actionMatches = isEmpty ? modeSuggestions : modeSuggestions.filter(item => [item.name, ...item.terms].some(term => {
       const value = normalizeName(term);
       return value.startsWith(normalized) || (normalized.length > 1 && value.includes(normalized));
     }));
-    if (isEmpty) heading(showAllTargets ? 'All searchable targets' : 'Popular searches');
+    const movingContextMatches = !movingMode && !isEmpty && /\b(comet|asteroid|moving)\b/i.test(query)
+      ? (/^moving$/.test(normalized)
+        ? popularMovingNames.map(name => movingTargets.find(item => item.name === name)).filter(Boolean)
+        : movingTargets.filter(item => [item.name, item.query, ...item.aliases, item.detail].some(field => {
+          const value = normalizeName(field);
+          return value.includes(normalized) || String(field).toLowerCase().split(/[^a-z0-9]+/).some(word => normalizeName(word).startsWith(normalized));
+        })))
+      : [];
+    if (isEmpty) heading(showAllTargets ? (movingMode ? 'All moving-object targets' : 'All searchable targets') : (movingMode ? 'Popular moving objects' : 'Popular searches'));
     else if (targetMatches.length) heading('Matching targets');
     for (const item of targetMatches.slice(0, isEmpty && showAllTargets ? 30 : 7)) {
-      appendOption({ id: normalizeName(item.name), titleText: item.name, detailText: kindFor(item), onSelect: () => chooseTarget(item) });
+      appendOption({ id: normalizeName(item.name), titleText: item.name, detailText: kindFor(item), onSelect: () => movingMode ? chooseMovingTarget(item) : chooseTarget(item) });
     }
     if (corrected.length) {
-      for (const item of corrected.slice(0, 4)) appendOption({ id: 'correct-' + normalizeName(item.name), titleText: item.name, detailText: `Did you mean this target? · ${kindFor(item)}`, onSelect: () => chooseTarget(item) });
+      for (const item of corrected.slice(0, 4)) appendOption({ id: 'correct-' + normalizeName(item.name), titleText: item.name, detailText: `Did you mean this target? · ${kindFor(item)}`, onSelect: () => movingMode ? chooseMovingTarget(item) : chooseTarget(item) });
     }
     if (actionMatches.length) {
-      heading(isEmpty ? 'Search options' : 'Explore');
+      heading(isEmpty ? 'Search categories' : 'Categories');
       for (const action of actionMatches) appendOption({
         id: action.mode, titleText: action.name, detailText: action.detail,
         onSelect: () => { closeAutocomplete(); setMode(action.mode); if (action.mode === 'coordinates') $('ra').focus(); else nameInput.focus(); }
       });
     }
-    if (!isEmpty) appendOption({ id: 'query-' + normalized, titleText: `Search for “${query}”`, detailText: 'Look up this name in the object catalogs', onSelect: () => { closeAutocomplete(); invalidate(); publish({ type: 'object', query }); onObject(query); } });
+    if (movingContextMatches.length) {
+      heading('Moving-object targets');
+      for (const item of movingContextMatches.slice(0, 5)) appendOption({ id: 'moving-' + normalizeName(item.name), titleText: item.name, detailText: item.detail, onSelect: () => chooseMovingTarget(item) });
+    }
+    if (!isEmpty) appendOption({
+      id: 'query-' + normalized,
+      titleText: `Search for “${query}”`,
+      detailText: movingMode ? 'Search this moving object over the selected dates' : 'Look up this name in the object catalogs',
+      onSelect: () => {
+        closeAutocomplete(); invalidate();
+        if (movingMode) { nameInput.value = query; form.requestSubmit(); }
+        else { publish({ type: 'object', query }); onObject(query); }
+      }
+    });
     if (isEmpty) appendOption({
       id: showAllTargets ? 'popular-targets' : 'all-targets',
       titleText: showAllTargets ? 'Show popular searches' : 'Browse all targets',
-      detailText: showAllTargets ? 'Return to suggested targets' : `${objectNames.length} names, aliases, and astronomical objects`,
+      detailText: showAllTargets ? 'Return to suggested targets' : `${movingMode ? movingTargets.length + ' comets and asteroids' : objectNames.length + ' names, aliases, and astronomical objects'}`,
       onSelect: () => { showAllTargets = !showAllTargets; renderAutocomplete(); }
     });
     autocomplete.hidden = false; nameInput.setAttribute('aria-expanded', 'true');
@@ -212,10 +281,9 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
     (mode === 'coordinates' ? $('ra') : $('lookup-name')).focus();
   });
   $('lookup-name').addEventListener('input', () => {
-    if (mode === 'coordinates') return;
+    if (mode === 'coordinates' || mode === 'moving') return;
     const query = $('lookup-name').value;
-    const next = isMovingQuery(query) ? 'moving' : 'object';
-    if (next !== mode) { setMode(next); $('lookup-name').value = query; }
+    if (isMovingQuery(query) || isMovingTargetQuery(query)) { setMode('moving'); $('lookup-name').value = query; }
   });
   // A useful, editable range for newly recognized moving objects.
   const today = new Date(), from = new Date(today);
@@ -275,7 +343,12 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
       const startDate = form.elements.startDate.value, endDate = form.elements.endDate.value, detector = form.elements.detector.value;
       if (startDate > endDate) { $('moving-status').setAttribute('data-error', 'true'); $('moving-status').textContent = 'End date must be on or after the start date.'; form.elements.endDate.focus(); return; }
       const entry = { type: mode, query, startDate, endDate, detector }; publish(entry); onMoving(entry);
-    } else { publish({ type: mode, query }); onObject(query); }
+    } else {
+      const normalized = normalizeName(query);
+      const knownPosition = objectNames.find(item => Number.isFinite(item.raDeg) && [item.name, item.query, ...(item.aliases || [])].some(value => normalizeName(value) === normalized));
+      if (knownPosition) chooseTarget(knownPosition);
+      else { publish({ type: mode, query }); onObject(query); }
+    }
   });
   $('moving-example').addEventListener('click', () => {
     if (mode !== 'moving') setMode('moving');

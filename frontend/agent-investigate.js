@@ -7,17 +7,12 @@ import { canvasToSky } from './sky-projection.js';
 import { findBlobs, pairBlobs } from './lib/blobs.js';
 import { createCaseBook, applyEvidence, summarize } from './lib/case-file.js';
 import { parallaxShift, separationArcsec, equatorialToEcliptic } from './lib/ecliptic.js';
-import { measureAt, wavelengthAtSky, centroidAt } from './lib/photometry.js';
-import { fitLinearMotion } from './lib/motion-fit.js';
-import { chooseEpochPair, WAVELENGTH_WARN_UM } from './lib/epochs.js';
-import { locateTarget } from './lib/target-locate.js';
-import { propagateGaia } from './gaia-core.js';
+import { measureAt } from './lib/photometry.js';
 import { spectralHints } from './lib/spectral-hints.js';
 import { QUESTS, NORTH_ECLIPTIC_POLE, barnardTrack, checkQuestAnswer } from './lib/quests.js';
 import { TOURS } from './lib/tours.js';
 import { shareUrl } from './share.js';
 import { pollUntil } from './lib/background-jobs.js';
-import { fastStarPasses, yearOf } from './lib/proper-motion.js';
 
 const DAY_MS = 86_400_000;
 const mjdOf = ms => ms / DAY_MS + 40587;
@@ -85,46 +80,6 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     return result?.added || [];
   }
 
-  // ---- wavelengths ------------------------------------------------------------
-  // SPHEREx sees the field centre at a different wavelength on each visit;
-  // comparisons use frames whose wavelengths match. Cached per frame and place.
-  const wavelengths = new Map();
-  function fieldCentre(frameTime) {
-    const target = latest.target;
-    if (!Number.isFinite(target?.raDeg)) return null;
-    return locateTarget({ target, frameTime }) || target;
-  }
-  function wavelengthFor(frame, signal) {
-    const centre = fieldCentre(frame.frameTime);
-    if (!frame?.accessUrl || !centre) return Promise.resolve(null);
-    const key = `${frame.accessUrl}|${centre.raDeg.toFixed(3)}|${centre.decDeg.toFixed(3)}`;
-    if (!wavelengths.has(key)) {
-      const pending = wavelengthAtSky(frame, centre, signal).catch(() => null);
-      wavelengths.set(key, pending);
-      pending.then(value => { if (value === null) wavelengths.delete(key); });
-    }
-    return wavelengths.get(key);
-  }
-  async function wavelengthsOf(list, signal) {
-    const found = new Map();
-    let next = 0;
-    await Promise.all(Array.from({ length: 4 }, async () => {
-      while (next < list.length) {
-        if (signal?.aborted) return;
-        const frame = list[next++];
-        const value = await wavelengthFor(frame, signal);
-        if (Number.isFinite(value)) found.set(frame, value);
-      }
-    }));
-    return found;
-  }
-  async function differenceWavelengthGap(state) {
-    const now = frameNear(Date.parse(state.date || '')), before = frameNear(Date.parse(state.referenceDate || ''));
-    if (!now || !before || now === before) return null;
-    const [a, b] = await Promise.all([wavelengthFor(now), wavelengthFor(before)]);
-    return Number.isFinite(a) && Number.isFinite(b) ? a - b : null;
-  }
-
   // ---- find_changes -------------------------------------------------------
   async function findChanges({ limit = 3, mark = true }) {
     const state = await request('sky:difference-requested');
@@ -138,7 +93,6 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
       return { ...blob, raDeg: sky?.raDeg, decDeg: sky?.decDeg, pair };
     }).filter(blob => Number.isFinite(blob.raDeg));
     let marked = [];
-    const spotFor = blob => marked[described.indexOf(blob)]?.n ?? null;
     if (mark && described.length) {
       // A fresh search replaces the guide's earlier automatic spots.
       await request('sky:agent-spots', { clear: 'agent' });
@@ -147,27 +101,21 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
       marked.forEach((spot, index) => {
         const blob = described[index];
         spotMeta.set(spot.n, { date: blob.sign === 'fainter' ? state.referenceDate : state.date, role: blob.sign === 'fainter' ? 'before' : 'now' });
-        // The other half of a moved pair, when both halves were marked.
-        const same = (a, b) => a.x === b.x && a.y === b.y && a.sign === b.sign;
-        const other = blob.pair && !blob.pair.adjacent ? (same(blob.pair.now, blob) ? blob.pair.before : blob.pair.now) : null;
-        const partner = other ? marked[described.findIndex(entry => same(entry, other))]?.n ?? null : null;
-        record(spot, 'find_changes', { blob, pairedAdjacent: Boolean(blob.pair?.adjacent), ...(partner ? { pairedWith: partner } : {}) });
+        record(spot, 'find_changes', { blob, pairedAdjacent: Boolean(blob.pair?.adjacent) });
       });
     }
-    const wavelengthGapUm = await differenceWavelengthGap(state);
+    const spotFor = blob => marked[described.indexOf(blob)]?.n ?? null;
     return {
       ok: true,
       sigma: round(state.sigma, 4), thresholdSigma: state.threshold,
       comparing: { now: state.date.slice(0, 10), reference: state.referenceDate ? state.referenceDate.slice(0, 10) : state.referenceLabel },
-      ...(Number.isFinite(wavelengthGapUm) ? { wavelengthGapUm: round(wavelengthGapUm, 3) } : {}),
       totalPatches: blobs.length,
       changes: described.map(blob => ({
         spot: spotFor(blob), sign: blob.sign, peakSigma: blob.peakSigma, pixels: blob.pixels,
         raDeg: round(blob.raDeg, 5), decDeg: round(blob.decDeg, 5),
-        ...(blob.singlePixel ? { note: 'single pixel: often a glitch' } : blob.touchesMask ? { note: 'next to masked pixels: often a saturated-star residual' } : {}),
+        ...(blob.singlePixel ? { note: 'single pixel: often a glitch' } : {}),
         ...(blob.edge ? { edge: true } : {})
       })),
-      ...(Math.abs(wavelengthGapUm) > WAVELENGTH_WARN_UM ? { wavelengthNote: `The two frames were taken ${round(Math.abs(wavelengthGapUm), 3)} μm apart in wavelength, so residuals around stars are likely colour, not change.` } : {}),
       movedPairs: pairs.filter(pair => described.includes(pair.now) || described.includes(pair.before)).map(pair => ({
         nowSpot: spotFor(pair.now), beforeSpot: spotFor(pair.before),
         separationArcsec: round(pair.separationPx * 6.15, 1),
@@ -228,70 +176,27 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
   }
 
   // ---- crossmatch ---------------------------------------------------------
-  // A point is matched against the nearest entries of three star catalogues
-  // (Gaia, CatWISE2020 for cold infrared sources, SIMBAD for named objects),
-  // each moved to the frame date, and JPL's known asteroids. An area lists
+  // A point is matched against the nearest catalogue entries; an area lists
   // what lies inside its circle instead.
-  const STAR_CATALOGUES = {
-    gaia: { path: '/api/gaia-sources', label: 'Gaia' },
-    catwise: { path: '/api/catwise-sources', label: 'CatWISE2020' },
-    simbad: { path: '/api/simbad-sources', label: 'SIMBAD' }
-  };
-  const starAt = (star, year) => propagateGaia({ ...star, refEpoch: Number(star.refEpoch) || 2016, pmra: Number(star.pmra) || 0, pmdec: Number(star.pmdec) || 0 }, year);
-  const starFields = {
-    gaia: star => ({ sourceId: String(star.sourceId), gMag: round(star.gMag, 1) }),
-    catwise: star => ({ sourceId: String(star.sourceId), w1: round(star.w1, 2), w2: round(star.w2, 2) }),
-    simbad: star => ({ sourceId: String(star.sourceId), name: star.mainId || String(star.sourceId), otype: star.otype || null })
-  };
-
-  // Raw sources from one catalogue around a spot, or { error }.
-  function starLookup(kind, spot, year, signal) {
-    const area = spot.radiusArcsec || 0, searched = area || 90;
-    const { path, label } = STAR_CATALOGUES[kind];
-    // A slow catalogue does not hold up the others: past 10 s it finishes in the background.
-    const bounded = AbortSignal.any([signal, AbortSignal.timeout(10_000)].filter(Boolean));
-    return fetch(`${path}?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), radius: (searched / 3600).toFixed(5) })}`, { signal: bounded })
-      .then(response => response.ok ? response.json() : Promise.reject(new Error(`${label} lookup failed.`)))
+  const gaiaLookup = (spot, years, signal) => {
+    const area = spot.radiusArcsec || 0, searched = area ? area : 90;
+    return fetch(`/api/gaia-sources?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), radius: (searched / 3600).toFixed(5) })}`, { signal })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('Gaia lookup failed.')))
       .then(data => {
-        const sources = (data.sources || []).map(star => ({ ...star, catalog: label }));
-        const within = sources.map(star => ({ ...starFields[kind](star), pmra: round(star.pmra, 1), pmdec: round(star.pmdec, 1), separationArcsec: round(separationArcsec(spot, starAt(star, year)), 1) }))
-          .filter(star => star.separationArcsec <= searched).sort((a, b) => a.separationArcsec - b.separationArcsec);
-        return { sources, within, truncated: Boolean(data.truncated) };
+        const within = (data.sources || []).map(star => {
+          const cos = Math.cos(star.decDeg * Math.PI / 180);
+          const raDeg = star.raDeg + (Number(star.pmra) || 0) * years / 3.6e6 / cos, decDeg = star.decDeg + (Number(star.pmdec) || 0) * years / 3.6e6;
+          return { sourceId: String(star.sourceId), gMag: round(star.gMag, 1), pmra: round(star.pmra, 1), pmdec: round(star.pmdec, 1), separationArcsec: round(separationArcsec(spot, { raDeg, decDeg }), 1) };
+        }).filter(star => star.separationArcsec <= searched).sort((a, b) => a.separationArcsec - b.separationArcsec);
+        if (!area) return { nearest: within[0] || null, within: within.slice(0, 8), searchedArcsec: 90 };
+        const fast = within.filter(star => Math.hypot(star.pmra || 0, star.pmdec || 0) >= 100);
+        return {
+          areaRadiusArcsec: area, starsInside: within.length, ...(data.truncated ? { countIsLowerLimit: true, note: 'Gaia returned only the brightest 1000 stars here, so there are more.' } : {}),
+          brightest: [...within].sort((a, b) => a.gMag - b.gMag).slice(0, 5), fastMoving: fast.slice(0, 5), fastMovingCount: fast.length
+        };
       })
-      .catch(error => { if (signal?.aborted) throw error; return { error: error.name === 'TimeoutError' ? `${label} is slow to answer.` : error.message }; });
-  }
-
-  // What the model and the case file see from one catalogue.
-  function describeStars(kind, found, spot) {
-    if (found.error) return { error: found.error };
-    const { within, truncated } = found, area = spot.radiusArcsec || 0;
-    if (!area) return { nearest: within[0] || null, ...(kind === 'gaia' ? { within: within.slice(0, 8) } : { count: within.length }), searchedArcsec: 90, ...(truncated ? { truncated: true } : {}) };
-    if (kind === 'simbad') return { areaRadiusArcsec: area, objectsInside: within.length, named: within.slice(0, 8).map(star => `${star.name}${star.otype ? ` (${star.otype})` : ''}`) };
-    if (kind === 'catwise') return { areaRadiusArcsec: area, sourcesInside: within.length, ...(truncated ? { countIsLowerLimit: true } : {}) };
-    const fast = within.filter(star => Math.hypot(star.pmra || 0, star.pmdec || 0) >= 100);
-    return {
-      areaRadiusArcsec: area, starsInside: within.length, ...(truncated ? { countIsLowerLimit: true, note: 'Gaia returned only the brightest 1000 stars here, so there are more.' } : {}),
-      brightest: [...within].sort((a, b) => a.gMag - b.gMag).slice(0, 5), fastMoving: fast.slice(0, 5), fastMovingCount: fast.length
-    };
-  }
-
-  // Fast stars are tracked over every loaded source of every catalogue, before
-  // the 90″ cut: one that sat here in 2000 can be several arcminutes away by now.
-  function movedThrough(spot, sources, time) {
-    const nowYear = yearOf(time), lastFrame = frames().at(-1)?.frameTime;
-    const toYear = Math.max(nowYear, Number.isFinite(lastFrame) ? yearOf(lastFrame) : nowYear);
-    const byId = new Map(sources.map(star => [String(star.sourceId), star]));
-    const seen = new Set();
-    return fastStarPasses(spot, sources, { fromYear: 2000, toYear, nowYear }).map(pass => {
-      const star = byId.get(pass.sourceId) || {};
-      return { ...pass, catalog: star.catalog || 'Gaia', ...(star.mainId ? { name: star.mainId, otype: star.otype || null } : {}) };
-    }).filter(pass => {
-      // The same star listed by two catalogues is one pass.
-      const key = `${pass.now.raDeg.toFixed(3)}|${pass.now.decDeg.toFixed(3)}`;
-      if (seen.has(key)) return false;
-      seen.add(key); return true;
-    }).slice(0, 3);
-  }
+      .catch(error => { if (signal?.aborted) throw error; return { error: error.message }; });
+  };
 
   const jplObject = object => ({ name: object.name, separationArcsec: round(object.separationArcsec, 1), vMag: object.vMag, rateArcsecPerHour: object.rateArcsecPerHour });
   const jplLookup = (spot, time, signal) => {
@@ -308,20 +213,17 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
   };
   const areaNote = (spot, note) => spot.radiusArcsec ? { areaRadiusArcsec: spot.radiusArcsec, note } : {};
 
-  // A lookup that is still computing (JPL) or failed (a star catalogue) keeps
-  // going in the background; when it finishes, the case file updates and the
-  // guide is told.
-  function backgroundLookup(kind, spot, n, time) {
+  // A lookup that is still computing (JPL) or failed (Gaia) keeps going in the
+  // background; when it finishes, the case file updates and the guide is told.
+  function backgroundLookup(kind, spot, n, time, years) {
     if (!jobs) return null;
-    const label = kind === 'jpl' ? `Known-asteroid check (JPL) for spot ${n}` : `Star catalogue check (${STAR_CATALOGUES[kind].label}) for spot ${n}`;
+    const label = kind === 'jpl' ? `Known-asteroid check (JPL) for spot ${n}` : `Star catalogue check (Gaia) for spot ${n}`;
     const job = jobs.start(`${kind}:${n}:${spot.raDeg.toFixed(5)}:${spot.decDeg.toFixed(5)}:${spot.radiusArcsec || 0}:${isoDay(time)}`, label, async signal => {
       const value = await pollUntil(async pollSignal => {
-        const result = kind === 'jpl' ? await jplLookup(spot, time, pollSignal) : await starLookup(kind, spot, yearOf(time), pollSignal);
+        const result = kind === 'jpl' ? await jplLookup(spot, time, pollSignal) : await gaiaLookup(spot, years, pollSignal);
         return (kind === 'jpl' ? result.checked : !result.error) ? result : undefined;
       }, { intervalMs: kind === 'jpl' ? 4000 : 8000, timeoutMs: kind === 'jpl' ? 180_000 : 60_000, signal });
-      const result = kind === 'jpl'
-        ? { ok: true, spot: n, date: isoDay(time), jpl: value }
-        : { ok: true, spot: n, date: isoDay(time), [kind]: describeStars(kind, value, spot), ...(spot.radiusArcsec ? {} : { movedThrough: movedThrough(spot, value.sources, time), trackedSince: 2000 }) };
+      const result = { ok: true, spot: n, date: isoDay(time), [kind]: value };
       return { ...result, case: record(spot, 'crossmatch', result).verdict };
     }, { spot: n });
     return job.id;
@@ -332,24 +234,12 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     if (!spot) return { ok: false, error: `There is no spot ${n}.` };
     const meta = spotMeta.get(n);
     const time = date ? Date.parse(date + 'T12:00:00Z') : Date.parse(meta?.date || '') || currentFrameTime();
-    const year = yearOf(time), kinds = Object.keys(STAR_CATALOGUES);
-    const [found, jpl] = await Promise.all([Promise.all(kinds.map(kind => starLookup(kind, spot, year, signal))), jplLookup(spot, time, signal)]);
+    const years = (time - Date.UTC(2016, 0, 1)) / (365.25 * DAY_MS);
+    const [gaia, jpl] = await Promise.all([gaiaLookup(spot, years, signal), jplLookup(spot, time, signal)]);
     const later = 'It keeps running in the background and its result will arrive on its own; carry on with other checks.';
-    const stars = Object.fromEntries(kinds.map((kind, i) => [kind, describeStars(kind, found[i], spot)]));
-    kinds.forEach((kind, i) => { if (found[i].error) { const id = backgroundLookup(kind, spot, n, time); if (id) Object.assign(stars[kind], { background: id, note: later }); } });
-    if (!jpl.checked) { const id = backgroundLookup('jpl', spot, n, time); if (id) Object.assign(jpl, { background: id, note: later }); }
-    const answered = found.filter(entry => !entry.error);
-    const point = !spot.radiusArcsec;
-    const result = {
-      ok: true, spot: n, ...areaNote(spot, 'This lists what is inside the area; it does not explain any one source in it.'), date: isoDay(time), ...stars, jpl,
-      ...(point && answered.length ? { movedThrough: movedThrough(spot, answered.flatMap(entry => entry.sources), time), trackedSince: 2000, ...(found[0].truncated ? { truncated: true } : {}) } : {})
-    };
-    // A matching catalogued star's motion seeds the multi-date motion check.
-    if (point) {
-      // Gaia and SIMBAD first: CatWISE motions of saturated stars can be wild.
-      const match = ['gaia', 'simbad', 'catwise'].map(kind => stars[kind].nearest).find(star => star && star.separationArcsec <= 6 && Math.hypot(star.pmra || 0, star.pmdec || 0) > 0);
-      if (match) spotMeta.set(n, { ...(spotMeta.get(n) || {}), pm: { pmra: match.pmra, pmdec: match.pmdec } });
-    }
+    if (gaia.error) { const id = backgroundLookup('gaia', spot, n, time, years); if (id) Object.assign(gaia, { background: id, note: later }); }
+    if (!jpl.checked) { const id = backgroundLookup('jpl', spot, n, time, years); if (id) Object.assign(jpl, { background: id, note: later }); }
+    const result = { ok: true, spot: n, ...areaNote(spot, 'This lists what is inside the area; it does not explain any one source in it.'), date: isoDay(time), gaia, jpl };
     return { ...result, case: record(spot, 'crossmatch', result).verdict };
   }
 
@@ -364,93 +254,6 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
   async function markSpot({ raDeg, decDeg, label, radiusArcsec }) {
     const [added] = await addAgentSpots([{ raDeg, decDeg, origin: 'agent', label, radiusArcsec }]);
     return added ? { ok: true, spot: added.n, ...(added.radiusArcsec ? { radiusArcsec: added.radiusArcsec } : {}) } : { ok: false, error: 'All 9 spots are in use; remove one first.' };
-  }
-
-  // Same path as the Mark star button (mark-target.js): moved to the frame
-  // date for proper motion, then snapped onto the source.
-  async function markTarget() {
-    const result = await request('sky:mark-target-requested', { origin: 'agent' }, 30000);
-    if (!result) return { ok: false, error: 'The viewer did not answer; is an image on screen?' };
-    if (result.ok) spotMeta.set(result.spot, { date: new Date(Date.parse(result.date + 'T12:00:00Z') || currentFrameTime()).toISOString(), role: 'target' });
-    return result;
-  }
-
-  // ---- confirm_motion -------------------------------------------------------
-  // Backyard Worlds style vetting: follow the source across many dates. A real
-  // mover sits on one straight line; glitches show once and colour residuals
-  // jump around.
-  async function confirmMotion({ spot: n, to_spot: toN }, { signal, progress = () => {} }) {
-    const spot = await spotOrError(n);
-    if (!spot) return { ok: false, error: `There is no spot ${n}.` };
-    if (spot.radiusArcsec) return { ok: false, error: `Spot ${n} is an area; mark a point on one object to follow its motion.` };
-    if (!(await needFrames(signal))) return { ok: false, error: 'No observations are loaded for this target yet.' };
-    const refTime = Date.parse(spotMeta.get(n)?.date || '') || currentFrameTime();
-    // Seed: the moved pair, a matching catalogued star's motion, or none.
-    let rate = { ra: 0, dec: 0 }, seed = 'none';
-    if (toN) {
-      const other = await spotOrError(toN);
-      const otherTime = Date.parse(spotMeta.get(toN)?.date || '');
-      if (!other) return { ok: false, error: `There is no spot ${toN}.` };
-      if (Number.isFinite(otherTime) && Math.abs(otherTime - refTime) > DAY_MS / 2) {
-        const days = (otherTime - refTime) / DAY_MS;
-        rate = { ra: (((other.raDeg - spot.raDeg + 540) % 360) - 180) / days, dec: (other.decDeg - spot.decDeg) / days };
-        seed = `spots ${n} and ${toN}`;
-      }
-    } else if (spotMeta.get(n)?.pm) {
-      const { pmra, pmdec } = spotMeta.get(n).pm;
-      rate = { ra: pmra / 3.6e6 / 365.25 / Math.cos(spot.decDeg * Math.PI / 180), dec: pmdec / 3.6e6 / 365.25 };
-      seed = 'catalogue proper motion';
-    }
-    const chosen = spread([...frames()].sort((a, b) => a.frameTime - b.frameTime), 12);
-    // Nearest dates first, so each prediction leans on a fit to closer dates.
-    const order = [...chosen].sort((a, b) => Math.abs(a.frameTime - refTime) - Math.abs(b.frameTime - refTime));
-    const detections = [], misses = [];
-    let fit = null;
-    const predict = time => fit ? fit.at(time) : { raDeg: spot.raDeg + rate.ra * (time - refTime) / DAY_MS, decDeg: spot.decDeg + rate.dec * (time - refTime) / DAY_MS };
-    for (let i = 0; i < order.length && !signal?.aborted; i += 4) {
-      progress(`Following spot ${n}: dates ${i + 1}-${Math.min(order.length, i + 4)} of ${order.length}…`);
-      await Promise.all(order.slice(i, i + 4).map(async frame => {
-        const date = isoDay(frame.frameTime);
-        try {
-          let found = await centroidAt(frame, predict(frame.frameTime), signal, { searchPx: 3 });
-          // Refine with a tighter box around the first centroid.
-          if (found.detected) { const refined = await centroidAt(frame, found, signal, { searchPx: 2 }).catch(() => null); if (refined?.detected) found = refined; }
-          if (found.detected && found.snr >= 3) detections.push({ time: frame.frameTime, raDeg: found.raDeg, decDeg: found.decDeg, snr: found.snr, date });
-          else misses.push({ date, snr: found.snr ?? null });
-        } catch (error) { if (signal?.aborted) throw error; misses.push({ date, error: 'outside image or flagged' }); }
-      }));
-      // A fit over a few days is mostly noise; predictions lean on it only once
-      // it spans a couple of months and the dates agree.
-      const running = detections.length >= 3 ? fitLinearMotion(detections) : null;
-      if (running?.consistent && running.spanYears >= 0.15) fit = running;
-    }
-    detections.sort((a, b) => a.time - b.time);
-    fit = detections.length >= 2 ? fitLinearMotion(detections) : null;
-    const dates = new Set(detections.map(entry => entry.date)).size;
-    const motion = fit ? { motionArcsecPerYear: fit.motionArcsecPerYear, directionDeg: fit.directionDeg, significance: fit.significance, consistent: fit.consistent, rmsArcsec: fit.rmsArcsec, spanYears: fit.spanYears, offLine: fit.dates.filter(entry => !entry.agrees).map(entry => entry.date) } : { consistent: false };
-    const comovers = fit && fit.significance >= 3 && fit.motionArcsecPerYear >= 0.1 ? await findComovers(spot, fit, signal) : [];
-    const result = {
-      ok: true, spot: n, seededFrom: seed, detectedOnDates: dates, of: order.length, ...motion,
-      ...(comovers.length ? { comovers } : {}),
-      ...(misses.length ? { notDetected: misses.slice(0, 6).map(entry => entry.date) } : {}),
-      note: fit?.consistent ? 'The positions line up across the dates.' : dates >= 2 ? 'The positions do not line up on one straight line.' : 'Too few detections to follow it across dates.'
-    };
-    return { ...result, case: record(spot, 'confirm_motion', result).verdict };
-  }
-
-  // Catalogue stars within 5′ moving the same way (proper motion within 20%):
-  // a wide companion would share the motion.
-  async function findComovers(spot, fit, signal) {
-    const direction = fit.directionDeg * Math.PI / 180, pm = fit.motionArcsecPerYear * 1000;
-    const want = { pmra: pm * Math.sin(direction), pmdec: pm * Math.cos(direction) };
-    const query = new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), radius: (300 / 3600).toFixed(5) });
-    const lists = await Promise.all(['/api/gaia-sources', '/api/simbad-sources'].map(path => fetch(`${path}?${query}`, { signal }).then(response => response.ok ? response.json() : null).catch(() => null)));
-    const year = yearOf(currentFrameTime()), seen = new Set();
-    return lists.flatMap((data, i) => (data?.sources || []).map(star => ({ star, catalog: i ? 'SIMBAD' : 'Gaia' })))
-      .filter(({ star }) => Number.isFinite(Number(star.pmra)) && Number.isFinite(Number(star.pmdec)) && Math.hypot(star.pmra - want.pmra, star.pmdec - want.pmdec) <= 0.2 * pm)
-      .map(({ star, catalog }) => ({ catalog, id: star.mainId || String(star.sourceId), separationArcsec: round(separationArcsec(spot, starAt(star, year)), 0), pmMasYr: round(Math.hypot(star.pmra, star.pmdec), 0) }))
-      .filter(entry => entry.separationArcsec > 6 && entry.separationArcsec <= 300 && !seen.has(entry.id) && seen.add(entry.id))
-      .sort((a, b) => a.separationArcsec - b.separationArcsec).slice(0, 5);
   }
 
   async function resizeSpot({ spot: n, radiusArcsec }) {
@@ -475,17 +278,14 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     if (!(await needFrames(signal))) return { ok: false, error: 'No observations are loaded for this target yet.' };
     const list = frames();
     if (list.length < 2) return { ok: false, error: 'Only one frame is available here.' };
-    // Read the wavelength at the field centre on up to 16 frames, then pick the
-    // pair whose gap is close to the one asked for and whose wavelengths match.
-    const known = await wavelengthsOf(spread(list, 16), signal);
-    const best = chooseEpochPair(list, { gapDays, wavelengthOf: frame => known.get(frame) ?? null });
+    let best = null;
+    for (const later of list) for (const earlier of list) {
+      if (earlier.frameTime >= later.frameTime) continue;
+      const gap = (later.frameTime - earlier.frameTime) / DAY_MS, score = Math.abs(gap - gapDays) - later.frameTime / 1e13;
+      if (!best || score < best.score) best = { score, earlier, later, gap };
+    }
     const compared = await base.compare_frames({ reference: 'frame', reference_date: isoDay(best.earlier.frameTime), target_date: isoDay(best.later.frameTime), view: 'difference' }, { signal });
-    return {
-      ...compared, reference: isoDay(best.earlier.frameTime), target: isoDay(best.later.frameTime), gapDays: Math.round(best.gapDays), requestedGapDays: gapDays,
-      ...(best.wavelengthMatched
-        ? { referenceWavelengthUm: round(known.get(best.earlier), 3), targetWavelengthUm: round(known.get(best.later), 3), wavelengthGapUm: round(best.deltaUm, 3) }
-        : { note: 'The wavelengths of these frames could not be read, so the pair was chosen on the time gap alone; residuals around stars may be colour, not change.' })
-    };
+    return { ...compared, reference: isoDay(best.earlier.frameTime), target: isoDay(best.later.frameTime), gapDays: Math.round(best.gap), requestedGapDays: gapDays };
   }
 
   async function predictParallax({ spot: n, distance_au: distanceAu, date }) {
@@ -716,8 +516,6 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
   const handlers = {
     find_changes: findChanges,
     mark_spot: markSpot,
-    mark_target: markTarget,
-    confirm_motion: confirmMotion,
     resize_spot: resizeSpot,
     remove_spots: removeSpots,
     measure_source: measureSource,

@@ -10,7 +10,7 @@ const output = path.join(root, '.vercel', 'output');
 const publicFiles = ['index.html', 'viewer.html', 'workspace-ui.js', 'onboarding.js', 'home.js', 'starfield.js', 'target-search.js', 'search-route.js', 'comet-benchmark.js', 'comet-benchmark.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'viewer-settings.js', 'lib/colormaps.js', 'lib/display-scale.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js', 'lib/crop-codec.js'];
 // Emit Vercel's documented Build Output API, avoiding framework auto-detection.
 publicFiles.push('moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js',
-  'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js', 'lib/peak.js');
+  'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js');
 publicFiles.push(...AGENT_PUBLIC_FILES);
 publicFiles.push('spectrum-explorer.js');
 // The search loading screen and the constellation/distance lines it shows.
@@ -98,11 +98,11 @@ for (const [name, maxDuration] of [['observations', 120], ['moving-observations'
 }
 // The Hobby plan allows 12 functions per deployment, so related endpoints share
 // one: the guide helpers (vision second opinion, JPL known-object check, saved
-// records) ride in the agent function, and WISE, CatWISE and SIMBAD in the Gaia one. config.json
+// records) ride in the agent function, and WISE in the Gaia one. config.json
 // rewrites their URLs to the host function with ?__route=<name>.
 const ROUTE_GROUPS = {
   agent: { routes: ['agent', 'agent-vision', 'known-objects', 'cases'], maxDuration: 30 },
-  'gaia-sources': { routes: ['gaia-sources', 'wise-sources', 'catwise-sources', 'simbad-sources'], maxDuration: 15 },
+  'gaia-sources': { routes: ['gaia-sources', 'wise-sources'], maxDuration: 15 },
 };
 for (const [host, { routes, maxDuration }] of Object.entries(ROUTE_GROUPS)) {
   const directory = path.join(output, 'functions', 'api', `${host}.func`);
@@ -140,4 +140,4 @@ const routes = Object.entries(ROUTE_GROUPS).map(([host, group]) => ({
   if (missing.length) throw new Error(`Function files imported but not copied:\n${missing.join('\n')}`);
 }
 await writeFile(path.join(output, 'config.json'), JSON.stringify({ version: 3, routes }, null, 2));
-console.log(`Vercel output ready: ${publicFiles.length} public assets, eleven Node.js API functions (serving seventeen endpoints), and the preset observation index.`);
+console.log(`Vercel output ready: ${publicFiles.length} public assets, eleven Node.js API functions (serving fifteen endpoints), and the preset observation index.`);

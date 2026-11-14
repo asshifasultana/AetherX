@@ -28,7 +28,7 @@ function mount({ fetchImpl = async () => json(resolved), initial = {}, page = 'v
     const listeners = new Map();
     return {
       value: attributes.value || '', hidden: 'hidden' in attributes, disabled: 'disabled' in attributes,
-      textContent: '', children: [], dataset: {}, classList: { toggle() {}, add() {}, remove() {} },
+      textContent: '', children: [], dataset: {}, classList: { toggle() {}, add() {} },
       setAttribute(key, value) { attributes[key] = value; }, removeAttribute(key) { delete attributes[key]; },
       getAttribute(key) { return attributes[key]; },
       focus() { focused = this; }, append(...items) { this.children.push(...items); },
@@ -288,21 +288,7 @@ test('FOV dragging only updates the readout and commits one viewer-settings even
   ui.get('field-of-view').dispatchEvent({ type: 'change' });
   assert.equal(changes().length, 1); assert.equal(changes()[0].detail.fovArcmin, 19);
   ui.get('field-of-view').dispatchEvent({ type: 'change' }); assert.equal(changes().length, 1);
-  ui.get('colours').value = 'magma'; ui.get('colours').dispatchEvent({ type: 'change' });
-  ui.get('reset-button').click();
-  assert.equal(ui.get('field-of-view').value, 16);
-  assert.equal(ui.get('colours').value, 'grayscale');
-});
-
-test('every new search starts from the default viewer settings', () => {
-  const ui = mount();
-  for (const [id, value] of [['detector-array', '5'], ['colours', 'magma'], ['view-mode', 'difference']]) {
-    ui.get(id).value = value; ui.get(id).dispatchEvent({ type: 'change' });
-  }
-  ui.get('lookup-name').value = 'Sirius'; ui.form.requestSubmit();
-  assert.equal(ui.get('detector-array').value, '2');
-  assert.equal(ui.get('colours').value, 'grayscale');
-  assert.equal(ui.get('view-mode').value, 'time-lapse');
+  ui.get('reset-button').click(); assert.equal(ui.get('field-of-view').value, 16);
 });
 
 test('sidebar dropdowns retain detector and view-mode behavior and moving targets never show fixed coordinates', () => {

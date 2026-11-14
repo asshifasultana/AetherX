@@ -5,7 +5,6 @@
 
 import { shareUrl } from './share.js';
 import { presets } from './presets.js';
-import { locateTarget } from './lib/target-locate.js';
 import { createInvestigator } from './agent-investigate.js';
 import { createJobs } from './lib/background-jobs.js';
 
@@ -96,29 +95,18 @@ export function createViewerController() {
     'motion-trail': ['trailWindow'], 'deep-stack': ['maxStackFrames'], 'time-lapse': []
   };
 
-  // A fast-moving preset is stored at its J2000 catalogue position, which is
-  // empty sky years later; report where the star is on the frame on screen.
-  function targetNow(presetId) {
-    const fixed = value => Number.isFinite(value) ? Number(value.toFixed(4)) : null;
-    const target = latest.target;
-    const frameMs = Date.parse(refreshPlayback()?.frameDate || '');
-    const base = { name: $('object-name')?.textContent || '', ...(presetId && presets[presetId] ? { about: presets[presetId].description } : {}) };
-    const now = Number.isFinite(frameMs) ? locateTarget({ target, frameTime: frameMs }) : null;
-    if (!now || now.method !== 'preset') return { ...base, raDeg: fixed(target?.raDeg), decDeg: fixed(target?.decDeg) };
-    return {
-      ...base, raDeg: fixed(now.raDeg), decDeg: fixed(now.decDeg),
-      catalogRaDeg: fixed(target.raDeg), catalogDecDeg: fixed(target.decDeg),
-      note: 'Moves fast: raDeg/decDeg is where it is on the current frame date; catalogRaDeg/catalogDecDeg (J2000) is now empty sky. To mark it, use mark_target.'
-    };
-  }
-
   function snapshot() {
     const settings = latest.settings;
     const presetId = latest.target?.targetId;
     const overlays = Object.entries({ gaia: Boolean($('gaia-stars')?.checked), crosshair: settings.showCrosshair, compass: settings.showCompass, qualityOverlay: settings.qualityOverlay }).filter(([, on]) => on).map(([name]) => name);
     const status = $('cutout-status')?.hidden ? '' : $('cutout-status')?.textContent || '';
     return {
-      target: targetNow(presetId),
+      target: {
+        name: $('object-name')?.textContent || '',
+        raDeg: Number.isFinite(latest.target?.raDeg) ? Number(latest.target.raDeg.toFixed(4)) : null,
+        decDeg: Number.isFinite(latest.target?.decDeg) ? Number(latest.target.decDeg.toFixed(4)) : null,
+        ...(presetId && presets[presetId] ? { about: presets[presetId].description } : {})
+      },
       band: settings.band ? `D${settings.band} ${BANDS[settings.band - 1]}` : null,
       fov: settings.fovArcmin,
       mode: settings.viewMode,

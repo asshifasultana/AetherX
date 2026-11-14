@@ -4,7 +4,7 @@ import { presets } from './presets.js';
 import { mountObjectLookup } from './object-lookup.js';
 import { initialViewState, isEmbedded } from './share.js';
 import { encodeViewState, linkViewSettings } from './url-state.js';
-import { MODE_DESCRIPTIONS, SETTINGS_SCHEMA, DEFAULT_SETTINGS, normalizeSettings, applyLook, reconcileLook, resetKeys, loadStoredSettings, storeSettings } from './viewer-settings.js';
+import { MODE_DESCRIPTIONS, SETTINGS_SCHEMA, DISPLAY_KEYS, OBSERVATION_KEYS, normalizeSettings, applyLook, reconcileLook, resetKeys, loadStoredSettings, storeSettings } from './viewer-settings.js';
 ensureSearchForm();
 const initialEntry = readSearchEntry(typeof location === 'undefined' ? '' : location.search);
 const $ = id => document.getElementById(id);
@@ -63,9 +63,9 @@ const targetSearch = mountTargetSearch({
   invalidate: objectLookup.invalidate,
   onEdit: () => { selected = null; updateSelection(); },
   onObject: query => objectLookup.resolve(query),
-  onCoordinates: coordinates => {
+  onCoordinates: (coordinates, targetInfo) => {
     position = { ...coordinates, frame: 'icrs' }; selected = null; updateSelection();
-    showPosition({ name: 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Searching observations at your selected sky position.' });
+    showPosition(targetInfo || { name: 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Searching observations at your selected sky position.' });
   },
   onPreset: (targetId, target) => {
     selected = targetId; position = { raDeg: target.raDeg, decDeg: target.decDeg, frame: 'icrs', targetId };
@@ -233,18 +233,16 @@ window.addEventListener('sky:display-scale-locked', () => {
   $('announcement').textContent = 'Display scale locked to the current frame.';
 });
 window.addEventListener('sky:display-limits', event => { if (Number.isFinite(event.detail?.low) && Number.isFinite(event.detail?.high)) lastDisplayLimits = event.detail; });
-const RESET_KEYS = Object.keys(DEFAULT_SETTINGS);
-function resetAllSettings(announce = '') {
-  viewerSettings = { ...resetKeys(viewerSettings, RESET_KEYS), pinnedReferenceKey: '' };
-  renderSettings(); storeSettings(viewerSettings); emitSettings();
-  if (announce) $('announcement').textContent = announce;
-}
 $('reset-button').addEventListener('click', () => {
-  resetAllSettings('All viewer settings reset to their defaults.');
+  viewerSettings = { ...resetKeys(viewerSettings, OBSERVATION_KEYS), pinnedReferenceKey: '' };
+  renderSettings(); storeSettings(viewerSettings); emitSettings();
+  $('announcement').textContent = 'View and processing settings reset to their defaults.';
 });
-// Every search starts a target from the default settings, so a new star never
-// inherits the previous target's view, processing or display choices.
-window.addEventListener('sky:search-entry', () => resetAllSettings());
+$('reset-display')?.addEventListener('click', () => {
+  viewerSettings = resetKeys(viewerSettings, DISPLAY_KEYS);
+  renderSettings(); storeSettings(viewerSettings); emitSettings();
+  $('announcement').textContent = 'Display settings reset to their defaults.';
+});
 // Remember which sections and Advanced panels are open.
 const OPEN_KEY = 'spherex-open-sections-v1';
 let openSections = {};

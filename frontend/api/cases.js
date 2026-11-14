@@ -8,13 +8,17 @@
 //      (latest vote per browser; view public.planetx_vote_tally)
 // GET  /api/cases?kind=finding&caseId=… the 20 newest PlanetX case-file
 //      submissions for one case, without the voter id
+// GET  /api/cases?kind=recovery&tally=1 human "find the hidden planet" rounds
+//      binned by brightness (views planetx_recovery_tally and
+//      planetx_recovery_lab_cells); single rounds are never listed
 // Without SUPABASE_URL and SUPABASE_SERVICE_KEY the endpoint reports 503 and
 // the guide falls back to share links (PlanetX keeps votes in the browser).
 //
 // PlanetX case ids are "p9-…" (public suspicion patches) or "t9-…" (any other
 // 5° tile; the team promotes well-backed tiles to public case files).
 
-const KINDS = ['patrol', 'case', 'report', 'vote', 'finding'];
+const KINDS = ['patrol', 'case', 'report', 'vote', 'finding', 'recovery'];
+const RECOVERY_GAMES = ['lab', 'quest'];
 const VOTE_VERDICTS = ['something', 'nothing'];
 const CASE_ID = /^(p9|t9)-ra\d{3}\.\d-dec[+-]\d{2}\.\d$/;
 const VOTER_ID = /^[a-z0-9-]{8,64}$/i;
@@ -42,6 +46,27 @@ export function cleanFinding(payload) {
     ? { raDeg: Number(ra.toFixed(5)), decDeg: Number(dec.toFixed(5)), ...(Number.isFinite(radius) && radius > 0 && radius <= 3600 ? { radiusArcsec: Math.round(radius) } : {}) }
     : null;
   return { caseId: payload.caseId, verdict: payload.verdict, voter: String(payload.voter).toLowerCase(), answers, ai, spot, ...(spot ? { raDeg: spot.raDeg, decDeg: spot.decDeg } : {}) };
+}
+
+const inRange = (value, low, high) => Number.isFinite(value) && value >= low && value <= high;
+
+/**
+ * One round of a "find the hidden planet" game: which game, how bright the
+ * fake was (peak over single-frame noise), whether it was found and after how
+ * many misses, and for the Lab its magnitude, distance and date gap. Nothing
+ * else is kept.
+ */
+export function cleanRecovery(payload) {
+  if (!payload || !RECOVERY_GAMES.includes(payload.game) || typeof payload.found !== 'boolean' || !VOTER_ID.test(String(payload.voter))) return null;
+  const sigma = Number(payload.peakSigma), misses = Number(payload.misses), mag = Number(payload.mag), distanceAu = Number(payload.distanceAu), baselineDays = Number(payload.baselineDays);
+  if (!inRange(sigma, 0, 1000)) return null;
+  return {
+    game: payload.game, peakSigma: Number(sigma.toFixed(2)), found: payload.found, voter: String(payload.voter).toLowerCase(),
+    misses: Number.isInteger(misses) && misses >= 0 && misses <= 3 ? misses : 0,
+    ...(inRange(mag, 5, 30) ? { mag: Number(mag.toFixed(2)) } : {}),
+    ...(inRange(distanceAu, 10, 5000) ? { distanceAu: Number(distanceAu.toFixed(1)) } : {}),
+    ...(inRange(baselineDays, 0, 1000) ? { baselineDays: Number(baselineDays.toFixed(2)) } : {})
+  };
 }
 
 /** A PlanetX vote holds a case id, a verdict and an anonymous browser id; nothing else is kept. */
@@ -100,6 +125,22 @@ export function createCasesHandler({ env = process.env, fetchImpl = (...args) =>
           res.end(JSON.stringify({ tallies }));
           return;
         }
+        if (kind === 'recovery') {
+          if (params.get('tally') !== '1') { fail(400, 'Recovery rounds are only read as totals: use ?kind=recovery&tally=1.', 'BAD_REQUEST'); return; }
+          const view = name => base.replace(/agent_records$/, name);
+          const [tally, lab] = await Promise.all([
+            fetchImpl(`${view('planetx_recovery_tally')}?select=game,sigma,trials,found&limit=2000`, { headers, signal: AbortSignal.timeout(5000) }),
+            fetchImpl(`${view('planetx_recovery_lab_cells')}?select=mag,distance_au,trials,found&limit=2000`, { headers, signal: AbortSignal.timeout(5000) })
+          ]);
+          if (!tally.ok || !lab.ok) { fail(502, 'Could not read recovery totals.', 'STORE_ERROR'); return; }
+          const count = value => Math.max(0, Math.round(Number(value)) || 0);
+          const bins = (await tally.json()).filter(row => RECOVERY_GAMES.includes(row.game) && Number.isFinite(Number(row.sigma)))
+            .map(row => ({ game: row.game, sigma: Number(row.sigma), trials: count(row.trials), found: Math.min(count(row.found), count(row.trials)) }));
+          const cells = (await lab.json()).filter(row => Number.isFinite(Number(row.mag)) && Number.isFinite(Number(row.distance_au)))
+            .map(row => ({ mag: Number(row.mag), distanceAu: Number(row.distance_au), trials: count(row.trials), found: Math.min(count(row.found), count(row.trials)) }));
+          res.end(JSON.stringify({ bins, cells }));
+          return;
+        }
         if (kind === 'finding') {
           const caseId = params.get('caseId');
           if (!CASE_ID.test(String(caseId))) { fail(400, 'Findings are read per case: use ?kind=finding&caseId=p9-….', 'BAD_REQUEST'); return; }
@@ -130,8 +171,9 @@ export function createCasesHandler({ env = process.env, fetchImpl = (...args) =>
         }
       } catch { fail(400, 'Send {kind, payload} as JSON (at most 16 KB).', 'BAD_REQUEST'); return; }
       if (!KINDS.includes(body?.kind) || !body.payload || typeof body.payload !== 'object' || Array.isArray(body.payload)) { fail(400, 'Send {kind, payload}.', 'BAD_REQUEST'); return; }
-      const payload = body.kind === 'vote' ? cleanVote(body.payload) : body.kind === 'finding' ? cleanFinding(body.payload) : cleanPayload(body.payload);
-      if (!payload) { fail(400, `A ${body.kind} needs {caseId, verdict: "something" | "nothing", voter}.`, 'BAD_REQUEST'); return; }
+      const cleaners = { vote: cleanVote, finding: cleanFinding, recovery: cleanRecovery };
+      const payload = (cleaners[body.kind] || cleanPayload)(body.payload);
+      if (!payload) { fail(400, body.kind === 'recovery' ? 'A recovery needs {game: "lab" | "quest", peakSigma, found, voter}.' : `A ${body.kind} needs {caseId, verdict: "something" | "nothing", voter}.`, 'BAD_REQUEST'); return; }
       const ra = Number(payload.raDeg), dec = Number(payload.decDeg);
       const row = { kind: body.kind, payload, ra_deg: Number.isFinite(ra) ? ra : null, dec_deg: Number.isFinite(dec) && Math.abs(dec) <= 90 ? dec : null };
       const response = await fetchImpl(base, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' }, body: JSON.stringify(row), signal: AbortSignal.timeout(5000) });

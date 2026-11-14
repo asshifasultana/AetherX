@@ -15,6 +15,7 @@ import { propagateGaia } from './gaia-core.js';
 import { spectralHints } from './lib/spectral-hints.js';
 import { QUESTS, NORTH_ECLIPTIC_POLE, barnardTrack, checkQuestAnswer } from './lib/quests.js';
 import { TOURS } from './lib/tours.js';
+import { submitRecovery } from './lib/planetx-votes.js';
 import { shareUrl } from './share.js';
 import { pollUntil } from './lib/background-jobs.js';
 import { fastStarPasses, yearOf } from './lib/proper-motion.js';
@@ -677,10 +678,11 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     }
     const result = checkQuestAnswer(quest.id, spot, quest.expected);
     if (quest.id === 'hidden-planet') {
-      if (result.correct) { questStats.push({ peakSigma: quest.expected.peakSigma, found: true }); await request('sky:inject-synthetic', { source: null }); quest = null; }
+      if (result.correct) { questStats.push({ peakSigma: quest.expected.peakSigma, found: true }); void submitRecovery({ game: 'quest', peakSigma: quest.expected.peakSigma, found: true, misses: quest.misses }); await request('sky:inject-synthetic', { source: null }); quest = null; }
       else if (++quest.misses >= 3) {
         const [shown] = await addAgentSpots([{ ...quest.expected.track[1], origin: 'predicted', label: 'hidden planet' }]);
         questStats.push({ peakSigma: quest.expected.peakSigma, found: false });
+        void submitRecovery({ game: 'quest', peakSigma: quest.expected.peakSigma, found: false, misses: quest.misses });
         const reveal = { revealedSpot: shown?.n ?? null, peakSigma: quest.expected.peakSigma };
         await request('sky:inject-synthetic', { source: null });
         quest = null;

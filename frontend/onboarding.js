@@ -6,13 +6,13 @@ const homeSteps = [
   { target: '#preset-panel', title: 'Or try a quick pick', copy: 'Choose one of these objects to open its infrared images. Next, we’ll open the viewer so you can see how it works.' }
 ];
 
-const viewerStepCount = 3;
-
 const planetxSteps = [
   { target: '#planetx-introduction', title: 'Meet Planet Nine', copy: 'This 30-second video explains the Planet Nine hypothesis with NASA observations. You can play it after the tour.' },
   { target: '.px-map-wrap', title: 'Find a place to look', copy: 'Brighter tiles show where the model gives Planet Nine more relative probability. Select a tile to see its coordinates on the map.' },
   { target: '.px-map-actions', title: 'Explore a coordinate', copy: 'After selecting a tile, use Jump to coordinate or Jump to case to inspect the sky in SPHEREx. Switch to Community evidence to see where others have flagged findings.' },
-  { target: '.px-case-drawer > summary', title: 'Open a case file', copy: 'Browse the patches highlighted by the model, open a case file, and vote on whether it’s worth following up.' },
+  { target: '#planetx-aladin-context > summary', title: 'See the real sky there', copy: 'Open the selected tile in Aladin Lite to zoom around real survey images of that patch. It shows context, not a detection.' },
+  { target: '.px-case-drawer > summary', title: 'Open a case file', copy: 'Browse the patches highlighted by the model, open a case file, and vote on whether it’s worth following up. The AI can give its own read for you to compare.' },
+  { target: '#planetx-lab > summary', title: 'Practice the search', copy: 'Plant a fake planet in real SPHEREx images, spot a methane dip in a spectrum, and see how deep we can really see: how faint a hidden planet the code and other players actually find.' },
   { target: '#planetx-evidence > summary', title: 'Weigh the evidence', copy: 'Read why some astronomers propose a ninth planet and what observations challenge the idea.' }
 ];
 
@@ -20,8 +20,25 @@ function viewerSteps(moving) {
   return [
     { target: moving ? '#moving-target' : '.viewer-shell > .viewer', title: 'See your patch of sky', copy: 'This is Barnard’s Star. The large frame shows an infrared image for one observation date. Images can take a moment to arrive from the archive.' },
     { target: moving ? '#moving-target' : '.timeline-panel', title: 'Play or choose any frame', copy: 'Playback and all dated frame thumbnails stay below the image. Press Play when you’re ready, drag the timeline, or choose a thumbnail to compare dates. Playback never starts automatically.' },
-    { target: '#sidebar-toggle', title: 'Adjust the view anytime', copy: 'Open Settings to change the detector, brightness or view mode. Choose New search when you want to look somewhere else.' }
+    { target: '#sidebar-toggle', title: 'Adjust the view anytime', copy: 'Open Settings to change the detector, brightness or view mode. Choose New search when you want to look somewhere else.' },
+    { target: '#agent-toggle', title: 'Ask the AI guide', copy: 'The AI guide works the viewer for you: it compares dates, marks numbered spots on anything that changed, checks them against star and asteroid catalogs, and measures their spectra. It only reports what it measured.' },
+    // The spectrum tool lives inside the collapsed Observations panel and only
+    // appears once results load, so open the panel and fall back to its header.
+    { open: '#observation-disclosure', target: ['#quick-spectrum .quick-spectrum-heading', '#observation-disclosure > summary'], title: 'See spectra on the fly', copy: 'Measure the selected spot across SPHEREx’s 102 infrared colours in the loaded images, by wavelength or over time. Click any point to open the image it came from.' },
+    { target: '#aladin-context > summary', title: 'Zoom out with Aladin', copy: 'Open Aladin Lite for a wide-field view around the target and compare DSS, 2MASS, unWISE and Pan-STARRS survey maps. It adds context; the dated SPHEREx exposures stay in the viewer above.' }
   ];
+}
+
+const viewerStepCount = viewerSteps(false).length;
+
+// A step's target may list fallbacks; use the first one that is on the page and visible.
+function stepTarget(step) {
+  for (const selector of [].concat(step.target || [])) {
+    const element = document.querySelector(selector);
+    const rect = element?.getBoundingClientRect();
+    if (rect?.width && rect.height) return element;
+  }
+  return null;
 }
 
 export function readTourProgress(storage) {
@@ -104,8 +121,7 @@ export function mountOnboarding() {
   }
   function position() {
     if (!root) return;
-    const step = steps[index];
-    const target = step.target ? document.querySelector(step.target) : null;
+    const target = stepTarget(steps[index]);
     const card = root.querySelector('.tour-card');
     const targetRect = target?.getBoundingClientRect();
     const rect = targetRect && targetRect.width && targetRect.height ? {
@@ -117,14 +133,17 @@ export function mountOnboarding() {
     if (rect) {
       hole.setAttribute('x', Math.max(4, rect.left - padding));
       hole.setAttribute('y', Math.max(4, rect.top - padding));
-      hole.setAttribute('width', Math.min(width - 8, rect.width + padding * 2));
-      hole.setAttribute('height', Math.min(height - 8, rect.height + padding * 2));
+      hole.setAttribute('width', Math.max(0, Math.min(width - 8, rect.width + padding * 2)));
+      hole.setAttribute('height', Math.max(0, Math.min(height - 8, rect.height + padding * 2)));
     }
     if (!rect) { hole.setAttribute('width', 0); hole.setAttribute('height', 0); }
     const bounds = card.getBoundingClientRect();
     const below = (rect?.bottom ?? height / 3) + 24;
     const above = (rect?.top ?? height / 2) - bounds.height - 24;
-    const top = !rect ? (height - bounds.height) / 2 : below + bounds.height < height - 16 ? below : above >= 16 ? above : (height - bounds.height) / 2;
+    // When the card fits neither fully below nor above, lean towards the side
+    // with more room (clamped below) rather than centring it over the target.
+    const roomier = rect && height - rect.bottom > rect.top ? below : above;
+    const top = !rect ? (height - bounds.height) / 2 : below + bounds.height < height - 16 ? below : above >= 16 ? above : roomier;
     card.style.top = `${Math.max(16, Math.min(height - bounds.height - 16, top))}px`;
     const side = rect && rect.left > bounds.width + 40;
     if (side) card.style.top = `${Math.max(16, Math.min(height - bounds.height - 16, rect.top))}px`;
@@ -139,9 +158,10 @@ export function mountOnboarding() {
     root.querySelector('#tour-back').disabled = index === 0 && !continuation;
     root.querySelector('#tour-next').textContent = index === steps.length - 1 ? (home ? 'Next' : 'Got it') : 'Next';
     for (const [i, dot] of [...root.querySelectorAll('.tour-dot')].entries()) dot.dataset.active = String(i === stepOffset + index);
+    if (step.open) { const details = document.querySelector(step.open); if (details) details.open = true; }
     // The viewer page scrolls now, so bring a target that is below (or above)
     // the fold into view before drawing the spotlight around it.
-    const target = step.target && document.querySelector(step.target);
+    const target = stepTarget(step);
     const targetRect = target?.getBoundingClientRect();
     const outOfView = targetRect && (targetRect.bottom < 80 || targetRect.top > window.innerHeight - 80);
     if (outOfView && !target.closest('header')) {
@@ -190,7 +210,7 @@ export function mountOnboarding() {
     window.addEventListener('resize', position);
     window.addEventListener('scroll', position, true);
     resizeObserver = new ResizeObserver(position);
-    steps.forEach(step => { const target = step.target && document.querySelector(step.target); if (target) resizeObserver.observe(target); });
+    steps.forEach(step => { for (const selector of [].concat(step.target || [])) { const target = document.querySelector(selector); if (target) resizeObserver.observe(target); } });
     render(); root.querySelector('#tour-next').focus({ preventScroll: true });
   }
   document.getElementById('tour-restart')?.addEventListener('click', () => open(0));

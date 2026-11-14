@@ -67,6 +67,7 @@
         <button type="button" role="tab" id="lab-tab-plant" aria-controls="lab-panel-plant" aria-selected="true"><span>01</span> Plant a planet</button>
         <button type="button" role="tab" id="lab-tab-methane" aria-controls="lab-panel-methane" aria-selected="false" tabindex="-1"><span>02</span> Spot the methane dip</button>
         <button type="button" role="tab" id="lab-tab-gallery" aria-controls="lab-panel-gallery" aria-selected="false" tabindex="-1"><span>03</span> What you’ll really find</button>
+        <button type="button" role="tab" id="lab-tab-depth" aria-controls="lab-panel-depth" aria-selected="false" tabindex="-1"><span>04</span> How deep can we see?</button>
       </div>
 
       <section class="lab-panel" role="tabpanel" id="lab-panel-plant" aria-labelledby="lab-tab-plant" tabindex="0">
@@ -130,6 +131,40 @@
         <p class="lab-intro">Searching for Planet Nine mostly turns up other things, and they are worth finding. Each card opens the viewer on real SPHEREx data.</p>
         <ul class="lab-gallery" id="lab-gallery"></ul>
         <p class="lab-note lab-reality">Reality check: the citizen-science search <a href="https://www.zooniverse.org/projects/marckuchner/backyard-worlds-planet-9" target="_blank" rel="noopener noreferrer">Backyard Worlds: Planet 9 <span aria-hidden="true">↗</span></a> has turned up thousands of brown dwarfs, including some of the coldest known, but no Planet Nine. That is what a careful search usually finds.</p>
+      </section>
+
+      <section class="lab-panel lab-depth" role="tabpanel" id="lab-panel-depth" aria-labelledby="lab-tab-depth" tabindex="0" hidden>
+        <p class="lab-intro">A search is only as good as its measured limit. We hid thousands of fake planets in <strong>real</strong> SPHEREx photo pairs of the Planet Nine patches and ran the same change-finder the AI guide uses. Next to it: how often people found the planet in the two hide-and-seek games.</p>
+        <div class="lab-depth-stats" id="lab-depth-stats" aria-live="polite"></div>
+        <figure class="lab-depth-figure">
+          <figcaption class="lab-depth-head">
+            <h3>Share of hidden planets found, by brightness</h3>
+            <ul class="lab-depth-legend" aria-label="Legend">
+              <li><i class="is-6mo" aria-hidden="true"></i>Code · photos 6 months apart</li>
+              <li><i class="is-days" aria-hidden="true"></i><span id="lab-depth-days-label">Code · photos days apart</span></li>
+              <li><i class="is-people" aria-hidden="true"></i>People · both games</li>
+            </ul>
+          </figcaption>
+          <div class="lab-depth-chart" id="lab-depth-chart"><p class="lab-depth-empty">Loading the results…</p></div>
+        </figure>
+        <div class="lab-depth-heats">
+          <figure class="lab-depth-figure">
+            <figcaption class="lab-depth-head"><h3>Days apart: the Lab’s own photo pair</h3><p>Code’s hit rate by distance and brightness. <span class="lab-depth-dot-key" aria-hidden="true"></span> your Lab rounds.</p></figcaption>
+            <div class="lab-depth-heat" id="lab-depth-heat-days"></div>
+          </figure>
+          <figure class="lab-depth-figure">
+            <figcaption class="lab-depth-head"><h3>Six months apart: six Planet Nine patches</h3><p>Code’s hit rate by distance and brightness.</p></figcaption>
+            <div class="lab-depth-heat" id="lab-depth-heat-6mo"></div>
+          </figure>
+        </div>
+        <div class="lab-depth-ramp" aria-hidden="true"><span>0% found</span><i></i><span>100%</span></div>
+        <details class="lab-depth-table">
+          <summary>Show the numbers as a table</summary>
+          <div id="lab-depth-table"></div>
+        </details>
+        <p class="lab-note" id="lab-depth-source"></p>
+        <p class="lab-note" id="lab-depth-method"></p>
+        <div class="lab-tip" id="lab-depth-tip" hidden></div>
       </section>
     </details>
     <details class="px-evidence" id="planetx-evidence">

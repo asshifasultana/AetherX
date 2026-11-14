@@ -1926,6 +1926,53 @@ html:has(body.home-page) { background:#050409; color-scheme:dark; }
 .lab-gallery h3{margin:0;font:600 16px Manrope,sans-serif}
 .lab-gallery p{margin:0;font-size:12px;line-height:1.65;color:var(--lab-muted);flex:1}
 .lab-gallery-open{font-size:12px;color:#ecd9a8}
+/* Lab 4 · How deep can we see? (dark panel; series colours validated on #0d1621) */
+.lab-depth{position:relative;--depth-6mo:#3987e5;--depth-days:#199e70;--depth-people:#d95926;--depth-surface:#0d1621}
+.lab-depth-stats dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.lab-depth-stat{border:1px solid var(--lab-line);border-radius:10px;background:var(--depth-surface);padding:14px 16px}
+.lab-depth-stat dt{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#8a9c9e;margin-bottom:6px}
+.lab-depth-stat dd{margin:0;font:600 28px/1.1 Manrope,sans-serif;color:#eef2ea;font-variant-numeric:tabular-nums}
+.lab-depth-stat p{margin:6px 0 0;font-size:12px;line-height:1.55;color:var(--lab-muted)}
+.lab-depth-figure{margin:0 0 16px;border:1px solid var(--lab-line);border-radius:10px;background:var(--depth-surface);padding:14px 14px 10px;min-width:0}
+.lab-depth-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 16px;margin-bottom:8px}
+.lab-depth-head h3{margin:0;font:600 15px Manrope,sans-serif;color:#eef2ea}
+.lab-depth-head p{margin:0;font-size:12px;color:#8a9c9e}
+.lab-depth-legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:#b4c0bd}
+.lab-depth-legend li{display:inline-flex;align-items:center;gap:6px}
+.lab-depth-legend i,.lab-tip i{display:inline-block;width:16px;height:0;border-top:2px solid var(--depth-6mo);vertical-align:middle;margin-right:5px}
+.lab-depth-legend i.is-days,.lab-tip i.is-days{border-top:2px dashed var(--depth-days)}
+.lab-depth-legend i.is-people,.lab-tip i.is-people,.lab-depth-dot-key{width:8px;height:8px;border:0;border-radius:50%;background:var(--depth-people)}
+.lab-depth-dot-key{display:inline-block;vertical-align:-1px}
+.lab-depth-chart,.lab-depth-heat{width:100%;min-height:120px}
+.lab-depth-svg{display:block;overflow:visible;touch-action:pan-y}
+.lab-depth-axis text,.lab-depth-axis-text{fill:#8a9c9e;font-size:10px;font-variant-numeric:tabular-nums}
+.lab-depth-axis .is-title,.lab-depth-axis-text.is-title{fill:#7f9397;font-size:10px;letter-spacing:.3px}
+.lab-depth-axis line.is-grid{stroke:#ffffff12}
+.lab-depth-axis line.is-base{stroke:#ffffff33}
+.lab-depth-ref{stroke:#e2bd72;stroke-width:1;stroke-dasharray:3 4;opacity:.6}
+.lab-depth-ref-label{fill:#d9c48f;font-size:10px}
+.lab-depth-line{fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.lab-depth-line.is-6mo{stroke:var(--depth-6mo)}
+.lab-depth-line.is-days{stroke:var(--depth-days);stroke-dasharray:6 5}
+.lab-depth-direct{fill:#cbd5cf;font-size:11px}
+.lab-depth-bar{stroke:var(--depth-people);stroke-width:2;stroke-linecap:round;opacity:.55}
+.lab-depth-person{fill:var(--depth-people);stroke:var(--depth-surface);stroke-width:2}
+.lab-depth-n{fill:#b4c0bd;font-size:10px}
+.lab-depth-cross{stroke:#ffffff55;stroke-width:1;pointer-events:none}
+.lab-depth-cell:hover{stroke:#fff;stroke-width:1}
+.lab-depth-heats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.lab-depth-ramp{display:flex;align-items:center;gap:8px;font-size:11px;color:#8a9c9e;margin:-4px 0 14px}
+.lab-depth-ramp i{flex:0 1 220px;height:8px;border-radius:4px;background:linear-gradient(90deg,#14243a,#104281,#184f95,#256abf,#3987e5,#6da7ec,#9ec5f4,#cde2fb)}
+.lab-depth-table summary{cursor:pointer;font-size:12px;color:#ecd9a8}
+.lab-depth-table table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;font-variant-numeric:tabular-nums}
+.lab-depth-table th,.lab-depth-table td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--lab-line);color:#cbd5cf}
+.lab-depth-table th{color:#8a9c9e;font-weight:500}
+.lab-depth-table small{color:#7f9397}
+.lab-depth-table>div{overflow-x:auto}
+.lab-depth-empty{margin:40px 0;text-align:center;font-size:13px;color:#8a9c9e}
+.lab-depth .lab-tip{transform:translate(12px,-110%);line-height:1.6;white-space:nowrap;z-index:3}
+.lab-depth .lab-tip strong{color:#fff;font-weight:600}
+@media(max-width:860px){.lab-depth-heats{grid-template-columns:1fr}.lab-depth-stats dl{grid-template-columns:1fr}}
 @media(max-width:860px){.lab-plant{grid-template-columns:1fr}.lab-spectra{grid-template-columns:1fr}}
 @media(max-width:760px){.lab-tabs{padding:10px 12px 0}.lab-panel{padding:18px 16px 20px}.lab-readout{grid-template-columns:1fr}.lab-scale{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.lab-methane-band,.lab-methane-band-label{transition:none}}

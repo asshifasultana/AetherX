@@ -17,7 +17,7 @@ import { encodeViewState, decodeViewState, viewStateSignature, DEFAULT_VIEW_STAT
 import { parseSbident, raToSbident, decToSbident, createKnownObjectsHandler } from '../api/known-objects.js';
 import { createAgentHandler, capabilitiesOf, CRITIC_PROMPT } from '../api/agent.js';
 import { parseVerdict, createVisionHandler } from '../api/agent-vision.js';
-import { cleanPayload, cleanVote, cleanFinding, createCasesHandler } from '../api/cases.js';
+import { cleanPayload, cleanVote, cleanFinding, cleanRecovery, createCasesHandler } from '../api/cases.js';
 import { parsePopulation, binRemaining } from '../../scripts/planet-nine-region.mjs';
 import { AGENT_PUBLIC_FILES } from '../agent-assets.js';
 import { readFile, access } from 'node:fs/promises';
@@ -472,4 +472,44 @@ test('PlanetX votes accept candidate tiles; findings keep only answers, verdict,
   res = response();
   await createCasesHandler({ env, fetchImpl })(request('GET', undefined, { url: '/api/cases?kind=finding' }), res);
   assert.equal(res.statusCode, 400);
+});
+
+test('hidden-planet rounds keep only the game, brightness and result, and are read back only as totals', async () => {
+  const voter = 'a1b2c3d4-e5f6-7890-abcd-ef0123456789';
+  assert.deepEqual(cleanRecovery({ game: 'lab', peakSigma: 6.4321, found: true, misses: 1, voter, mag: 17.25, distanceAu: 412.3, baselineDays: 4.75, email: 'x@y.z', note: 'hi' }),
+    { game: 'lab', peakSigma: 6.43, found: true, voter, misses: 1, mag: 17.25, distanceAu: 412.3, baselineDays: 4.75 });
+  assert.deepEqual(cleanRecovery({ game: 'quest', peakSigma: 5, found: false, misses: 9, voter, mag: 99 }), { game: 'quest', peakSigma: 5, found: false, voter, misses: 0 });
+  assert.equal(cleanRecovery({ game: 'chess', peakSigma: 5, found: true, voter }), null);
+  assert.equal(cleanRecovery({ game: 'lab', peakSigma: -1, found: true, voter }), null);
+  assert.equal(cleanRecovery({ game: 'lab', peakSigma: 5, found: 'yes', voter }), null);
+  assert.equal(cleanRecovery({ game: 'lab', peakSigma: 5, found: true, voter: 'x' }), null);
+
+  const env = { SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_KEY: 'sb_secret' };
+  const urls = [];
+  let sent;
+  const fetchImpl = async (url, options = {}) => {
+    urls.push(url); sent = { url, body: options.body && JSON.parse(options.body) };
+    if (url.includes('planetx_recovery_tally')) return { ok: true, json: async () => [{ game: 'lab', sigma: 6, trials: 4, found: 3 }, { game: 'spam', sigma: 1, trials: 9, found: 9 }, { game: 'quest', sigma: 8, trials: 2, found: 5 }] };
+    if (url.includes('planetx_recovery_lab_cells')) return { ok: true, json: async () => [{ mag: 17.25, distance_au: 400, trials: 2, found: 1 }] };
+    return { ok: true, json: async () => [{ id: 12 }] };
+  };
+  let res = response();
+  await createCasesHandler({ env, fetchImpl })(request('POST', { kind: 'recovery', payload: { game: 'quest', peakSigma: 7.2, found: true, misses: 0, voter } }, { headers: { 'x-forwarded-for': '10.0.0.31' } }), res);
+  assert.equal(res.statusCode, 201);
+  assert.equal(sent.body.kind, 'recovery');
+  assert.deepEqual(sent.body.payload, { game: 'quest', peakSigma: 7.2, found: true, voter, misses: 0 });
+  res = response();
+  await createCasesHandler({ env, fetchImpl })(request('POST', { kind: 'recovery', payload: { game: 'quest', peakSigma: 7.2, voter } }, { headers: { 'x-forwarded-for': '10.0.0.32' } }), res);
+  assert.equal(res.statusCode, 400);
+  res = response();
+  await createCasesHandler({ env, fetchImpl })(request('GET', undefined, { url: '/api/cases?kind=recovery&tally=1' }), res);
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(JSON.parse(res.body), {
+    bins: [{ game: 'lab', sigma: 6, trials: 4, found: 3 }, { game: 'quest', sigma: 8, trials: 2, found: 2 }],
+    cells: [{ mag: 17.25, distanceAu: 400, trials: 2, found: 1 }]
+  });
+  assert.ok(urls.some(url => url === 'https://x.supabase.co/rest/v1/planetx_recovery_tally?select=game,sigma,trials,found&limit=2000'));
+  res = response();
+  await createCasesHandler({ env, fetchImpl })(request('GET', undefined, { url: '/api/cases?kind=recovery' }), res);
+  assert.equal(res.statusCode, 400, 'single rounds (with voter ids) are never listed');
 });

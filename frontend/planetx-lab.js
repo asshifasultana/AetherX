@@ -2,9 +2,12 @@
 // 1. Plant a fake planet into two real SPHEREx exposures and blink them.
 // 2. Spot the methane dip among three illustrative spectra.
 // 3. A gallery of what searches really find, each one click into the viewer.
-import { magToPeak, peakSigma, limitingMag, visibility, planetShift, plantInto, decodePlane, SPHEREX_DEPTH_AB } from './lib/planted-lab.js';
+// 4. How deep can we see? Machine vs. human recovery of planted planets.
+import { magToPeak, peakToMag, peakSigma, limitingMag, visibility, planetShift, plantInto, decodePlane, SPHEREX_DEPTH_AB } from './lib/planted-lab.js';
+import { wilson, fiftyPercentPoint } from './lib/recovery.js';
 import { MYSTERY_SPECTRA, METHANE_BAND_UM, spectrumSamples } from './lib/mystery-spectra.js';
 import { spectralHints } from './lib/spectral-hints.js';
+import { submitRecovery, loadRecoveryTally } from './lib/planetx-votes.js';
 
 const $ = id => document.getElementById(id);
 const lab = $('planetx-lab');
@@ -21,6 +24,7 @@ function selectTab(tab, focus = false) {
   }
   if (focus) tab.focus();
   if (tab.id === 'lab-tab-plant') plant.resume(); else plant.pause();
+  if (tab.id === 'lab-tab-depth') depth.show(); else depth.hide();
 }
 for (const tab of tabs) {
   tab.addEventListener('click', () => selectTab(tab));
@@ -152,6 +156,13 @@ const plant = (() => {
     $('lab-hide').textContent = 'Give up · show me';
     update();
   }
+  // Every finished round (found, three misses or given up) is one human data
+  // point for the "How deep?" chart.
+  function recordRound(found) {
+    const s = state();
+    void submitRecovery({ game: 'lab', peakSigma: s.sigma, found, misses: game.misses, mag: s.mag, distanceAu: s.distanceAu, baselineDays: s.shift.days })
+      .then(() => window.dispatchEvent(new CustomEvent('planetx:recovery-recorded')));
+  }
   function endGame(message, reveal) {
     if (reveal) game.revealed = true;
     status.textContent = message;
@@ -162,7 +173,7 @@ const plant = (() => {
   }
   $('lab-hide').addEventListener('click', () => {
     if (!data) return;
-    if (game && !game.over) { endGame(`There it was: ${state().sigma.toFixed(1)}× the noise. ${visibility(state().sigma).note}`, true); return; }
+    if (game && !game.over) { recordRound(false); endGame(`There it was: ${state().sigma.toFixed(1)}× the noise. ${visibility(state().sigma).note}`, true); return; }
     startGame();
   });
   canvas.addEventListener('click', event => {
@@ -171,9 +182,9 @@ const plant = (() => {
     const guess = { x: (event.clientX - box.left) / box.width * data.width - 0.5, y: (event.clientY - box.top) / box.height * data.width - 0.5 };
     const s = state();
     const miss = Math.min(...s.positions.map(p => Math.hypot(p.x - guess.x, p.y - guess.y)));
-    if (miss <= 2.5) { endGame(`Found it! It was ${s.sigma.toFixed(1)}× the noise and hopped ${s.shift.arcsec.toFixed(0)}″. Try it fainter or farther away.`, true); return; }
+    if (miss <= 2.5) { recordRound(true); endGame(`Found it! It was ${s.sigma.toFixed(1)}× the noise and hopped ${s.shift.arcsec.toFixed(0)}″. Try it fainter or farther away.`, true); return; }
     game.guesses.push(guess);
-    if (++game.misses >= 3) { endGame(`Three misses, so here it is (circled): ${s.sigma.toFixed(1)}× the noise. ${s.sigma < 5 ? 'Below 5σ a real search could not claim it either.' : 'Try again; it helps to watch one small patch while it blinks.'}`, true); return; }
+    if (++game.misses >= 3) { recordRound(false); endGame(`Three misses, so here it is (circled): ${s.sigma.toFixed(1)}× the noise. ${s.sigma < 5 ? 'Below 5σ a real search could not claim it either.' : 'Try again; it helps to watch one small patch while it blinks.'}`, true); return; }
     status.textContent = `Not there (${3 - game.misses} ${game.misses === 2 ? 'try' : 'tries'} left). ${miss < 12 ? 'Close! ' : ''}${s.shift.pixels < 1 ? 'It barely moves at this distance, so nothing gives it away. Try a closer distance.' : 'Look for a dot that jumps between the two frames.'}`;
     render();
   });
@@ -349,6 +360,209 @@ $('lab-gallery').replaceChildren(...GALLERY.map(entry => {
   item.innerHTML = `<a href="${entry.href}"><span class="lab-gallery-icon" aria-hidden="true">${entry.icon}</span><small>${entry.kind}</small><h3>${entry.name}</h3><p>${entry.copy}</p><span class="lab-gallery-open">Open in viewer <span aria-hidden="true">↗</span></span></a>`;
   return item;
 }));
+
+// ---- 4. how deep can we see? ------------------------------------------------------------
+// Machine recovery (frontend/data/recovery-grid.json, from scripts/recovery-grid.mjs)
+// next to human recovery from both hide-and-seek games (/api/cases tallies).
+const depth = (() => {
+  const chartBox = $('lab-depth-chart'), tip = $('lab-depth-tip'), panel = $('lab-panel-depth');
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const el = (name, attributes = {}, text) => {
+    const node = document.createElementNS(svgNS, name);
+    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, value);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+  const percent = (k, n) => (n ? `${Math.round(100 * k / n)}%` : '—');
+  const RAMP = ['#14243a', '#104281', '#184f95', '#256abf', '#3987e5', '#6da7ec', '#9ec5f4', '#cde2fb'];
+  const hex = value => [1, 3, 5].map(i => parseInt(value.slice(i, i + 2), 16));
+  function rampColor(fraction) {
+    const t = Math.max(0, Math.min(1, fraction)) * (RAMP.length - 1), i = Math.min(RAMP.length - 2, Math.floor(t)), f = t - i;
+    const [a, b] = [hex(RAMP[i]), hex(RAMP[i + 1])];
+    return `rgb(${a.map((v, k) => Math.round(v + f * (b[k] - v))).join(',')})`;
+  }
+  let grid = null, human = { bins: [], cells: [], shared: false }, loading = null, visible = false;
+
+  function showTip(event, html) {
+    const box = panel.getBoundingClientRect();
+    tip.hidden = false; tip.innerHTML = html;
+    tip.style.left = `${event.clientX - box.left}px`; tip.style.top = `${event.clientY - box.top}px`;
+  }
+  const hideTip = () => { tip.hidden = true; };
+
+  const daysDistance = () => {
+    const distances = grid.settings.distancesAu, median = grid.labField.medianDistanceAu || 600;
+    return distances.reduce((best, d) => Math.abs(Math.log(d / median)) < Math.abs(Math.log(best / median)) ? d : best);
+  };
+  const machineCurve = (baseline, distanceAu) => grid.bySigma.filter(b => b.baseline === baseline && b.distanceAu === distanceAu && b.trials >= 10);
+  function peopleCurve() {
+    const pooled = new Map();
+    for (const bin of human.bins) {
+      const entry = pooled.get(bin.sigma) || { sigma: bin.sigma, trials: 0, found: 0 };
+      entry.trials += bin.trials; entry.found += bin.found;
+      pooled.set(bin.sigma, entry);
+    }
+    return [...pooled.values()].filter(b => b.sigma >= 0).sort((a, b) => a.sigma - b.sigma).map(b => ({ ...b, x: Math.max(0.5, b.sigma + 0.5) }));
+  }
+  const magAt = sigma => peakToMag(sigma * grid.labField.noise, { pixelArcsec: grid.labField.pixelArcsec });
+
+  function stats() {
+    const people = peopleCurve(), roundCount = people.reduce((n, b) => n + b.trials, 0);
+    const peopleFifty = fiftyPercentPoint(people.filter(b => b.trials >= 3).map(b => ({ x: b.x, fraction: b.found / b.trials })));
+    const sixMonth = grid.fifty['6mo']?.all, days = grid.fifty.days?.[daysDistance()];
+    const tile = (label, sigma, note) => `<div class="lab-depth-stat"><dt>${label}</dt><dd>${Number.isFinite(sigma) ? `${sigma.toFixed(1)}σ` : '—'}</dd><p>${note}</p></div>`;
+    $('lab-depth-stats').innerHTML = `<dl>${[
+      tile('Code · 6 months apart', sixMonth, Number.isFinite(sixMonth) ? `Finds half at ${sixMonth.toFixed(1)}× the noise: about AB ${magAt(sixMonth).toFixed(1)} on the Lab’s patch, at any distance we tried.` : 'Not measured yet.'),
+      tile(`Code · days apart, ${daysDistance()} AU`, days, Number.isFinite(days) ? `At Planet Nine’s distance it barely moves in days, so it cancels itself out unless it is very bright.` : 'Even the brightest fakes were mostly missed: they cancel themselves out.'),
+      tile('People · both games', peopleFifty, roundCount ? `${peopleFifty === null ? 'Not enough rounds to find the halfway point yet. ' : ''}${roundCount} round${roundCount === 1 ? '' : 's'} so far${human.shared ? ' from everyone' : ' in this browser'}.` : 'No rounds yet. Play “Hide it from me” in Plant a planet.')
+    ].join('')}</dl>`;
+  }
+
+  function lineChart() {
+    const W = Math.max(240, chartBox.clientWidth), narrow = W < 520;
+    const H = Math.round(Math.max(240, Math.min(340, W * 0.48)));
+    const PAD = { l: narrow ? 38 : 46, r: narrow ? 12 : 92, t: 34, b: 38 };
+    const X_MIN = 1, X_MAX = 100;
+    const sx = sigma => PAD.l + Math.log(Math.max(X_MIN, Math.min(X_MAX, sigma)) / X_MIN) / Math.log(X_MAX / X_MIN) * (W - PAD.l - PAD.r);
+    const sy = fraction => PAD.t + (1 - fraction) * (H - PAD.t - PAD.b);
+    const svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', class: 'lab-depth-svg' });
+    const inRange = p => p.sigma >= X_MIN && p.sigma <= X_MAX;
+    const sixMonth = machineCurve('6mo', 'all').filter(inRange), days = machineCurve('days', daysDistance()).filter(inRange), people = peopleCurve().filter(p => p.x >= X_MIN && p.x <= X_MAX);
+    svg.setAttribute('aria-label', `Share of hidden planets found against brightness in multiples of the noise. The code with photos six months apart finds half at ${grid.fifty['6mo']?.all ?? 'an unmeasured'} sigma.`);
+    // Grid and axes (recessive).
+    const axes = el('g', { class: 'lab-depth-axis' });
+    for (const f of [0, 0.25, 0.5, 0.75, 1]) {
+      axes.append(el('line', { x1: PAD.l, x2: W - PAD.r, y1: sy(f), y2: sy(f), class: f ? 'is-grid' : 'is-base' }));
+      axes.append(el('text', { x: PAD.l - 7, y: sy(f) + 3.5, 'text-anchor': 'end' }, `${f * 100}%`));
+    }
+    for (const tick of [1, 2, 3, 5, 10, 20, 50, 100]) axes.append(el('text', { x: sx(tick), y: H - PAD.b + 16, 'text-anchor': 'middle' }, `${tick}σ`));
+    axes.append(el('text', { x: (PAD.l + W - PAD.r) / 2, y: H - 4, 'text-anchor': 'middle', class: 'is-title' }, 'brightness: peak ÷ noise of one photo'));
+    // Top axis: AB magnitude on the Lab's patch.
+    const brightest = Math.ceil(magAt(X_MAX)), faintest = Math.floor(magAt(X_MIN));
+    for (let mag = brightest; mag <= faintest; mag++) {
+      const sigma = 10 ** (-0.4 * (mag - magAt(1)));
+      if (narrow && mag % 2) continue;
+      axes.append(el('text', { x: sx(sigma), y: PAD.t - 8, 'text-anchor': 'middle' }, `${mag}`));
+    }
+    axes.append(el('text', { x: W - PAD.r, y: 10, 'text-anchor': 'end', class: 'is-title' }, 'AB magnitude on the Lab’s patch · brighter →'));
+    svg.append(axes);
+    // The usual detection bar.
+    svg.append(el('line', { x1: sx(5), x2: sx(5), y1: PAD.t, y2: H - PAD.b, class: 'lab-depth-ref' }));
+    svg.append(el('text', { x: sx(5) + 5, y: PAD.t + 12, class: 'lab-depth-ref-label' }, '5σ bar'));
+    // Machine lines.
+    const path = points => points.map((p, i) => `${i ? 'L' : 'M'}${sx(p.sigma).toFixed(1)},${sy(p.recovered / p.trials).toFixed(1)}`).join('');
+    if (days.length) svg.append(el('path', { d: path(days), class: 'lab-depth-line is-days' }));
+    if (sixMonth.length) svg.append(el('path', { d: path(sixMonth), class: 'lab-depth-line is-6mo' }));
+    if (!narrow) {
+      // End-of-line labels, pushed apart when the two lines finish close together.
+      const ends = [[sixMonth, '6 months', 'is-6mo'], [days, `days, ${daysDistance()} AU`, 'is-days']]
+        .filter(([points]) => points.length).map(([points, text, cls]) => ({ x: sx(points.at(-1).sigma) + 8, y: sy(points.at(-1).recovered / points.at(-1).trials) + 4, text, cls }));
+      if (ends.length === 2 && Math.abs(ends[0].y - ends[1].y) < 14) {
+        const middle = (ends[0].y + ends[1].y) / 2, upper = ends[0].y <= ends[1].y ? 0 : 1;
+        ends[upper].y = middle - 7; ends[1 - upper].y = middle + 7;
+      }
+      for (const end of ends) svg.append(el('text', { x: Math.max(...ends.map(e => e.x)), y: end.y, class: `lab-depth-direct ${end.cls}` }, end.text));
+    }
+    // People: dots with Wilson bars and n.
+    for (const bin of people) {
+      const { low, high } = wilson(bin.found, bin.trials), x = sx(bin.x);
+      svg.append(el('line', { x1: x, x2: x, y1: sy(low), y2: sy(high), class: 'lab-depth-bar' }));
+      svg.append(el('circle', { cx: x, cy: sy(bin.found / bin.trials), r: 5, class: 'lab-depth-person' }));
+      if (!narrow) svg.append(el('text', { x: x, y: sy(high) - 6, 'text-anchor': 'middle', class: 'lab-depth-n' }, `n=${bin.trials}`));
+    }
+    // Hover: crosshair + tooltip at the nearest machine bin.
+    const cross = el('line', { y1: PAD.t, y2: H - PAD.b, class: 'lab-depth-cross', visibility: 'hidden' });
+    const hit = el('rect', { x: PAD.l, y: PAD.t, width: W - PAD.l - PAD.r, height: H - PAD.t - PAD.b, fill: 'transparent' });
+    svg.append(cross, hit);
+    const nearest = (points, sigma) => points.reduce((best, p) => (!best || Math.abs(Math.log(p.sigma / sigma)) < Math.abs(Math.log(best.sigma / sigma)) ? p : best), null);
+    hit.addEventListener('pointermove', event => {
+      const box = svg.getBoundingClientRect(), x = event.clientX - box.left;
+      const sigma = X_MIN * (X_MAX / X_MIN) ** ((x - PAD.l) / (W - PAD.l - PAD.r));
+      const a = nearest(sixMonth, sigma), b = nearest(days, sigma);
+      const person = people.find(p => sigma >= p.sigma && sigma < p.sigma + 1);
+      cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.setAttribute('visibility', 'visible');
+      showTip(event, `<strong>${sigma.toFixed(1)}σ · about AB ${magAt(sigma).toFixed(1)}</strong><br>`
+        + `<i class="is-6mo"></i>6 months: ${a ? `${percent(a.recovered, a.trials)} of ${a.trials}` : '—'}<br>`
+        + `<i class="is-days"></i>Days apart: ${b ? `${percent(b.recovered, b.trials)} of ${b.trials}` : '—'}<br>`
+        + `<i class="is-people"></i>People: ${person ? `${person.found} of ${person.trials} found` : 'no rounds here'}`);
+    });
+    hit.addEventListener('pointerleave', () => { cross.setAttribute('visibility', 'hidden'); hideTip(); });
+    chartBox.replaceChildren(svg);
+  }
+
+  function heatmap(box, baseline, withPeople) {
+    const W = Math.max(240, box.clientWidth), distances = grid.settings.distancesAu, mags = grid.settings.mags;
+    const PAD = { l: 52, r: 6, t: 6, b: 30 }, rowH = 22;
+    const H = PAD.t + distances.length * rowH + PAD.b, cellW = (W - PAD.l - PAD.r) / mags.length;
+    const svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', class: 'lab-depth-svg' });
+    svg.setAttribute('aria-label', `Code hit rate for photos ${baseline === '6mo' ? 'six months' : 'days'} apart, by distance (rows) and AB magnitude (columns).`);
+    const cells = new Map(grid.cells.filter(c => c.baseline === baseline).map(c => [`${c.distanceAu}|${c.mag}`, c]));
+    const sx = i => PAD.l + i * cellW, sy = j => PAD.t + j * rowH;
+    distances.forEach((d, j) => {
+      svg.append(el('text', { x: PAD.l - 6, y: sy(j) + rowH / 2 + 3.5, 'text-anchor': 'end', class: 'lab-depth-axis-text' }, `${d.toLocaleString()} AU`));
+      mags.forEach((mag, i) => {
+        const cell = cells.get(`${d}|${mag}`);
+        if (!cell) return;
+        const rect = el('rect', { x: sx(i) + 1, y: sy(j) + 1, width: Math.max(1, cellW - 2), height: rowH - 2, rx: 2, fill: rampColor(cell.recovered / cell.trials), class: 'lab-depth-cell' });
+        rect.addEventListener('pointermove', event => showTip(event, `<strong>AB ${mag.toFixed(2)} · ${d.toLocaleString()} AU</strong><br>Code found ${cell.recovered} of ${cell.trials} (${percent(cell.recovered, cell.trials)})<br>about ${cell.medianPeakSigma}σ`));
+        rect.addEventListener('pointerleave', hideTip);
+        svg.append(rect);
+      });
+    });
+    mags.forEach((mag, i) => { if (Number.isInteger(mag)) svg.append(el('text', { x: sx(i) + cellW / 2, y: H - PAD.b + 14, 'text-anchor': 'middle', class: 'lab-depth-axis-text' }, `${mag}`)); });
+    svg.append(el('text', { x: (PAD.l + W - PAD.r) / 2, y: H - 3, 'text-anchor': 'middle', class: 'lab-depth-axis-text is-title' }, 'AB magnitude → fainter'));
+    if (withPeople) for (const round of human.cells) {
+      const i = mags.indexOf(round.mag), j = distances.indexOf(round.distanceAu);
+      if (i < 0 || j < 0) continue;
+      const dot = el('circle', { cx: sx(i) + cellW / 2, cy: sy(j) + rowH / 2, r: Math.min(7, 3.5 + round.trials), class: 'lab-depth-person' });
+      dot.addEventListener('pointermove', event => showTip(event, `<strong>AB ${round.mag.toFixed(2)} · ${round.distanceAu.toLocaleString()} AU</strong><br>People found ${round.found} of ${round.trials}`));
+      dot.addEventListener('pointerleave', hideTip);
+      svg.append(dot);
+    }
+    box.replaceChildren(svg);
+  }
+
+  function table() {
+    const sixMonth = machineCurve('6mo', 'all'), days = machineCurve('days', daysDistance()), people = peopleCurve();
+    const at = (points, sigma) => points.find(p => Math.abs(Math.log(p.sigma / sigma)) < 0.06);
+    const rows = sixMonth.map(p => {
+      const d = at(days, p.sigma), person = people.find(b => p.sigma >= b.sigma && p.sigma < b.sigma + 1);
+      return `<tr><td>${p.sigma.toFixed(1)}σ</td><td>AB ${magAt(p.sigma).toFixed(1)}</td><td>${percent(p.recovered, p.trials)} <small>of ${p.trials}</small></td><td>${d ? `${percent(d.recovered, d.trials)} <small>of ${d.trials}</small>` : '—'}</td><td>${person ? `${person.found} of ${person.trials}` : '—'}</td></tr>`;
+    }).join('');
+    $('lab-depth-table').innerHTML = `<table><thead><tr><th>Brightness</th><th>On the Lab’s patch</th><th>Code · 6 months</th><th>Code · days, ${daysDistance()} AU</th><th>People (whole-σ bin)</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function render() {
+    if (!grid || !visible) return;
+    $('lab-depth-days-label').textContent = `Code · photos days apart (${daysDistance()} AU)`;
+    stats(); lineChart();
+    heatmap($('lab-depth-heat-days'), 'days', true);
+    heatmap($('lab-depth-heat-6mo'), '6mo', false);
+    table();
+    const six = grid.pairs.filter(p => p.baseline === '6mo'), lab = grid.pairs.find(p => p.baseline === 'days');
+    $('lab-depth-source').textContent = `${human.shared ? 'People: community results from everyone who played.' : 'People: rounds played in this browser only (the shared store is not set up here).'} Code: ${grid.cells.reduce((n, c) => n + c.trials, 0).toLocaleString()} fake planets, ${grid.settings.trialsPerCell} per cell, seed ${grid.settings.seed}, run ${grid.generatedAt}.`;
+    $('lab-depth-method').textContent = `How it works: each fake is a point of light added to real pixels where Earth’s motion puts a body at that distance on each date, then the viewer’s own difference image (${grid.detector.threshold}σ cut) and patch finder look for it. It counts as found only if a new brighter patch appears within ${grid.detector.matchPx} pixels; a patch that was already there (a star residual) must get ${grid.detector.threshold}σ stronger. Pairs: ${six.length} six-month pairs (${six.map(p => `#${p.patchNumber} ${p.dates.join('→')}`).join(', ')}) and the Lab’s pair (${lab ? lab.dates.join('→') : '—'}). Brightness uses a simple point-source model, so magnitudes are approximate. Rerun with npm run recovery:grid.`;
+  }
+
+  async function load() {
+    loading ||= (async () => {
+      try {
+        const [response, tally] = await Promise.all([fetch('/data/recovery-grid.json'), loadRecoveryTally()]);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        grid = await response.json(); human = tally;
+      } catch {
+        chartBox.innerHTML = '<p class="lab-depth-empty">The recovery results could not be loaded. Please refresh and try again.</p>';
+      }
+    })();
+    return loading;
+  }
+  window.addEventListener('planetx:recovery-recorded', async () => { human = await loadRecoveryTally(); render(); });
+  new ResizeObserver(() => { if (visible) render(); }).observe(chartBox);
+  return {
+    async show() { visible = true; await load(); render(); },
+    hide() { visible = false; hideTip(); }
+  };
+})();
 
 // ---- start ---------------------------------------------------------------------------
 methane.shuffle();

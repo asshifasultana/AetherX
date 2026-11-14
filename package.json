@@ -12,6 +12,8 @@
     "update:index": "node scripts/update-observation-index.mjs",
     "refresh:cache": "node scripts/refresh-search-cache.mjs",
     "bake:tour": "node scripts/bake-tour-view.mjs",
+    "bake:recovery": "node scripts/bake-recovery-pairs.mjs",
+    "recovery:grid": "node scripts/recovery-grid.mjs",
     "build": "node scripts/build-vercel.mjs",
     "dev": "node --env-file-if-exists=.env frontend/server.mjs",
     "start": "node frontend/server.mjs",

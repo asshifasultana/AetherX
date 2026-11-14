@@ -111,3 +111,58 @@ export async function castVote(patch, verdict) {
   const result = await loadTallies();
   return { ...result, saved };
 }
+
+// ---- "find the hidden planet" rounds -------------------------------------------
+// Each round of the Planted Lab game or the viewer quest: game, brightness
+// (peak over single-frame noise), found or not. Shared totals come from
+// /api/cases; without the store, this browser's own rounds are counted.
+
+const RECOVERY_KEY = 'planetx-recovery';
+const RECOVERY_DISTANCES_AU = [50, 100, 200, 400, 700, 1000, 1500];
+function readRecovery() {
+  try { const list = JSON.parse(storage()?.getItem(RECOVERY_KEY) || '[]'); return Array.isArray(list) ? list : []; } catch { return []; }
+}
+
+/** Bin rounds the way the shared views do: whole-σ bins per game, and Lab rounds per 0.25 mag × nearest grid distance. */
+export function tallyRecovery(rounds) {
+  const bins = new Map(), cells = new Map();
+  for (const round of rounds) {
+    if (!Number.isFinite(round?.peakSigma)) continue;
+    const sigma = Math.floor(round.peakSigma), binKey = `${round.game}|${sigma}`;
+    const bin = bins.get(binKey) || { game: round.game, sigma, trials: 0, found: 0 };
+    bin.trials++; if (round.found) bin.found++;
+    bins.set(binKey, bin);
+    if (round.game === 'lab' && Number.isFinite(round.mag) && round.distanceAu > 0) {
+      const mag = Math.round(round.mag * 4) / 4;
+      const distanceAu = RECOVERY_DISTANCES_AU.reduce((best, d) => Math.abs(Math.log(d / round.distanceAu)) < Math.abs(Math.log(best / round.distanceAu)) ? d : best);
+      const cellKey = `${mag}|${distanceAu}`;
+      const cell = cells.get(cellKey) || { mag, distanceAu, trials: 0, found: 0 };
+      cell.trials++; if (round.found) cell.found++;
+      cells.set(cellKey, cell);
+    }
+  }
+  return { bins: [...bins.values()], cells: [...cells.values()] };
+}
+
+/** Save one round (kept locally too, so the chart works without the shared store). */
+export async function submitRecovery({ game, peakSigma, found, misses = 0, mag, distanceAu, baselineDays }) {
+  const round = { game, peakSigma: Number(peakSigma), found: Boolean(found), misses, ...(Number.isFinite(mag) ? { mag } : {}), ...(Number.isFinite(distanceAu) ? { distanceAu } : {}), ...(Number.isFinite(baselineDays) ? { baselineDays } : {}) };
+  if (!Number.isFinite(round.peakSigma)) return { saved: false };
+  try { storage()?.setItem(RECOVERY_KEY, JSON.stringify([...readRecovery(), { ...round, createdAt: new Date().toISOString() }].slice(-200))); } catch { /* storage blocked: still sent to the server */ }
+  try {
+    const response = await fetch('/api/cases', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'recovery', payload: { ...round, voter: voterId() } }) });
+    return { saved: response.ok };
+  } catch { return { saved: false }; }
+}
+
+/** {bins, cells, shared}: shared community totals, or this browser's own rounds when the store is not set up. */
+export async function loadRecoveryTally() {
+  try {
+    const response = await fetch('/api/cases?kind=recovery&tally=1', { cache: 'no-store' });
+    if (response.ok) {
+      const { bins, cells } = await response.json();
+      return { bins: Array.isArray(bins) ? bins : [], cells: Array.isArray(cells) ? cells : [], shared: true };
+    }
+  } catch { /* offline or no API: fall back below */ }
+  return { ...tallyRecovery(readRecovery()), shared: false };
+}

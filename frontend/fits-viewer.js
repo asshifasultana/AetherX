@@ -6,7 +6,8 @@ import { displayGrid } from './display-grid.js';
 import { initialViewState } from './share.js';
 import { QUALITY_FLAGS, FLAG_CATEGORIES, maskBitsFor } from './lib/pixel-quality.js';
 import { colormap, colormapGradient } from './lib/colormaps.js';
-import { scaleLimits, toneMapper, differenceMapper, gaussianSmooth, fillMaskedHoles, formatValue, subtractLargeScale } from './lib/display-scale.js';
+import { scaleLimits, toneMapper, differenceMapper, gaussianSmooth, fillMaskedHoles, formatValue } from './lib/display-scale.js';
+import { differenceImage } from './lib/difference.js';
 import { estimateBackground } from './lib/background.js';
 import { DEFAULT_SETTINGS } from './viewer-settings.js';
 import { matrixFor, projectSkyToPixel, projectionKey } from './lib/fits-engine.js';
@@ -1436,24 +1437,9 @@ async function composeComparison(frame, entry, signal, sequence) {
   if (referenceValues.length !== current.length) throw new Error('The reference frame uses a different sky grid; choose another reference.');
   if (settings.viewMode === 'blink') return { kind: 'blink', canvas: entry.canvas, other: referenceCanvas, otherValues: referenceValues, referenceLabel, unit,
     observation:frame,image:entry.image,referenceObservation,referenceImage };
-  const raw = new Float32Array(current.length);
-  for (let i = 0; i < raw.length; i++) raw[i] = Number.isFinite(current[i]) && Number.isFinite(referenceValues[i]) ? current[i] - referenceValues[i] : NaN;
-  if (!raw.some(Number.isFinite)) throw new Error('This frame and its reference do not overlap on the sky.');
-  // Remove sky-level offsets and gradients between the two epochs, either
-  // locally (default) or as one constant, so only compact changes remain.
-  let flattened;
-  if (settings.differenceFlatten) flattened = subtractLargeScale(raw, width, 16);
-  else { const level = estimateBackground(raw).level; flattened = raw.map(value => value - level); }
-  const diff = settings.smoothing ? gaussianSmooth(flattened, width, settings.smoothing) : flattened;
-  // Robust (MAD) noise of the difference image, so a few real changes do not
-  // inflate the significance scale.
-  const sigma = estimateBackground(diff).noise;
-  const threshold = settings.differenceThreshold, significant = new Uint8Array(diff.length);
-  let brighter = 0, fainter = 0;
-  if (sigma > 0) for (let i = 0; i < diff.length; i++) {
-    if (diff[i] > threshold * sigma) { significant[i] = 1; brighter++; }
-    else if (diff[i] < -threshold * sigma) { significant[i] = 2; fainter++; }
-  }
+  const difference = differenceImage({ current, reference: referenceValues, width, threshold: settings.differenceThreshold, flatten: settings.differenceFlatten, smoothing: settings.smoothing });
+  if (!difference) throw new Error('This frame and its reference do not overlap on the sky.');
+  const { values: diff, sigma, threshold, significant, brighter, fainter } = difference;
   const element = document.createElement('canvas');
   paintGrid(element, diff, width, { mapper: differenceMapper(sigma, threshold * 2), lut: colormap('diverging'), smooth: false });
   return { kind: 'difference', canvas: element, values: diff, unit, sigma, threshold, significant, brighter, fainter, referenceLabel, currentCanvas: entry.canvas, referenceCanvas, referenceObservation };

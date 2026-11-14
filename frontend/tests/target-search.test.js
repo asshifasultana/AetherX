@@ -167,7 +167,9 @@ test('moving searches validate dates and use the existing endpoint and parameter
   assert.equal(url.pathname, '/api/moving-observations');
   assert.equal(url.searchParams.get('object'), '4 Vesta'); assert.equal(url.searchParams.get('detector'), '2');
   assert.equal(url.searchParams.get('startDate'), '2025-08-15');
-  assert.equal(ui.selections().length, 0); assert.match(ui.get('moving-status').textContent, /No public exposures/);
+  assert.equal(ui.selections().length, 0);
+  assert.match(ui.get('moving-status').textContent, /No public exposures matched this object in this date range/);
+  assert.equal(ui.get('moving-choices').children[0].href, 'https://irsa.ipac.caltech.edu/applications/MOST/');
 });
 
 test('moving designation choices and example resubmit through the same form', async () => {

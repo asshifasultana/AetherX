@@ -7,12 +7,12 @@ import { AGENT_PUBLIC_FILES } from '../frontend/agent-assets.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const frontend = path.join(root, 'frontend');
 const output = path.join(root, '.vercel', 'output');
-const publicFiles = ['index.html', 'viewer.html', 'workspace-ui.js', 'onboarding.js', 'home.js', 'starfield.js', 'target-search.js', 'search-route.js', 'comet-benchmark.js', 'comet-benchmark.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'viewer-settings.js', 'lib/colormaps.js', 'lib/display-scale.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js', 'lib/crop-codec.js'];
+const publicFiles = ['index.html', 'viewer.html', 'planetx.html', 'planetx.js', 'planetx-case.html', 'planetx-case.js', 'lib/planetx-suspects.js', 'lib/planetx-votes.js', 'planetx-casefile.js', 'data/planetx-promoted.json', 'aladin-context.js', 'workspace-ui.js', 'onboarding.js', 'home.js', 'starfield.js', 'target-search.js', 'search-route.js', 'comet-benchmark.js', 'comet-benchmark.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'viewer-settings.js', 'lib/colormaps.js', 'lib/display-scale.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js', 'lib/crop-codec.js'];
 // Emit Vercel's documented Build Output API, avoiding framework auto-detection.
 publicFiles.push('moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js',
   'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js', 'lib/peak.js');
 publicFiles.push(...AGENT_PUBLIC_FILES);
-publicFiles.push('spectrum-explorer.js');
+publicFiles.push('spectrum-explorer.js', 'wavelength-guide.js');
 // The search loading screen and the constellation/distance lines it shows.
 publicFiles.push('search-loader.js', 'lib/constellation.js', 'lib/distance.js');
 publicFiles.push(...CONTEXT_PUBLIC_FILES);

@@ -17,7 +17,7 @@ import { encodeViewState, decodeViewState, viewStateSignature, DEFAULT_VIEW_STAT
 import { parseSbident, raToSbident, decToSbident, createKnownObjectsHandler } from '../api/known-objects.js';
 import { createAgentHandler, capabilitiesOf, CRITIC_PROMPT } from '../api/agent.js';
 import { parseVerdict, createVisionHandler } from '../api/agent-vision.js';
-import { cleanPayload, createCasesHandler } from '../api/cases.js';
+import { cleanPayload, cleanVote, cleanFinding, createCasesHandler } from '../api/cases.js';
 import { parsePopulation, binRemaining } from '../../scripts/planet-nine-region.mjs';
 import { AGENT_PUBLIC_FILES } from '../agent-assets.js';
 import { readFile, access } from 'node:fs/promises';
@@ -368,6 +368,39 @@ test('saved records are cleaned and need Supabase', async () => {
   assert.equal(res.statusCode, 400);
 });
 
+test('PlanetX votes keep only a case id, verdict and anonymous voter', async () => {
+  const voter = '7f1c2a9e-3b4d-4c5e-8f60-123456789abc';
+  assert.deepEqual(cleanVote({ caseId: 'p9-ra062.5-dec+12.5', verdict: 'something', voter, raDeg: 62.5, decDeg: 12.5, email: 'x@y.z' }), { caseId: 'p9-ra062.5-dec+12.5', verdict: 'something', voter, raDeg: 62.5, decDeg: 12.5 });
+  assert.equal(cleanVote({ caseId: 'p9-ra062.5-dec+12.5', verdict: 'maybe', voter }), null);
+  assert.equal(cleanVote({ caseId: 'drop table', verdict: 'nothing', voter }), null);
+  assert.equal(cleanVote({ caseId: 'p9-ra062.5-dec+12.5', verdict: 'nothing', voter: 'x' }), null);
+  const env = { SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_KEY: 'sb_secret' };
+  let sent;
+  const fetchImpl = async (url, options = {}) => {
+    sent = { url, body: options.body && JSON.parse(options.body) };
+    return url.includes('planetx_vote_tally')
+      ? { ok: true, json: async () => [{ case_id: 'p9-ra062.5-dec+12.5', something: 3, nothing: 1 }, { case_id: 'bad', something: 9, nothing: 0 }] }
+      : { ok: true, json: async () => [{ id: 9 }] };
+  };
+  let res = response();
+  await createCasesHandler({ env, fetchImpl })(request('POST', { kind: 'vote', payload: { caseId: 'p9-ra062.5-dec+12.5', verdict: 'nothing', voter, raDeg: 62.5, decDeg: 12.5 } }, { headers: { 'x-forwarded-for': '10.0.0.9' } }), res);
+  assert.equal(res.statusCode, 201);
+  assert.equal(sent.body.kind, 'vote');
+  assert.equal(sent.body.payload.verdict, 'nothing');
+  assert.equal(sent.body.ra_deg, 62.5);
+  res = response();
+  await createCasesHandler({ env, fetchImpl })(request('POST', { kind: 'vote', payload: { caseId: 'p9-ra062.5-dec+12.5', verdict: 'yes', voter } }, { headers: { 'x-forwarded-for': '10.0.0.10' } }), res);
+  assert.equal(res.statusCode, 400);
+  res = response();
+  await createCasesHandler({ env, fetchImpl })(request('GET', undefined, { url: '/api/cases?kind=vote&tally=1' }), res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(sent.url, 'https://x.supabase.co/rest/v1/planetx_vote_tally?select=case_id,something,nothing&limit=500');
+  assert.deepEqual(JSON.parse(res.body), { tallies: { 'p9-ra062.5-dec+12.5': { something: 3, nothing: 1 } } });
+  res = response();
+  await createCasesHandler({ env, fetchImpl })(request('GET', undefined, { url: '/api/cases?kind=vote' }), res);
+  assert.equal(res.statusCode, 400, 'individual votes (with voter ids) are never listed');
+});
+
 test('the Planet Nine map keeps only synthetic planets no survey would have seen', async () => {
   const csv = '# comment\nindex, ra, dec, R, V, ZTF, DES, PS1\n0, 62.0, 12.0, 600, 22.5, 0, 0, 0\n1, 63.0, 13.0, 400, 21.0, 0, 0, 0\n2, 10.0, -5.0, 300, 19.0, 1, 0, 1\n3, 200.0, -30.0, 800, 23.0, 0, 0, 0';
   const binned = binRemaining(parsePopulation(csv));
@@ -395,4 +428,48 @@ test('every guide module is published and exists', async () => {
   }
   const html = await readFile(new URL('../viewer.html', import.meta.url), 'utf8');
   for (const id of ['spot-layer', 'agent-notice', 'ai-guide-activity', 'ai-guide-spots', 'ai-guide-more']) assert.match(html, new RegExp(`id="${id}"`));
+});
+
+test('PlanetX votes accept candidate tiles; findings keep only answers, verdict, AI read and spot', async () => {
+  const voter = '7f1c2a9e-3b4d-4c5e-8f60-123456789abc';
+  assert.equal(cleanVote({ caseId: 't9-ra062.5-dec+12.5', verdict: 'something', voter }).caseId, 't9-ra062.5-dec+12.5');
+  assert.equal(cleanVote({ caseId: 'x9-ra062.5-dec+12.5', verdict: 'something', voter }), null);
+  const finding = cleanFinding({
+    caseId: 't9-ra062.5-dec+12.5', verdict: 'something', voter, note: 'call me', email: 'x@y.z',
+    answers: { glitch: 'ruled_out', known_star: 'supported', variable_star: 'maybe', hacked: 'ruled_out' },
+    ai: { label: 'known object', suspects: { known_star: 'supported', glitch: 'bogus' }, extra: 1 },
+    spot: { raDeg: 62.512345678, decDeg: 12.5, radiusArcsec: 30 }
+  });
+  assert.deepEqual(finding, {
+    caseId: 't9-ra062.5-dec+12.5', verdict: 'something', voter,
+    answers: { glitch: 'ruled_out', known_star: 'supported' },
+    ai: { label: 'known object', suspects: { known_star: 'supported' } },
+    spot: { raDeg: 62.51235, decDeg: 12.5, radiusArcsec: 30 }, raDeg: 62.51235, decDeg: 12.5
+  });
+  assert.equal(cleanFinding({ caseId: 'p9-ra062.5-dec+12.5', verdict: 'maybe', voter }), null);
+  assert.deepEqual(cleanFinding({ caseId: 'p9-ra062.5-dec+12.5', verdict: 'nothing', voter, spot: { raDeg: 999, decDeg: 0 } }).spot, null);
+
+  const env = { SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_KEY: 'sb_secret' };
+  let sent;
+  const fetchImpl = async (url, options = {}) => {
+    sent = { url, body: options.body && JSON.parse(options.body) };
+    return url.includes('kind=eq.finding')
+      ? { ok: true, json: async () => [{ payload: { caseId: 'p9-ra062.5-dec+12.5', voter, verdict: 'nothing', answers: { glitch: 'supported' }, ai: null, spot: null }, created_at: '2026-11-13T10:00:00Z' }] }
+      : { ok: true, json: async () => [{ id: 11 }] };
+  };
+  let res = response();
+  await createCasesHandler({ env, fetchImpl })(request('POST', { kind: 'finding', payload: { caseId: 'p9-ra062.5-dec+12.5', verdict: 'something', voter, answers: { glitch: 'ruled_out' }, spot: { raDeg: 62.5, decDeg: 12.5 } } }, { headers: { 'x-forwarded-for': '10.0.0.21' } }), res);
+  assert.equal(res.statusCode, 201);
+  assert.equal(sent.body.kind, 'finding');
+  assert.equal(sent.body.ra_deg, 62.5);
+  res = response();
+  await createCasesHandler({ env, fetchImpl })(request('GET', undefined, { url: '/api/cases?kind=finding&caseId=p9-ra062.5-dec%2B12.5' }), res);
+  assert.equal(res.statusCode, 200);
+  assert.equal(sent.url, 'https://x.supabase.co/rest/v1/agent_records?kind=eq.finding&payload->>caseId=eq.p9-ra062.5-dec%2B12.5&select=payload,created_at&order=created_at.desc&limit=20');
+  const body = JSON.parse(res.body);
+  assert.deepEqual(body.findings, [{ verdict: 'nothing', answers: { glitch: 'supported' }, ai: null, spot: null, createdAt: '2026-11-13T10:00:00Z' }]);
+  assert.ok(!JSON.stringify(body).includes(voter));
+  res = response();
+  await createCasesHandler({ env, fetchImpl })(request('GET', undefined, { url: '/api/cases?kind=finding' }), res);
+  assert.equal(res.statusCode, 400);
 });

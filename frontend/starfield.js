@@ -7,43 +7,17 @@
 
 import { objectNames } from './object-names.js';
 
-// The sky drifts through the colour wheel (see the `sky-hue` animation in styles.css)
-// and stars take their colour from it. Each star has a tint role, given in HSL as it
-// looks against the unrotated magenta nebula; sky-coloured roles are put through the
-// same hue-rotate() matrix as the nebula every frame, so they stay matched to what
-// the browser actually draws. Neutral roles never rotate.
-const HUE_PERIOD = 45;  // seconds per colour cycle; must match `sky-hue` in styles.css
+// Stars take fixed colours that sit with the blue-violet nebula in styles.css.
+// Each star has a tint role; most are pale, some clearly blue or violet.
 const TINT_ROLES = [
-  { h: 220, s: 0.35, l: 0.95, fixed: true }, // near-white, slightly cool
-  { h: 35, s: 0.7, l: 0.93, fixed: true },   // near-white, slightly warm
-  { h: 300, s: 0.55, l: 0.9 },               // pale, sky-coloured
-  { h: 305, s: 0.85, l: 0.8 },               // clearly sky-coloured
-  { h: 255, s: 0.7, l: 0.84 }                // neighbouring hue for variety
+  { h: 220, s: 0.35, l: 0.95 }, // near-white, slightly cool
+  { h: 35, s: 0.7, l: 0.93 },   // near-white, slightly warm
+  { h: 225, s: 0.55, l: 0.9 },  // pale blue
+  { h: 235, s: 0.85, l: 0.8 },  // clearly blue
+  { h: 265, s: 0.7, l: 0.84 }   // violet for variety
 ];
 const TINT_WEIGHTS = [0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 4]; // mostly pale, some vivid
 const pickTint = () => TINT_WEIGHTS[Math.floor(Math.random() * TINT_WEIGHTS.length)];
-
-// The colour cycle runs on one clock for the whole browser tab: `sky-epoch` in
-// sessionStorage is the wall-clock second the cycle started (a random point in it on the
-// first visit), so moving from the homepage to the viewer's loader carries on where it
-// was instead of jumping to a new colour. An inline script in each page's <head> sets
-// `--sky-start` from the same key before first paint; this is the fallback.
-const SKY_KEY = 'sky-epoch';
-function readSkyEpoch() {
-  let epoch = NaN;
-  try { epoch = parseFloat(sessionStorage.getItem(SKY_KEY)); } catch { /* storage blocked */ }
-  if (!Number.isFinite(epoch)) {
-    epoch = Date.now() / 1000 - Math.random() * HUE_PERIOD;
-    try { sessionStorage.setItem(SKY_KEY, String(epoch)); } catch { /* storage blocked */ }
-  }
-  return epoch;
-}
-const skyEpoch = readSkyEpoch();
-const skySeconds = () => Date.now() / 1000 - skyEpoch;
-
-const root = document.documentElement;
-if (!root.style.getPropertyValue('--sky-start')) root.style.setProperty('--sky-start', skySeconds().toFixed(2));
-const skyStart = parseFloat(root.style.getPropertyValue('--sky-start')) || 0;
 
 function hslToRgb(h, s, l) {
   const a = s * Math.min(l, 1 - l);
@@ -53,35 +27,7 @@ function hslToRgb(h, s, l) {
   };
   return [f(0), f(8), f(4)];
 }
-const TINT_RGB = TINT_ROLES.map(role => hslToRgb(role.h, role.s, role.l));
-
-// Current rotation of the sky in degrees, read from the running CSS animation so
-// stars and nebula stay in step.
-function skyRotation(animated) {
-  let progress = skyStart / HUE_PERIOD;
-  if (animated) {
-    const animation = document.getAnimations().find(item => item.animationName === 'sky-hue');
-    const timing = animation && animation.effect.getComputedTiming();
-    progress = timing && timing.progress !== null
-      ? timing.progress
-      : skySeconds() / HUE_PERIOD;
-  }
-  return progress * 360;
-}
-
-// The CSS/SVG hue-rotate() matrix applied to each sky-coloured tint.
-function skyPalette(degrees) {
-  const c = Math.cos(degrees * Math.PI / 180), s = Math.sin(degrees * Math.PI / 180);
-  const m = [
-    0.213 + c * 0.787 - s * 0.213, 0.715 - c * 0.715 - s * 0.715, 0.072 - c * 0.072 + s * 0.928,
-    0.213 - c * 0.213 + s * 0.143, 0.715 + c * 0.285 + s * 0.140, 0.072 - c * 0.072 - s * 0.283,
-    0.213 - c * 0.213 - s * 0.787, 0.715 - c * 0.715 + s * 0.715, 0.072 + c * 0.928 + s * 0.072
-  ];
-  const channel = value => Math.round(clamp(value, 0, 255));
-  return TINT_RGB.map(([r, g, b], i) => TINT_ROLES[i].fixed
-    ? `${channel(r)},${channel(g)},${channel(b)}`
-    : `${channel(m[0] * r + m[1] * g + m[2] * b)},${channel(m[3] * r + m[4] * g + m[5] * b)},${channel(m[6] * r + m[7] * g + m[8] * b)}`);
-}
+const PALETTE = TINT_ROLES.map(role => hslToRgb(role.h, role.s, role.l).map(Math.round).join(','));
 const Z_NEAR = 0.05, Z_FAR = 1;
 const SPEED = 0.06;        // depth units per second: a star crosses the field in ~16 s
 const FADE_IN_DEPTH = 0.15; // stars fade in over the farthest part of the field
@@ -301,12 +247,11 @@ export function mountStarfield(canvas, { paused = false, labels = false, avoid =
     return true;
   }
 
-  // `streaks` is true for animated frames; the static reduced-motion frame uses the
-  // visit's fixed starting hue, matching the unanimated nebula.
+  // `streaks` is true for animated frames; the reduced-motion frame draws without them.
   function draw(time, streaks) {
     ctx.clearRect(0, 0, width, height);
     const t = time / 1000;
-    const palette = skyPalette(skyRotation(streaks));
+    const palette = PALETTE;
 
     for (const s of backdrop) {
       let x = (s.x + pointer.x * 0.3) % width, y = (s.y + pointer.y * 0.3) % height;
@@ -414,12 +359,8 @@ export function mountStarfield(canvas, { paused = false, labels = false, avoid =
 const loadingCanvas = document.getElementById('loading-starfield');
 if (loadingCanvas) {
   const loader = document.getElementById('preview-loading');
-  // The loader's nebula animations restart each time it is shown, so stamp the
-  // current point in the shared colour cycle on it just before it renders.
-  const syncSky = () => { if (!loader.hidden) loader.style.setProperty('--sky-start', skySeconds().toFixed(2)); };
-  syncSky();
   // Star names drift by while a search loads too, kept clear of the ring and its text.
   const starfield = mountStarfield(loadingCanvas, { paused: loader.hidden, labels: true, avoid: ['.loader-stage'] });
-  new MutationObserver(() => { syncSky(); starfield.setPaused(loader.hidden); })
+  new MutationObserver(() => starfield.setPaused(loader.hidden))
     .observe(loader, { attributes: true, attributeFilter: ['hidden'] });
 }

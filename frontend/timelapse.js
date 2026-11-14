@@ -483,8 +483,9 @@ async function selectFrame(index, { playback = false } = {}) {
   } finally {
     if (!playback) prefetch.paused = Math.max(0, prefetch.paused - 1);
     if (loaded && token === state.token && state.frames[state.index] === frame) {
+      // Nothing is said while playing; the timeline already shows the frame.
       setStatus(playback
-        ? `Playing · frame ${state.index + 1} of ${state.frames.length} · ${frameDate(frame)}`
+        ? ''
         : `Frame ${state.index + 1} of ${state.frames.length} · ${frameDate(frame)}. Use ← → or the timeline to scrub.`);
     }
     schedulePrefetch(200);
@@ -812,7 +813,8 @@ window.addEventListener('sky:cutout-rendered', event => {
   paintThumbFrom(observation, event.detail?.canvas || document.getElementById('sky-canvas'));
   const current = state.frames[state.index];
   if (current && key === observationKey(current)) {
-    setStatus(`Showing ${frameDate(current)} · D${current.detector}.`);
+    // The date is already on the timeline, so nothing is said once the frame is up.
+    setStatus('');
   }
 });
 

@@ -125,9 +125,8 @@ window.addEventListener('sky:mark-target-requested', async event => {
 // ---- Track star: the toolbar toggle ----------------------------------------
 const button = $('mark-target-button'), status = $('mark-target-status'), viewer = document.querySelector('.viewer');
 const buttonText = button?.querySelector('.mark-target-text');
-const tracking = { on: false, busy: false, pending: false, name: '', savedFov: null };
-let hideTimer = null, playback = null;
-window.addEventListener('sky:playback-state', event => { playback = event.detail || playback; });
+const tracking = { on: false, busy: false, pending: false, name: '' };
+let hideTimer = null;
 
 function say(text, { sticky = false } = {}) {
   if (!status) return;
@@ -143,8 +142,6 @@ function sync() {
   if (buttonText) buttonText.textContent = tracking.on ? 'Tracking' : 'Track star';
   button.title = tracking.on ? 'Stop tracking; the path stays on the image' : 'Track the target star across frames: marks it on every frame shown and draws its path';
 }
-const currentFov = () => Number($('field-of-view')?.value) || null;
-const setFov = fovArcmin => emit('sky:agent-settings-requested', { changes: { fovArcmin } });
 
 function progress(result) {
   if (!result?.ok) return result?.error || 'Could not find the star on this frame.';
@@ -167,31 +164,17 @@ async function markFrame({ restart = false } = {}) {
   return result;
 }
 
-// The whole path across the loaded dates is often a few pixels, so zoom in
-// until it spans about a quarter of the field (never zooming out).
-async function zoomToFit() {
-  const fov = currentFov(), first = Date.parse(playback?.firstDate || ''), last = Date.parse(playback?.lastDate || '');
-  if (!fov || !target || !Number.isFinite(first) || !Number.isFinite(last)) return;
-  const gaiaSources = presetMotion(target) ? [] : await catalogueStars(target);
-  const a = locateTarget({ target, frameTime: first, gaiaSources }), b = locateTarget({ target, frameTime: last, gaiaSources });
-  if (!a || !b || !tracking.on) return;
-  const path = describeTrack([{ ...a, date: null }, { ...b, date: null }])?.arcsec || 0;
-  const wanted = Math.max(1, Math.min(fov, Math.ceil(4 * path / 60)));
-  if (path > 0 && wanted < fov) { tracking.savedFov = fov; setFov(wanted); }
-}
-
 async function startTracking() {
-  tracking.on = true; tracking.pending = false; tracking.savedFov = null; sync();
+  tracking.on = true; tracking.pending = false; sync();
   say('Finding the star on this date…', { sticky: true });
   const result = await markFrame({ restart: true });
-  if (!result?.ok) { stopTracking({ message: result?.error || 'Could not mark the target.' }); return; }
-  await zoomToFit();
+  // The field of view is left as the visitor set it; tracking never zooms.
+  if (!result?.ok) stopTracking({ message: result?.error || 'Could not mark the target.' });
 }
 function stopTracking({ message = 'Stopped tracking; the path stays on the image.' } = {}) {
   if (!tracking.on) return;
   tracking.on = false; tracking.pending = false;
-  if (tracking.savedFov && currentFov() !== tracking.savedFov) setFov(tracking.savedFov);
-  tracking.savedFov = null; sync();
+  sync();
   say(message);
 }
 

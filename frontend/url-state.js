@@ -42,6 +42,8 @@ export const DEFAULT_VIEW_STATE = Object.freeze({
   // Spots 2 and later; spot 1 keeps the original mra/mdec parameters.
   extraSpots: Object.freeze([]),
   targetId: null,
+  // A PlanetX case this view was opened for (planetx.html → Jump to coordinate).
+  planetxCase: null,
   embed: false,
   culture: 'all',
   gaia: false,
@@ -52,6 +54,8 @@ export const DEFAULT_VIEW_STATE = Object.freeze({
 });
 
 export const MAX_EXTRA_SPOTS = 8;
+// Same shape as lib/planetx-suspects.js ANY_CASE_ID_PATTERN: a public patch (p9-) or a tile (t9-).
+export const PLANETX_CASE_ID = /^(p9|t9)-ra\d{3}\.\d-dec[+-]\d{2}\.\d$/;
 function cleanSpots(spots) {
   return (Array.isArray(spots) ? spots : [])
     .filter(spot => Number.isFinite(spot?.raDeg) && Number.isFinite(spot?.decDeg) && spot.decDeg >= -90 && spot.decDeg <= 90)
@@ -116,6 +120,7 @@ export function encodeViewState(state = {}) {
   const extra = cleanSpots(merged.extraSpots);
   if (extra.length) params.set('spots', extra.map(spotParam).join(';'));
   if (merged.targetId) params.set('target', merged.targetId);
+  if (merged.planetxCase && PLANETX_CASE_ID.test(merged.planetxCase)) params.set('px', merged.planetxCase);
   if (merged.embed) params.set('embed', '1');
   if (CULTURE_OPTIONS.includes(merged.culture) && merged.culture !== 'all') params.set('culture',merged.culture);
   if (merged.gaia) params.set('gaia','1');
@@ -232,6 +237,12 @@ export function decodeViewState(input) {
     if (/^[a-z0-9-]{1,32}$/i.test(text)) state.targetId = text;
   }
 
+  if (params.has('px')) {
+    const text = (params.get('px') || '').trim();
+    if (PLANETX_CASE_ID.test(text)) state.planetxCase = text;
+    else issues.push('The PlanetX case in this link is not valid, so it was ignored.');
+  }
+
   state.embed = params.get('embed') === '1' || params.get('embed') === 'true';
   if(params.has('culture')) {
     if(params.getAll('culture').length===1&&CULTURE_OPTIONS.includes(params.get('culture')))state.culture=params.get('culture');
@@ -273,7 +284,7 @@ export function viewStateSignature(state = {}) {
   return [
     merged.raDeg, merged.decDeg, merged.fovArcmin, merged.band,
     merged.startDate, merged.endDate, merged.frameDate,
-    merged.markRaDeg ?? '', merged.markDecDeg ?? '', merged.markRadiusArcsec ?? '', cleanSpots(merged.extraSpots).map(spot => `${spot.raDeg},${spot.decDeg},${spot.radiusArcsec ?? ''}`).join(';'), merged.targetId ?? '', merged.embed ? 1 : 0, merged.culture, merged.gaia ? 1 : 0, merged.wise ? 1 : 0,
+    merged.markRaDeg ?? '', merged.markDecDeg ?? '', merged.markRadiusArcsec ?? '', cleanSpots(merged.extraSpots).map(spot => `${spot.raDeg},${spot.decDeg},${spot.radiusArcsec ?? ''}`).join(';'), merged.targetId ?? '', merged.planetxCase ?? '', merged.embed ? 1 : 0, merged.culture, merged.gaia ? 1 : 0, merged.wise ? 1 : 0,
     ...VIEW_SETTING_PARAMS.map(([key]) => merged[key]), merged.referenceDate, cleanNote(merged.note)
   ].join('|');
 }

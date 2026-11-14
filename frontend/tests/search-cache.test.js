@@ -217,3 +217,51 @@ test('search responses are always gzipped with no Vary, so the CDN shares one co
     }
   } finally { server.close(); }
 });
+
+// Empty planet searches: MOST resolves the body; Horizons supplies the Sun angle.
+function planetUpstream({ horizonsDown = false } = {}) {
+  const calls = [];
+  const most = '\\object_name = "Jupiter (599)"\n|observationid|planeid|productid|mjd_start|mjd_end|exposure_time|uri|\n';
+  const horizons = JSON.stringify({ result: '$$SOE\n' + [58, 59, 60.5].map(a => ` 2461000.5, , , ${a},/T,`).join('\n') + '\n$$EOE\n' });
+  const fetchImpl = async url => {
+    calls.push(String(url));
+    if (String(url).includes('MOST')) return new Response(most);
+    return horizonsDown ? new Response('down', { status: 503 }) : new Response(horizons);
+  };
+  return { calls, fetchImpl };
+}
+const recentJupiter = () => {
+  const day = time => new Date(time).toISOString().slice(0, 10);
+  return new URLSearchParams({ object: 'Jupiter', startDate: day(Date.now() - 10 * DAY), endDate: day(Date.now()) });
+};
+const movingKey = params => JSON.stringify(['moving', params.get('object'), ...[...params].sort()]);
+
+test('empty results saved before Sun angles existed are searched again; new ones are reused', async () => {
+  const supabase = fakeSupabase(), store = storeFor(supabase, Date.now), params = recentJupiter();
+  await store.put('moving', movingKey(params), { query: params.toString(), object: 'Jupiter' }, { object: 'Jupiter', name: 'Jupiter (599)', exposures: [] });
+  const archive = planetUpstream();
+  const fresh = await createMovingSearch({ store, fetchImpl: archive.fetchImpl, resources: createSearchResources() })(params);
+  assert.equal(fresh.cache, undefined); assert.deepEqual(fresh.sunAngle, { min: 58, max: 60.5 }); assert.ok('dataThrough' in fresh);
+  assert.equal(fresh.object, '599:MB'); assert.match(archive.calls.at(-1), /COMMAND=%27599%27/);
+  assert.deepEqual([...supabase.rows.values()][0].result.sunAngle, { min: 58, max: 60.5 });
+
+  const calls = archive.calls.length;
+  const again = await createMovingSearch({ store, fetchImpl: archive.fetchImpl, resources: createSearchResources() })(params);
+  assert.equal(again.cache.shared, true); assert.equal(archive.calls.length, calls); assert.deepEqual(again.sunAngle, fresh.sunAngle);
+});
+
+test('an empty result whose Sun angle could not be fetched is not saved', async () => {
+  const supabase = fakeSupabase(), store = storeFor(supabase, Date.now);
+  const result = await createMovingSearch({ store, fetchImpl: planetUpstream({ horizonsDown: true }).fetchImpl, resources: createSearchResources() })(recentJupiter());
+  assert.equal(result.exposures.length, 0); assert.equal(result.sunAngle, undefined); assert.equal(supabase.rows.size, 0);
+});
+
+test('the daily job checks planet orbit solutions with the resolved body, not the bare name', async () => {
+  const now = Date.parse('2026-11-08T05:00:00Z'), iso = time => new Date(time).toISOString();
+  const supabase = fakeSupabase(() => now), store = storeFor(supabase, () => now), asked = [];
+  supabase.rows.set('jupiter-old', { key: 'jupiter-old', kind: 'moving', params: { query: 'object=Jupiter&endDate=2026-04-02', object: 'Jupiter' },
+    result: { object: '599:MB', solution: 'jup365_merged' }, saved_at: iso(now - 3 * DAY), checked_at: iso(now - 3 * DAY), last_used_at: iso(now - DAY) });
+  const movingFactory = () => async query => { asked.push(query.get('object')); return { solution: 'jup365_merged' }; };
+  const counts = await refreshSearchCache({ store, now, movingFactory, log: () => {} });
+  assert.deepEqual(asked, ['599:MB']); assert.equal(counts.unchanged, 1); assert.equal(counts.failed, 0);
+});

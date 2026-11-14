@@ -157,27 +157,36 @@ function renderResults() {
   const searchedDetector = submittedParams?.get('detector') || 'all';
   const coverage = summarizeDetectorCoverage(result.observations, { searchedDetector });
   const detectorLimits = [[0.75, 1.09], [1.10, 1.62], [1.63, 2.41], [2.42, 3.82], [3.83, 4.41], [4.42, 5.00]];
+  // Shared axis with the rainbow explainer in wavelength-guide.js (keep in sync):
+  // 0.38 μm (violet) to 5 μm, so D1 starts right where visible light ends.
+  const axisMin = 0.38, axisSpan = 5 - axisMin;
   const lanes = $('spectral-lanes'); lanes.replaceChildren();
   for (const band of coverage) {
     const [low, high] = detectorLimits[band.detector - 1];
     const lane = make('div', undefined, `spectral-lane${band.count ? ' has-coverage' : ''}`);
+    lane.setAttribute('data-detector', String(band.detector));
+    lane.setAttribute('data-low', String(low)); lane.setAttribute('data-high', String(high));
+    lane.setAttribute('tabindex', '0');
+    lane.setAttribute('style', `--band-color:var(--d${band.detector});--lane-delay:${((low - 0.75) / 4.25 * 1.5).toFixed(2)}s`);
     lane.append(make('strong', `D${band.detector}`));
     const track = make('span', undefined, 'spectral-track');
     const detectorBar = make('span', undefined, 'spectral-detector-range');
-    detectorBar.setAttribute('style', `left:${100 * (low - 0.75) / 4.25}%;width:${100 * (high - low) / 4.25}%`);
+    detectorBar.setAttribute('style', `left:${100 * (low - axisMin) / axisSpan}%;width:${100 * (high - low) / axisSpan}%`);
     track.append(detectorBar);
     if (band.count && Number.isFinite(band.wavelengthMinUm) && Number.isFinite(band.wavelengthMaxUm)) {
       const start = Math.max(low, band.wavelengthMinUm), end = Math.min(high, band.wavelengthMaxUm);
       if (end > start) {
         const covered = make('span', undefined, 'spectral-observed-range');
-        covered.setAttribute('style', `left:${100 * (start - 0.75) / 4.25}%;width:${100 * (end - start) / 4.25}%`);
+        covered.setAttribute('style', `left:${100 * (start - axisMin) / axisSpan}%;width:${100 * (end - start) / axisSpan}%`);
         track.append(covered);
       }
     }
     lane.append(track, make('span', band.count ? `${band.count} images` : band.searched ? '0 images' : 'not searched', 'spectral-lane-count'));
     lane.title = `Detector ${band.detector}: approximately ${low.toFixed(2)}–${high.toFixed(2)} micrometers; ${band.count} loaded images.`;
+    lane.setAttribute('aria-label', lane.title);
     lanes.append(lane);
   }
+  emit('sky:spectral-lanes-rendered', { detectors: coverage.length });
   for (const band of coverage) {
     const card = make('article', undefined, `detector-coverage-card${band.count ? '' : ' empty-count'}`);
     const heading = make('div', undefined, 'detector-coverage-heading');

@@ -675,26 +675,30 @@ async function converse(text, chips) {
   }
 }
 
-async function playTour() {
+async function runDirectTool(name, args, label) {
   if (running) return;
   const abort = new AbortController();
   running = abort;
   setStarted(true);
   $('ai-guide-send').disabled = true;
   $('ai-guide-stop').hidden = false;
-  addEntry('user', 'Take me on the tour.');
+  addEntry('action', `↳ ${label}…`);
   try {
-    const result = await controller.execute('start_tour', { id: 'highlights' }, {
+    const result = await controller.execute(name, args, {
       signal: abort.signal,
-      progress: text => { addEntry(text.startsWith('(') ? 'note' : 'guide', text); setActivity(ACTIVITY.start_tour); }
+      progress: text => addEntry(text.startsWith('(') ? 'note' : 'progress', text)
     });
-    addEntry('guide', result.ok === false ? result.error : result.outro);
+    if (result.ok === false) { addEntry('guide', forPeople(result.error)); }
+    else if (name === 'start_quest') { const message = `${result.title}: ${result.goal} Use Mark on the image, click your answer, then press Ask to request an answer check. This game is running directly; no model is needed to start it.`; addEntry('guide', message); }
+    else if (name === 'check_answer') { const message = result.correct ? `Correct — ${result.story || 'you found it.'} ${result.lesson || ''}` : result.correct === false ? `Not yet. ${result.hint || 'Try another marked spot.'}` : result.note || 'The answer needs more evidence.'; addEntry('guide', message); }
+    else { const message = `Case file opened for Spot ${args.spot}. Verdict: ${result.verdict?.label || 'evidence recorded'}.`; addEntry('guide', message); }
+  } catch (error) {
+    const message = forPeople(error?.message); addEntry('guide', message);
   } finally {
     if (running === abort) running = null;
-    setActivity('');
     $('ai-guide-send').disabled = false;
     $('ai-guide-stop').hidden = true;
-    if (inbox.length) scheduleBackgroundTurn();
+    setActivity('');
   }
 }
 
@@ -754,8 +758,11 @@ function mount() {
   $('ai-guide-form').addEventListener('submit', event => { event.preventDefault(); submit(input.value); });
   $('ai-guide-stop').addEventListener('click', () => running?.abort());
   for (const chip of section.querySelectorAll('[data-prompt]')) chip.addEventListener('click', () => submit(chip.dataset.prompt));
-  // The tour is scripted: it runs without the model, so it cannot stall on stage.
-  section.querySelector('[data-action="tour"]')?.addEventListener('click', () => { void playTour(); });
+  for (const card of section.querySelectorAll('[data-direct-quest]')) card.addEventListener('click', () => runDirectTool('start_quest', { id: card.dataset.directQuest }, describe.start_quest({ id: card.dataset.directQuest })));
+  // Deep links for quests (e.g. the planted-planet lab): ?launch=hidden|tombaugh|barnard|planetnine.
+  const launch = new URLSearchParams(location.search).get('launch');
+  const quests = { hidden: 'hidden-planet', tombaugh: 'be-tombaugh', barnard: 'be-barnard', planetnine: 'be-leverrier' };
+  if (quests[launch]) setTimeout(() => runDirectTool('start_quest', { id: quests[launch] }, `Started ${quests[launch]}`), 180);
   $('ai-guide-more')?.addEventListener('click', event => {
     const cards = $('ai-guide-suggestions'), open = cards.hidden;
     cards.hidden = !open;
@@ -802,6 +809,15 @@ function mount() {
     renderChips();
     window.dispatchEvent(new CustomEvent('sky:open-agent'));
     input.focus();
+  });
+  // Another panel (the PlanetX case file) asks the guide something about a spot.
+  window.addEventListener('sky:agent-prompt-requested', event => {
+    const { text, spot } = event.detail || {};
+    if (!text || running) { event.detail?.respond?.(false); return; }
+    if (Number.isInteger(spot)) { attached.add(spot); renderChips(); }
+    window.dispatchEvent(new CustomEvent('sky:open-agent'));
+    submit(String(text));
+    event.detail?.respond?.(true);
   });
   window.addEventListener('sky:case-updated', event => {
     const summary = event.detail?.case;

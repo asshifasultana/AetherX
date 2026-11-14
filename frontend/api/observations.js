@@ -14,7 +14,10 @@ export function createObservationsHandler(search = searchObservations) {
     try {
       const params = new URL(req.url, 'http://localhost').searchParams;
       const result = await search(params, { signal: controller.signal });
-      if (!res.destroyed) res.end(JSON.stringify(result));
+      if (!res.destroyed) {
+        if (!result.source?.fallback) res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=60');
+        res.end(JSON.stringify(result));
+      }
     } catch (error) {
       if (res.destroyed) return;
       if (error.retryAfter) res.setHeader('Retry-After', String(error.retryAfter));

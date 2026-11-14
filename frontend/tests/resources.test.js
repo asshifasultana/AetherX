@@ -89,3 +89,13 @@ test('empty responses are cached and API overload includes Retry-After without q
     assert.match((await response.json()).error, /busy/); assert.equal(calls, 1);
   } finally { release(); await new Promise(resolve => server.close(resolve)); }
 });
+
+test('a bounded gate admits three jobs and releases slots exactly once', () => {
+  const gate = createWorkGate({ slots: 3, rss: () => 0 });
+  const releases = [gate.acquire(), gate.acquire(), gate.acquire()];
+  assert.throws(() => gate.acquire(), { status: 503 });
+  releases[0](); releases[0]();
+  const next = gate.acquire();
+  assert.throws(() => gate.acquire(), { status: 503 });
+  next(); releases[1](); releases[2]();
+});

@@ -145,11 +145,11 @@ test('fresh fallback is labelled and only upstream failures can select it', asyn
   const store = createIndexStore({ directory });
   const service = status => createIndexedSearch({ store, now: () => clock, liveFactory: () => async () => { throw new SearchError('failed', status); } });
   for (const status of [502, 504]) {
-    const fallback = await service(status)(params()); assert.equal(fallback.source.fallback, true); assert.equal(fallback.source.stale, false);
+    const fallback = await service(status)(params({ refresh: 'live' })); assert.equal(fallback.source.fallback, true); assert.equal(fallback.source.stale, false);
     assert.ok(fallback.warnings.some(w => w.includes('Live IRSA search was unavailable')));
-    const empty = await service(status)(params({ endDate: '2020-01-01' })); assert.equal(empty.count, 0); assert.equal(empty.source.fallback, true);
+    const empty = await service(status)(params({ endDate: '2020-01-01', refresh: 'live' })); assert.equal(empty.count, 0); assert.equal(empty.source.fallback, true);
   }
-  for (const status of [400, 409, 503, 500]) await assert.rejects(service(status)(params()), { status });
+  for (const status of [400, 409, 503, 500]) await assert.rejects(service(status)(params({ refresh: 'live' })), { status });
   await assert.rejects(service(502)(params({ cursor: Buffer.from(raw[0].uri).toString('base64url') })), { status: 502 });
   await assert.rejects(service(502)(params({ raDeg: 'invalid' })), { status: 400 });
 });
@@ -164,4 +164,13 @@ test('missing or corrupt fallback never masks an upstream error', async t => {
   const service = createIndexedSearch({ store, liveFactory: offline });
   await assert.rejects(service(params()), /IRSA offline/);
   await assert.rejects(service(params({ indexVersion: manifest.targets[0].hash })), { status: 409 });
+});
+
+ test('fresh fixed-position snapshots avoid live TAP and are not outage fallbacks', async t => {
+  const directory = await workspace(t); const clock = Date.now(); await updateIndex(setup(directory, { now: () => clock }));
+  let calls = 0;
+  const service = createIndexedSearch({ store: createIndexStore({ directory }), now: () => clock, liveFactory: () => async () => { calls++; throw new Error('Unexpected TAP'); } });
+  const result = await service(params());
+  assert.equal(calls, 0); assert.equal(result.source.kind, 'scheduled-index'); assert.equal(result.source.fallback, false);
+  assert.ok(!result.warnings.some(w => w.includes('Live IRSA search was unavailable')));
 });

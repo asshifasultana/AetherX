@@ -6,14 +6,15 @@ export class BusyError extends Error {
   }
 }
 
-export function createWorkGate({ rss = () => process.memoryUsage().rss, limit = 320 * 1024 * 1024 } = {}) {
-  let active = false;
+export function createWorkGate({ rss = () => process.memoryUsage().rss, limit = 320 * 1024 * 1024, slots = 1 } = {}) {
+  if (!Number.isInteger(slots) || slots < 1) throw new TypeError('Work slots must be a positive integer.');
+  let active = 0;
   return {
     acquire() {
-      if (active || rss() >= limit) throw new BusyError();
-      active = true;
+      if (active >= slots || rss() >= limit) throw new BusyError();
+      active++;
       let released = false;
-      return () => { if (!released) { released = true; active = false; } };
+      return () => { if (!released) { released = true; active--; } };
     }
   };
 }
@@ -45,5 +46,5 @@ export function createSearchResources({ maxEntries = 8, maxBytes = 8 * 1024 * 10
   };
 }
 
-export const metadataResources = createSearchResources();
+export const metadataResources = createSearchResources({ gate: createWorkGate({ slots: 3 }) });
 export const cutoutGate = createWorkGate();

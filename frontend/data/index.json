@@ -7,8 +7,8 @@
     "timeZone": "UTC",
     "description": "Daily, around 10:27 AM Asia/Dhaka (04:27 UTC)"
   },
-  "lastAttemptAt": "2026-11-07T14:06:45.540Z",
-  "lastSuccessfulCheckAt": "2026-11-07T14:11:39.212Z",
+  "lastAttemptAt": "2026-11-08T11:26:02.991Z",
+  "lastSuccessfulCheckAt": "2026-11-08T11:26:51.475Z",
   "lastChangedAt": "2026-11-07T14:11:39.212Z",
   "collections": [
     "spherex_qr2",
@@ -18,10 +18,10 @@
   ],
   "totalObservations": 3885,
   "changes": {
-    "added": 22,
+    "added": 0,
     "revised": 0,
-    "removed": 13,
-    "unchanged": 3863
+    "removed": 0,
+    "unchanged": 3885
   },
   "targets": [
     {
@@ -33,7 +33,7 @@
       "hash": "e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a",
       "count": 364,
       "productCount": 364,
-      "checkedAt": "2026-11-07T14:07:58.599Z",
+      "checkedAt": "2026-11-08T11:26:17.120Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -50,12 +50,12 @@
       "hash": "8ba45b49b4f06ef758fab0ff538b6ea10d850df1878b1f5d7898758485fa49e3",
       "count": 449,
       "productCount": 449,
-      "checkedAt": "2026-11-07T14:08:31.555Z",
+      "checkedAt": "2026-11-08T11:26:28.927Z",
       "changes": {
-        "added": 13,
+        "added": 0,
         "revised": 0,
-        "removed": 8,
-        "unchanged": 436
+        "removed": 0,
+        "unchanged": 449
       }
     },
     {
@@ -67,7 +67,7 @@
       "hash": "90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5",
       "count": 256,
       "productCount": 256,
-      "checkedAt": "2026-11-07T14:09:24.756Z",
+      "checkedAt": "2026-11-08T11:26:37.481Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -84,7 +84,7 @@
       "hash": "f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c",
       "count": 333,
       "productCount": 333,
-      "checkedAt": "2026-11-07T14:10:16.034Z",
+      "checkedAt": "2026-11-08T11:26:41.398Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -101,21 +101,21 @@
       "hash": "8085ceda0e4ea2de25c5859329581953808f60a65a74c40fa67b6dc0115bf4e9",
       "count": 2483,
       "productCount": 2483,
-      "checkedAt": "2026-11-07T14:11:39.211Z",
+      "checkedAt": "2026-11-08T11:26:51.475Z",
       "changes": {
-        "added": 9,
+        "added": 0,
         "revised": 0,
-        "removed": 5,
-        "unchanged": 2474
+        "removed": 0,
+        "unchanged": 2483
       }
     }
   ],
   "previousSnapshots": [
     "snapshots/barnard-e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a.json",
-    "snapshots/epsilon-49606f3f91ac2cf3dbcc2bd63d307552184de0b215651424ddaa0a3a4b07f25e.json",
+    "snapshots/epsilon-8ba45b49b4f06ef758fab0ff538b6ea10d850df1878b1f5d7898758485fa49e3.json",
     "snapshots/wise-90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5.json",
     "snapshots/aurigae-f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c.json",
-    "snapshots/draconis-dfdceef7581d69ff3d8e0e94148121fe07b2721a56a33601a389fa2ca3628bd7.json"
+    "snapshots/draconis-8085ceda0e4ea2de25c5859329581953808f60a65a74c40fa67b6dc0115bf4e9.json"
   ],
   "error": null
 }

@@ -5,7 +5,7 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const frontend = path.join(root, 'frontend');
 const output = path.join(root, '.vercel', 'output');
-const publicFiles = ['index.html', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js'];
+const publicFiles = ['index.html', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js'];
 // Emit Vercel's documented Build Output API, avoiding framework auto-detection.
 await mkdir(path.join(output, 'static'), { recursive: true });
 for (const file of publicFiles) await copyFile(path.join(frontend, file), path.join(output, 'static', file));

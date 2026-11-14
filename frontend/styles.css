@@ -234,3 +234,42 @@ footer p,footer>span{font-size:15px;color:#59695e}
   .thumb{width:76px}
   .thumb canvas{width:62px;height:62px}
 }
+
+/* ---- Shareable links and the embeddable viewer ---- */
+.share-bar{margin-top:18px;border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:9px}
+.share-actions{display:flex;flex-wrap:wrap;gap:8px}
+.share-button{background:#f7f8f3;border:1px solid #dfe4dc;border-radius:7px;padding:8px 13px;font-size:14px;font-weight:500;color:#3c5247}
+.share-button:hover{background:#eef3e8;border-color:#aebfa2}
+.share-button[disabled]{opacity:.55;cursor:default;transform:none}
+.share-button.mark-button{border-color:#d8b48c;background:#fdf6ed;color:#8a5a2b}
+.share-summary{font-size:13px;line-height:1.7;color:#7c8580;margin:0}
+.share-status{font-size:13px;line-height:1.7;color:#305e52;margin:0;min-height:1em}
+.share-status.is-error{color:#b4543f}
+.share-help{font-size:12px;line-height:1.7;color:#7c8580;margin:0}
+.embed-panel{display:flex;flex-direction:column;gap:7px;background:#f7f8f3;border:1px solid #e3e8dd;border-radius:8px;padding:11px 12px}
+.embed-panel label{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:#84917c}
+.embed-panel textarea{width:100%;resize:vertical;border:1px solid #d6decf;border-radius:5px;background:#fff;padding:8px;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:#354a41}
+.share-notice{background:#fdf6ed;border:1px solid #e6cfae;border-radius:9px;padding:11px 14px;margin:18px 0 0}
+.share-notice p{font-size:14px;line-height:1.7;color:#8a5a2b;margin:0}
+.share-notice p+p{margin-top:5px}
+
+/* Marked candidate source, drawn over the reprojected sky image */
+.source-mark{position:absolute;z-index:3;pointer-events:none;transform:translate(-50%,-50%)}
+.source-mark-ring{display:block;width:22px;height:22px;border:2px solid #ffd479;border-radius:50%;box-shadow:0 0 0 1px #101b2099,0 0 12px #ffd47966}
+.source-mark-label{position:absolute;left:50%;top:-8px;transform:translate(-50%,-100%);white-space:nowrap;background:#101b20e0;color:#ffd479;border:1px solid #ffd47966;border-radius:4px;padding:2px 6px;font-size:11px;letter-spacing:.4px;font-variant-numeric:tabular-nums}
+.viewer.is-marking{cursor:crosshair}
+
+/* Embed layout: the viewer and its timeline, nothing else */
+.is-embed main{padding:12px;max-width:none}
+.is-embed .site-header,.is-embed .intro,.is-embed #target-picker,
+.is-embed #observations,.is-embed #mission,.is-embed footer,
+.is-embed .viewer-settings,.is-embed .share-bar,.is-embed .share-notice,
+.is-embed .observation-panel{display:none!important}
+.is-embed .explorer{grid-template-columns:minmax(0,1fr);gap:0}
+.is-embed .viewer{grid-column:1;grid-row:1;min-height:0;aspect-ratio:1.7;border-radius:10px}
+.is-embed .timeline-panel{grid-column:1;grid-row:2;padding:14px 0 4px}
+.is-embed .timeline-filmstrip{margin-top:8px}
+.is-embed .demo-note{display:none}
+@media(max-width:760px){.is-embed .viewer{aspect-ratio:1.1}.is-embed main{padding:8px}}
+.source-mark.is-offscreen .source-mark-ring{border-style:dashed;border-color:#e8a06a;box-shadow:0 0 0 1px #101b2099}
+.source-mark.is-offscreen .source-mark-label{color:#f0b98d;border-color:#e8a06a66}

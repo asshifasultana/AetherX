@@ -5,7 +5,8 @@
   <meta name="theme-color" content="#f5f6f2">
   <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
   <title>SPHEREx — A sky in motion</title>
-  <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:5173/');</script>
+  <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:5173/');
+    if (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top) document.documentElement.classList.add('is-embed');</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -16,6 +17,7 @@
   </header>
 
   <main>
+    <div id="share-notice" class="share-notice" role="note" hidden></div>
     <section class="intro" aria-labelledby="page-title">
       <div><p class="eyebrow"><span></span> AN INFRARED PERSPECTIVE</p><h1 id="page-title">The sky is never <em>still.</em></h1></div>
       <div class="intro-right"><p>Look closer. Travel through time.<br>Discover a universe that keeps changing.</p><a href="#target-picker">Choose your destination <span>↘</span></a></div>
@@ -51,6 +53,7 @@
         <div class="canvas-top"><span id="cutout-cache-state" class="cutout-cache-state">No cutout loaded</span><button id="expand-button" class="canvas-button" aria-label="Expand sky viewer" title="Expand sky viewer">⛶</button></div>
         <div class="canvas-bottom"><span id="cutout-caption">Choose an observation to view its cutout</span><span class="compass">N<span>↑</span></span></div>
         <p id="cutout-status" class="cutout-status" role="status" aria-live="polite">Scroll down past the timeline and settings to Find your observations. Choose Details + on a result, then View aligned cutout.</p>
+        <div id="source-mark" class="source-mark" hidden><span class="source-mark-ring" aria-hidden="true"></span><span id="source-mark-label" class="source-mark-label"></span></div>
       </div>
 
       <aside class="observation-panel">
@@ -92,6 +95,20 @@
         </div>
         <div id="timeline-filmstrip" class="timeline-filmstrip" role="group" aria-label="Observation thumbnails"></div>
         <p id="timeline-status" class="timeline-status" role="status" aria-live="polite">Search for a target to build a dated time-lapse. Timeline ticks are placed at the real observation dates, so long gaps appear as long spaces.</p>
+        <div class="share-bar" aria-label="Share this view">
+          <div class="share-actions">
+            <button id="copy-link" class="share-button" type="button">Copy link</button>
+            <button id="copy-embed" class="share-button" type="button">Embed this view</button>
+            <button id="clear-mark" class="share-button mark-button" type="button" hidden>Clear mark</button>
+          </div>
+          <p id="share-summary" class="share-summary">Coordinates, field of view, detector band and dates are kept in the link.</p>
+          <p id="share-status" class="share-status" role="status" aria-live="polite"></p>
+          <div id="embed-panel" class="embed-panel" hidden>
+            <label for="embed-code">Embed code</label>
+            <textarea id="embed-code" readonly rows="3" spellcheck="false"></textarea>
+            <p class="share-help">Paste this into any page. The frame opens the same coordinates, field of view, detector band, date range and marked source.</p>
+          </div>
+        </div>
       </div>
       <section class="viewer-settings" aria-labelledby="settings-heading">
         <div class="settings-title"><div><p class="eyebrow">YOUR SKY, YOUR PERSPECTIVE</p><h2 id="settings-heading">Shape your observation</h2></div><button id="reset-button" class="reset-settings" type="button">Reset settings ↺</button></div>
@@ -154,5 +171,6 @@
   <script type="module" src="observations-ui.js"></script>
   <script type="module" src="fits-viewer.js"></script>
   <script type="module" src="timelapse.js"></script>
+  <script type="module" src="share-ui.js"></script>
 </body>
 </html>

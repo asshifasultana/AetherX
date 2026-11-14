@@ -1,11 +1,24 @@
 import { parseCoordinate, formatSexagesimal } from './coordinates.js';
 import { presets } from './presets.js';
 import { mountObjectLookup } from './object-lookup.js';
+import { initialViewIssues, initialViewState, isEmbedded } from './share.js';
+import { encodeViewState } from './url-state.js';
 const $ = id => document.getElementById(id);
-let selected = 'barnard';
-let position = { raDeg: presets.barnard.raDeg, decDeg: presets.barnard.decDeg, frame: 'icrs', targetId: 'barnard' };
+// A shared link is authoritative. A curated target supplies the label and the
+// highlighted card, while explicit coordinates in the link always win.
+const restoredTargetId = initialViewState.targetId && presets[initialViewState.targetId] ? initialViewState.targetId : null;
+// Opening a bare page keeps the old behaviour: nothing is searched until the
+// visitor chooses a destination. Only a link that carries a view restores one.
+const restoredView = encodeViewState({ ...initialViewState, embed: false }) !== '';
+let selected = restoredTargetId;
+let position = {
+  raDeg: initialViewState.raDeg,
+  decDeg: initialViewState.decDeg,
+  frame: 'icrs',
+  ...(restoredTargetId ? { targetId: restoredTargetId } : {})
+};
 const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, combineExposures: true, hideBadPixels: true, consistentBrightness: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: true, labelAsteroids: false, asteroidMagnitude: 20 };
-let viewerSettings = { ...defaultSettings };
+let viewerSettings = { ...defaultSettings, band: initialViewState.band, fovArcmin: initialViewState.fovArcmin };
 const ranges = ['0.75 – 1.09', '1.10 – 1.62', '1.63 – 2.41', '2.42 – 3.82', '3.83 – 4.41', '4.42 – 5.00'];
 const signed = n => `${n < 0 ? '' : '+'}${n.toFixed(4)}`;
 function fillInputs() {
@@ -101,8 +114,24 @@ $('reset-button').addEventListener('click', () => {
   $('announcement').textContent = 'All observation settings reset to their defaults.';
 });
 renderSettings();
-// Publish the initial UI settings after the other page modules have attached their listeners.
-window.addEventListener('load', () => emitSettings(), { once: true });
+updateSelection();
+fillInputs();
+if (isEmbedded) document.documentElement.classList.add('is-embed');
+function restoredTarget() {
+  if (restoredTargetId) return presets[restoredTargetId];
+  return {
+    name: 'Shared sky position',
+    type: 'SHARED COORDINATES · ICRS',
+    description: 'This link opened a specific patch of sky. The observation search below is already set to it.'
+  };
+}
+// Publish the initial UI settings, then restore the shared destination, after the
+// other page modules have attached their listeners. A bare page still waits for
+// the visitor to choose a target.
+window.addEventListener('load', () => {
+  emitSettings();
+  if (restoredView) showPosition(restoredTarget());
+}, { once: true });
 $('expand-button').addEventListener('click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();

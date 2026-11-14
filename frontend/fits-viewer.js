@@ -1,12 +1,20 @@
 import { loadCutout } from './cutout-loader.js';
+import { canvasToSky, skyToCanvas } from './sky-projection.js';
+import { initialViewState } from './share.js';
 
 const canvas = document.getElementById('sky-canvas');
 const context = canvas.getContext('2d', { alpha: false });
 const status = document.getElementById('cutout-status');
 const caption = document.getElementById('cutout-caption');
+const sourceMark = document.getElementById('source-mark');
+const sourceMarkLabel = document.getElementById('source-mark-label');
 let target = { raDeg: 269.4521, decDeg: 4.6934 }, settings = { fovArcmin: 16, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false };
 let activeObservation = null, activeSequence = 0, cutoutController = null;
 let comparisonScale = null;
+// A marked candidate source is an absolute sky position, so it survives frame
+// changes, band changes and a new search. Only the field of view can move it
+// (partly) out of frame.
+let markedSource = null;
 const PIXEL_ARCSEC = 6.15;
 // Decoded frames and their rendered canvases live in memory so playback can swap
 // frames with a single draw instead of re-fetching and re-parsing FITS.
@@ -41,6 +49,7 @@ function resetViewer(message) {
   document.getElementById('coverage-note').hidden = true;
   context.fillStyle = '#08090e'; context.fillRect(0, 0, canvas.width, canvas.height);
   document.getElementById('target-marker').hidden = true;
+  if (sourceMark) sourceMark.hidden = true;
   caption.textContent = '';
   status.hidden = false; status.classList.remove('is-error');
   cards(message);
@@ -216,6 +225,7 @@ function paintCanvas(element, image) {
 
 function applyChrome(coverage) {
   document.querySelector('.viewer')?.classList.add('has-image');
+  document.querySelector('.viewer')?.classList.add('is-marking');
   const coverageNote = document.getElementById('coverage-note');
   coverageNote.hidden = coverage >= 0.98;
   coverageNote.textContent = coverageNote.hidden ? '' : `Partial coverage · ${Math.round(coverage * 100)}%`;
@@ -226,8 +236,67 @@ function applyChrome(coverage) {
 function drawImage(image) {
   const coverage = paintCanvas(canvas, image);
   applyChrome(coverage);
+  positionMark();
   return coverage;
 }
+
+const formatMark = sky => `${sky.raDeg.toFixed(4)}°, ${sky.decDeg >= 0 ? '+' : ''}${sky.decDeg.toFixed(4)}°`;
+
+function setMarkedSource(sky) {
+  markedSource = sky && Number.isFinite(sky.raDeg) && Number.isFinite(sky.decDeg)
+    ? { raDeg: sky.raDeg, decDeg: sky.decDeg }
+    : null;
+  positionMark();
+  window.dispatchEvent(new CustomEvent('sky:source-marked', { detail: markedSource ? { ...markedSource } : {} }));
+}
+
+// Place the DOM marker over the stretched canvas. Percentages of the element box
+// map one-to-one onto canvas pixels, so the mark stays put at every field of view
+// even though the canvas has a fixed pixel grid and a fluid CSS size.
+function positionMark() {
+  if (!sourceMark) return;
+  const size = canvas.width;
+  if (!markedSource || !size || !document.querySelector('.viewer')?.classList.contains('has-image')) {
+    sourceMark.hidden = true;
+    return;
+  }
+  const point = skyToCanvas({
+    raDeg: markedSource.raDeg, decDeg: markedSource.decDeg, size,
+    centerRaDeg: target.raDeg, centerDecDeg: target.decDeg
+  });
+  if (!point) { sourceMark.hidden = true; return; }
+  // Clamp to the frame so a source outside the current field of view is still
+  // visible at the edge and clearly marked as out of frame, rather than vanishing.
+  const clamp = value => Math.max(0, Math.min(size - 1, value));
+  const x = clamp(point.x), y = clamp(point.y);
+  const offscreen = x !== point.x || y !== point.y;
+  sourceMark.hidden = false;
+  sourceMark.classList.toggle('is-offscreen', offscreen);
+  sourceMark.style.left = `${((x + 0.5) / size) * 100}%`;
+  sourceMark.style.top = `${((y + 0.5) / size) * 100}%`;
+  sourceMark.title = offscreen
+    ? `Marked source ${formatMark(markedSource)} lies outside this field of view. Widen the field to see it.`
+    : `Marked source ${formatMark(markedSource)}`;
+  if (sourceMarkLabel) {
+    sourceMarkLabel.textContent = offscreen ? `${formatMark(markedSource)} · outside field` : formatMark(markedSource);
+  }
+}
+
+canvas.addEventListener('click', event => {
+  if (!activeObservation?.image) return;
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const size = canvas.width;
+  if (!size) return;
+  const x = ((event.clientX - rect.left) / rect.width) * size;
+  const y = ((event.clientY - rect.top) / rect.height) * size;
+  const sky = canvasToSky({
+    x, y, size, centerRaDeg: target.raDeg, centerDecDeg: target.decDeg
+  });
+  if (sky) setMarkedSource(sky);
+});
+
+window.addEventListener('sky:clear-source-mark', () => setMarkedSource(null));
 
 // The exact proxy URL for a frame at the current target and field of view. The
 // time-lapse preloader uses the same URL so its cached download is reused.
@@ -285,11 +354,12 @@ export async function warmCutout(observation, signal) {
   return entry;
 }
 
-function commitCutout(observation, entry) {
+function commitCutout(observation, entry, { announce = true } = {}) {
   const source = entry.canvas;
   if (canvas.width !== source.width || canvas.height !== source.height) { canvas.width = source.width; canvas.height = source.height; }
   context.drawImage(source, 0, 0);
   applyChrome(entry.coverage);
+  positionMark();
   const image = entry.image;
   const date = observation.observedStartUtc ? new Date(observation.observedStartUtc).toLocaleString('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC' : 'Date not reported';
   const masked = image.flags && settings.hideBadPixels ? Array.from(image.flags).filter(value => (value & BAD_PIXEL_MASK) !== 0).length : 0;
@@ -297,6 +367,9 @@ function commitCutout(observation, entry) {
   status.hidden = true;
   document.getElementById('cutout-cache-state').textContent = 'Retrieved from IRSA · browser caching enabled';
   window.dispatchEvent(new CustomEvent('sky:cutout-rendered', { detail: { observation } }));
+  // Playback frames are not shared state: only a frame the user opened updates
+  // the address bar. Click the sky image to mark a candidate source.
+  if (announce) window.dispatchEvent(new CustomEvent('sky:frame-shown', { detail: { observation } }));
 }
 
 export async function showCutout(observation, { quiet = false, keepImage = false } = {}) {
@@ -331,7 +404,7 @@ export async function showCutout(observation, { quiet = false, keepImage = false
     }
     if (sequence !== activeSequence) return;
     activeObservation.image = entry.image;
-    commitCutout(observation, entry);
+    commitCutout(observation, entry, { announce: !quiet });
     window.dispatchEvent(new CustomEvent('sky:cutout-detector-selected', { detail: { detector: observation.detector } }));
   } catch (error) {
     if (sequence === activeSequence && !requestController.signal.aborted) {
@@ -348,4 +421,8 @@ function formatWavelength(observation) {
 }
 
 export function observeCutout(observation) { void showCutout(observation); }
-resetViewer('Scroll down past the timeline and settings to Find your observations. Choose Details + on a result, then View aligned cutout.');
+// Restore a marked source carried by a shared link before any image is loaded.
+if (Number.isFinite(initialViewState.markRaDeg) && Number.isFinite(initialViewState.markDecDeg)) {
+  setMarkedSource({ raDeg: initialViewState.markRaDeg, decDeg: initialViewState.markDecDeg });
+}
+resetViewer('Scroll down past the timeline and settings to Find your observations. Choose Details + on a result, then View aligned cutout. Click the sky image to mark a candidate source.');

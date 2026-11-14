@@ -1,5 +1,6 @@
 import { preferredProducts } from './observation-products.js';
 import { observeCutout } from './fits-viewer.js';
+import { initialViewState } from './share.js';
 const $ = id => document.getElementById(id);
 const make = (tag, text, className) => { const element = document.createElement(tag); if (text !== undefined) element.textContent = text; if (className) element.className = className; return element; };
 const formatNumber = (value, digits = 3) => Number.isFinite(value) ? value.toFixed(digits).replace(/0+$/, '').replace(/\.$/, '') : 'Not reported';
@@ -61,6 +62,15 @@ async function search() {
   } finally { clearTimeout(timeout); if (current === requestNumber) setBusy(false); }
 }
 $('observation-search-form').addEventListener('submit', event => { event.preventDefault(); search(); });
+// A shared link can carry a date range. Seed the inputs before the restored
+// target triggers its first search, then publish later edits to the link state.
+if (initialViewState.startDate) $('search-start').value = initialViewState.startDate;
+if (initialViewState.endDate) $('search-end').value = initialViewState.endDate;
+for (const id of ['search-start', 'search-end']) {
+  $(id).addEventListener('change', () => {
+    emit('sky:search-filters-changed', { startDate: $('search-start').value, endDate: $('search-end').value });
+  });
+}
 $('cancel-search').addEventListener('click', () => controller?.abort());
 $('result-sort').addEventListener('change', () => { page = 0; renderRows(); });
 $('results-previous').addEventListener('click', () => { page--; renderRows(); });

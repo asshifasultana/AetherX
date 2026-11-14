@@ -52,3 +52,28 @@ Open an observation's **Details** row in the search results and choose **View al
 The browser reads the science image HDU and reprojects each observation from its FITS celestial WCS onto a common north-up, east-left grid centered on the selected target. The selected square field of view is therefore consistent when switching observations. Rendering uses the image data and display stretch controls; the delivered cutout retains the other FITS HDUs for later processing.
 
 Run the app locally with `npm run dev` from this repository. Cutouts are never saved on the server or buffered there as complete files. Successful responses permit private browser caching for one hour. Client disconnects cancel archive transfers. The first cutout request removes only the app's legacy `spherex-cutouts-v1` temporary cache before beginning retrieval.
+
+## Shareable links and the embeddable viewer
+
+Every part of a view that describes *where and when* you are looking can travel in the URL. The address bar is rewritten with `history.replaceState` as you work, so the link is always shareable without a "save" step, and sharing never adds entries the back button has to fight through. A bare page writes no query string until the view actually differs from the default.
+
+| Parameter | Meaning | Omitted when |
+| --- | --- | --- |
+| `ra`, `dec` | ICRS position in decimal degrees | position is the default target |
+| `fov` | Field of view in arcminutes (5, 10, 16, 25) | 16 |
+| `band` | Detector band 1–6 | 2 |
+| `from`, `to` | Observation date range, `YYYY-MM-DD` | unset |
+| `at` | The dated frame the sender was looking at | no frame opened |
+| `mra`, `mdec` | Marked candidate source position | no source marked |
+| `target` | Curated target id, for the highlighted card | custom or resolved position |
+| `embed` | `1` renders the compact, embeddable layout | not embedded |
+
+`url-state.js` owns the encoding and validation, and is the only module that decides what a link means. It is DOM-free and unit tested, so a truncated or hand-edited link degrades field by field: an impossible declination, an unoffered field of view, or a date such as `2026-02-31` falls back to the default for that field and is reported in a notice at the top of the page rather than failing the whole view. Right ascension wraps into 0–360° because it is cyclic; a mark with only one of its two coordinates is dropped rather than half-applied. A reversed date range is cleared instead of inverted.
+
+Opening a link restores the position, the field of view, the detector band, the date range and the marked source, then runs the archive search and jumps to the closest dated frame to `at`. Frames reached by playback deliberately do not rewrite the URL, so a running time-lapse does not churn the address bar; only a frame the visitor opens is recorded.
+
+**Marking a source.** Click the sky image to drop a candidate-source marker at the position under the cursor. The marker is an absolute sky position, so it survives frame changes, band changes and new searches. `sky-projection.js` holds the single canvas↔sky transformation used by both the renderer and the marker, and a round-trip unit test pins it. When the field of view changes, the marker keeps its sky position and moves toward the centre of a wider field; when a marked source falls outside the current field, it is drawn clamped to the edge and labelled `outside field` rather than disappearing. **Clear mark** removes it and drops the parameters from the link.
+
+**Embedding.** `?embed=1`, or simply being inside an iframe, switches to a compact layout that keeps the viewer and its timeline, hides the page chrome, settings and observation table, and adds `is-embed` on the document element before first paint to avoid a flash of the full page. The **Embed this view** button produces an `<iframe>` snippet for the current position, field of view, band, dates and marked source. The app sets no `X-Frame-Options` or `frame-ancestors` restriction, so the snippet works as-is.
+
+Both `frontend/server.mjs` and `scripts/build-vercel.mjs` keep an explicit list of public assets. `url-state.js`, `sky-projection.js`, `share.js` and `share-ui.js` are registered in both; add any new frontend module to both lists or it will 404 in production while working locally.

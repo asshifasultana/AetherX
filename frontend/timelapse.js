@@ -3,6 +3,7 @@ import {
   formatGapShort, nearestFrameIndex, nearestFrameIndexByTime, nextSpeed, observationKey
 } from './timelapse-core.js';
 import { showCutout, warmCutout } from './fits-viewer.js';
+import { takePendingFrameDate } from './share.js';
 
 const $ = id => document.getElementById(id);
 const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
@@ -471,6 +472,16 @@ window.addEventListener('sky:observations-loaded', event => {
   state.observations = Array.isArray(event.detail?.observations) ? event.detail.observations : [];
   rebuild();
   if (event.detail?.failed) setStatus('The archive search did not complete. Adjust the filters and try again.');
+  // A shared link names the frame it was looking at. Jump to the closest dated
+  // frame once, so the recipient lands on the same moment in the sequence.
+  const pending = takePendingFrameDate();
+  if (pending && state.frames.length) {
+    const time = Date.parse(`${pending}T00:00:00Z`);
+    if (Number.isFinite(time)) {
+      void selectFrame(nearestFrameIndexByTime(state.frames, time));
+      window.dispatchEvent(new CustomEvent('sky:frame-date-restored'));
+    }
+  }
 });
 
 function paintThumbFrom(observation, source) {

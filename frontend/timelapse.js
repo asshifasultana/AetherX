@@ -44,6 +44,90 @@ const prefetch = {
 let prefetchNote = false;
 let playbackController = null;
 
+// Search readiness includes every filmstrip frame, not just the selected image.
+let searchPending = false, archivePending = false, selectedPending = false;
+let loadingProgress = 0, loadingProgressTimer = null;
+// Sources: https://science.nasa.gov/universe/stars/
+// https://science.nasa.gov/blogs/spherex/2025/03/11/nasas-spherex-mission-2/
+// https://www.nasa.gov/missions/spherex/why-nasas-spherex-mission-will-make-most-colorful-cosmic-map-ever/
+// https://science.nasa.gov/solar-system/planet-x/
+const LOADING_FACTS = [
+  'The Milky Way alone contains more than 100 billion stars.',
+  'SPHEREx sees the sky in 102 infrared colors invisible to human eyes.',
+  'Some small stars can shine for trillions of years.',
+  'Planet Nine is a predicted world beyond Neptune that has yet to be discovered.',
+  'Stars are born inside enormous clouds of gas and dust.',
+  'SPHEREx is designed to map the entire sky four times in two years.',
+  'The most massive stars may live for only a few million years.',
+  'SPHEREx will survey more than 450 million galaxies and 100 million stars.',
+  'A baby star is called a protostar.',
+  'You can help search for distant worlds using infrared images from NASA’s WISE mission.',
+  'Stars shine by fusing hydrogen into helium in their cores.',
+  'SPHEREx searches for frozen water and other ingredients for life between stars.',
+  'Our Sun is roughly halfway through its main-sequence lifetime.',
+  'A white dwarf packs a star’s leftover core into roughly Earth’s size.',
+  'Massive stars forge elements such as oxygen, neon, and magnesium.',
+  'Material shed by dying stars helps build the next generation of stars.'
+];
+let loadingFactIndex = -1, loadingFactTimer = null;
+function showNextLoadingFact() {
+  loadingFactIndex = (loadingFactIndex + 1) % LOADING_FACTS.length;
+  $('preview-loading-fact').textContent = LOADING_FACTS[loadingFactIndex];
+  $('preview-loading-fact').classList.toggle('is-changing', false);
+}
+function scheduleLoadingFact() {
+  loadingFactTimer = setTimeout(() => {
+    if (!searchPending) return;
+    $('preview-loading-fact').classList.toggle('is-changing', true);
+    loadingFactTimer = setTimeout(() => {
+      if (!searchPending) return;
+      showNextLoadingFact();
+      scheduleLoadingFact();
+    }, 180);
+  }, 6000);
+}
+
+function paintLoadingProgress(value) {
+  loadingProgress = value;
+  $('preview-loading-percent').textContent = String(Math.floor(value)).padStart(2, '0');
+  $('preview-loading-progress').style.transform = `scaleX(${value / 100})`;
+}
+function tickLoadingProgress() {
+  // An estimated visual cadence: a quick first sweep, then a gentle approach
+  // to 99. Only actual image readiness can complete and dismiss the screen.
+  if (!searchPending) return;
+  paintLoadingProgress(loadingProgress < 90
+    ? Math.min(90, loadingProgress + 9)
+    : Math.min(99, loadingProgress + (99 - loadingProgress) * .025));
+  loadingProgressTimer = setTimeout(tickLoadingProgress, loadingProgress < 90 ? 70 : 250);
+}
+function updatePreviewLoading() {
+  const loader = $('preview-loading');
+  if (!loader) return;
+  const frames = document.documentElement?.classList.contains('is-tour-preview')
+    ? state.frames.slice(state.index, state.index + 1) : state.frames;
+  const settled = frames.filter(frame => {
+    const key = observationKey(frame);
+    return prefetch.fetched.has(key) || prefetch.failed.has(key) || isCutoutReady(frame);
+  }).length;
+  const busy = searchPending && (archivePending || selectedPending || settled < frames.length);
+  loader.hidden = !busy;
+  document.querySelector('.viewer')?.setAttribute('aria-busy', String(busy));
+  if (!busy) {
+    searchPending = false;
+    clearTimeout(loadingProgressTimer); loadingProgressTimer = null;
+    clearTimeout(loadingFactTimer); loadingFactTimer = null;
+    paintLoadingProgress(100);
+    loader.close?.();
+    return;
+  }
+  if (!loader.open) loader.showModal?.();
+
+}
+
+
+$('preview-loading')?.addEventListener('cancel', event => { if (searchPending) event.preventDefault(); });
+
 const dateOf = frame => new Date(frameTime(frame));
 const shortDate = frame => dateFormat.format(dateOf(frame));
 const frameDate = frame => `${shortDate(frame)} · ${timeFormat.format(dateOf(frame))} UTC`;
@@ -85,7 +169,7 @@ function nextPrefetchFrame(excluded = new Set()) {
 function schedulePrefetch(delay = 0) {
   clearTimeout(prefetch.timer);
   prefetch.timer = null;
-  if (!state.frames.length || prefetch.paused) return;
+  if (!state.frames.length || prefetch.paused || document.documentElement?.classList.contains('is-tour-preview')) return;
   prefetch.timer = setTimeout(() => { void runPrefetch(); }, delay);
 }
 
@@ -127,7 +211,7 @@ async function runPrefetch() {
     if (!frame) break;
     batch.push(frame); excluded.add(observationKey(frame));
   }
-  if (!batch.length) { prefetchFinished(); return; }
+  if (!batch.length) { prefetchFinished(); updatePreviewLoading(); return; }
   const controller = new AbortController();
   prefetch.controller = controller;
   prefetch.running = true;
@@ -140,7 +224,7 @@ async function runPrefetch() {
       } catch (error) {
         if (!controller.signal.aborted && error?.name !== 'AbortError') prefetch.failed.add(key);
       }
-      if (!controller.signal.aborted) prefetchAnnounce();
+      if (!controller.signal.aborted) { prefetchAnnounce(); updatePreviewLoading(); }
     }));
   } finally {
     // An old batch must never clear a new target's controller or running flag.
@@ -628,6 +712,14 @@ window.addEventListener('sky:target-selected', () => {
 });
 
 window.addEventListener('sky:observations-loading', () => {
+  clearTimeout(loadingProgressTimer);
+  paintLoadingProgress(0);
+  searchPending = true; archivePending = true; selectedPending = false;
+  clearTimeout(loadingFactTimer);
+  showNextLoadingFact();
+  scheduleLoadingFact();
+  loadingProgressTimer = setTimeout(tickLoadingProgress, 70);
+  updatePreviewLoading();
   state.observations = [];
   rebuild({ announce: false });
   setStatus('Searching the archive for dated observations…');
@@ -635,13 +727,21 @@ window.addEventListener('sky:observations-loading', () => {
 
 async function activateTimeline() {
   if (!state.frames.length || state.viewMode === 'deep-stack') return;
-  if (state.viewMode === 'time-lapse' && state.frames.length > 1 && !state.userPaused) await playPlayback();
-  else await selectFrame(state.index);
+  // Loading results, changing bands, or restoring a link never starts playback.
+  const frames = state.frames;
+  try { await selectFrame(state.index); }
+  finally {
+    if (state.frames === frames) { selectedPending = false; updatePreviewLoading(); }
+  }
 }
 
 window.addEventListener('sky:observations-loaded', event => {
+  archivePending = false;
+  selectedPending = Boolean(event.detail?.observations?.length) && !event.detail?.failed;
   state.observations = Array.isArray(event.detail?.observations) ? event.detail.observations : [];
   rebuild();
+  if (!state.frames.length || event.detail?.failed) selectedPending = false;
+  updatePreviewLoading();
   if (event.detail?.failed) { setStatus('The archive search did not complete. Adjust the filters and try again.'); return; }
   const pending = takePendingFrameDate();
   if (pending && state.frames.length) {
@@ -676,7 +776,9 @@ window.addEventListener('sky:cutout-warmed', event => {
   }
 });
 
+window.addEventListener('sky:deep-stack-error', () => { selectedPending = false; updatePreviewLoading(); });
 window.addEventListener('sky:deep-stack-built', event => {
+  selectedPending = false; updatePreviewLoading();
   const record = event.detail?.record;
   if (!record) return;
   $('timeline-status').textContent = record.failedObservationIds.length
@@ -707,6 +809,7 @@ window.addEventListener('sky:cutout-error', event => {
   if (!observation) return;
   const current = state.frames[state.index];
   if (current && observationKey(current) === observationKey(observation)) {
+    prefetch.failed.add(observationKey(observation));
     state.shownKey = null;
     setStatus(`Frame ${state.index + 1} could not be loaded: ${event.detail.error?.message || 'the cutout is unavailable.'} Playback is paused.`);
     pausePlayback();

@@ -6,17 +6,20 @@
   <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
   <title>SPHEREx — A sky in motion</title>
   <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:5173/');
-    if (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top) document.documentElement.classList.add('is-embed');</script>
+    if (/[?&]tourPreview=1(&|#|$)/.test(location.search)) document.documentElement.classList.add('is-tour-preview');
+    if (!document.documentElement.classList.contains('is-tour-preview') && (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top)) document.documentElement.classList.add('is-embed');</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="viewer-page">
   <header class="site-header viewer-header">
     <a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a>
-    <button id="sidebar-toggle" class="sidebar-mobile-toggle" type="button" aria-label="Open settings sidebar" aria-controls="sidebar-content" aria-expanded="false">☷ Settings</button>
+    <button id="sidebar-toggle" class="sidebar-mobile-toggle" type="button" aria-label="Open settings sidebar" aria-controls="sidebar-content" aria-expanded="false">Settings</button>
+    <a class="viewer-new-search" href="/">New search</a>
+    <button id="tour-restart" class="viewer-tour-button" type="button">How it works</button>
     <div id="target-picker" class="viewer-search" data-minimal="true" role="search" aria-label="Search the sky"></div>
   </header>
 
-  <main id="workspace" class="workspace" data-sidebar-open="true">
+  <main id="workspace" class="workspace" data-sidebar-open="false">
     <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Close settings sidebar" tabindex="-1" hidden></button>
     <aside id="workspace-sidebar" class="workspace-sidebar" aria-label="Observation settings">
       <button id="sidebar-rail-toggle" class="sidebar-rail-toggle" type="button" aria-label="Expand settings sidebar" aria-controls="sidebar-content" aria-expanded="true" hidden>☷</button>
@@ -76,8 +79,35 @@
       <section id="explorer" class="explorer" aria-label="Sky image viewer">
       <div class="viewer-stage">
       <div class="viewer-shell">
-        <div class="viewer-toolbar"><span id="cutout-cache-state">No cutout loaded</span><span id="blink-badge" class="blink-badge" aria-live="off" hidden></span><div class="canvas-actions"><button id="export-sky-png" class="canvas-button icon-button" type="button" aria-label="Download PNG" title="Download PNG" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg></button><button id="expand-button" class="canvas-button icon-button" type="button" aria-label="Fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg></button></div></div>
         <div class="viewer" role="region" aria-label="Aligned SPHEREx FITS cutout viewer"><canvas id="sky-canvas" tabindex="0" role="img" aria-label="North-up sky image, east to the left. Hover for coordinates and values; enable Inspect a pixel on click for full quality details."></canvas><canvas id="overlay-canvas" class="overlay-canvas" aria-hidden="true"></canvas><canvas id="gaia-canvas" aria-hidden="true"></canvas></div>
+        <div class="viewer-toolbar"><span id="cutout-cache-state" hidden></span><span id="blink-badge" class="blink-badge" aria-live="off" hidden></span><div class="canvas-actions"><button id="survey-layers-button" class="canvas-button" type="button" aria-expanded="false" aria-controls="survey-layers">Layers</button><button id="export-sky-png" class="canvas-button icon-button" type="button" aria-label="Download PNG" title="Download PNG" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span>Download</span></button><button id="expand-button" class="canvas-button icon-button" type="button" aria-label="Fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg><span>Fullscreen</span></button></div></div>
+        <div class="survey-legend" aria-label="Active survey layers">
+          <span id="gaia-legend" hidden><span class="survey-symbol gaia-symbol" aria-hidden="true">○</span> Gaia</span>
+          <span id="wise-legend" hidden><span class="survey-symbol wise-symbol" aria-hidden="true">◇</span> AllWISE</span>
+        </div>
+        <section id="survey-layers" class="survey-layers" popover aria-labelledby="survey-layers-title">
+          <header><h2 id="survey-layers-title">Survey layers</h2><button id="survey-layers-close" type="button" aria-label="Close survey layers">×</button></header>
+          <label class="check-row"><input id="gaia-stars" type="checkbox"><span><span class="survey-symbol gaia-symbol" aria-hidden="true">○</span> Gaia stars <small>· G ≤ 18</small></span></label>
+          <label class="check-row"><input id="wise-sources" type="checkbox"><span><span class="survey-symbol wise-symbol" aria-hidden="true">◇</span> WISE infrared sources <small>· AllWISE</small></span></label>
+          <div id="survey-source-details" class="survey-source-details" tabindex="-1" aria-live="polite" hidden></div>
+          <div id="survey-candidates" class="survey-candidates" role="group" aria-labelledby="survey-candidates-title" hidden>
+            <strong id="survey-candidates-title">Multiple sources here</strong>
+            <div id="survey-candidate-list"></div>
+          </div>
+          <section id="gaia-readouts" class="survey-readouts" hidden>
+            <p id="gaia-status" role="status"></p>
+            <button id="gaia-retry" type="button" hidden>Retry Gaia lookup</button>
+            <details><summary>Gaia stars in this field</summary><ul id="gaia-source-list" class="gaia-source-list" aria-label="Gaia sources"></ul>
+            <p id="gaia-approximation">Gaia positions use approximate proper motion where available. Annual parallax and observer effects are excluded.</p>
+            <a href="https://www.cosmos.esa.int/web/gaia/dr3" target="_blank" rel="noopener noreferrer">Gaia DR3 · ESA/Gaia/DPAC ↗</a></details>
+          </section>
+          <section id="wise-readouts" class="survey-readouts" hidden>
+            <p id="wise-status" role="status"></p>
+            <button id="wise-retry" type="button" hidden>Retry WISE lookup</button>
+            <details><summary>WISE infrared sources in this field</summary><ul id="wise-source-list" class="gaia-source-list" aria-label="AllWISE sources"></ul>
+            <a href="https://irsa.ipac.caltech.edu/Missions/wise.html" target="_blank" rel="noopener noreferrer">AllWISE · NASA/IPAC IRSA ↗</a></details>
+          </section>
+        </section>
         <div class="viewer-readouts"><div id="colour-bar" class="colour-bar" hidden><div id="colour-bar-strip" class="colour-bar-strip"></div><div class="colour-bar-labels"><span id="colour-bar-low"></span><span id="colour-bar-mid"></span><span id="colour-bar-high"></span></div><small id="colour-bar-unit"></small></div><p id="quality-hover-readout" class="hover-readout" hidden></p><div id="quality-legend" class="quality-legend" hidden></div><p id="cutout-caption"></p><p id="coverage-note" hidden></p><p id="cutout-status" role="status" aria-live="polite">Waiting for observations.</p></div>
         <div hidden aria-hidden="true"><div id="source-mark" hidden><span id="source-mark-label"></span></div></div>
       </div>
@@ -104,7 +134,6 @@
           <div class="setting-field" data-tooltip="Pixelated shows each resampled SPHEREx pixel (about 6 arcseconds) as a sharp square, so no detail is invented. Smooth lets the browser interpolate between pixels when enlarging, which looks softer."><div class="field-head"><label for="pixel-view">Pixels</label><button class="setting-help" type="button" aria-label="About Pixels" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div><select id="pixel-view"><option value="pixelated">Pixelated</option><option value="smooth">Smooth</option></select></div>
         </div></details>
         <h3 class="panel-subtitle">Overlays</h3>
-        <div class="setting-check"><label class="check-row"><input id="gaia-stars" type="checkbox"><span>Gaia stars · G ≤ 18</span></label></div>
         <div class="setting-check" data-tooltip="Marks the selected target at the centre of the field."><label class="check-row"><input id="show-crosshair" type="checkbox"><span>Target crosshair</span></label><button class="setting-help" type="button" aria-label="About Target crosshair" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
         <div class="setting-check" data-tooltip="North and east arrows and a scale bar. The image is always north-up with east to the left, as on the sky."><label class="check-row"><input id="show-compass" type="checkbox" checked><span>Compass &amp; scale bar</span></label><button class="setting-help" type="button" aria-label="About Compass and scale bar" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
         <div class="setting-check" data-tooltip="Colours pixels by their pipeline quality flag, with a legend and counts. Rule out artefacts before trusting an apparent change. Available on single-exposure frames."><label class="check-row"><input id="quality-overlay" type="checkbox"><span>Quality-flag overlay</span></label><button class="setting-help" type="button" aria-label="About Quality-flag overlay" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
@@ -148,11 +177,7 @@
           </div>
         </div>
       </div>
-      <div class="gaia-readouts">
-        <p id="gaia-status" role="status"></p><button id="gaia-retry" class="reset-settings" type="button" hidden>Retry Gaia lookup</button>
-        <p id="gaia-approximation" hidden>Gaia markers use approximate proper motion at the displayed epoch. Annual parallax, observer effects, and perspective acceleration are excluded. Catalog markers are contextual identifications, not SPHEREx detections.</p>
-        <details><summary>Gaia stars in this field</summary><ul id="gaia-source-list" class="gaia-source-list" tabindex="0" aria-label="Gaia source positions"></ul><a href="https://www.cosmos.esa.int/web/gaia/dr3" target="_blank" rel="noopener noreferrer">Gaia DR3 · ESA/Gaia/DPAC ↗</a></details>
-      </div>
+
       <details id="cultural-context" class="cultural-context">
         <summary>Star Details</summary>
         <section id="star-profile" class="star-profile" aria-label="Selected star" hidden>
@@ -213,6 +238,20 @@
       <p id="search-error" class="search-error" role="alert" hidden></p>
       <div id="observation-results" hidden>
         <div class="results-toolbar"><p id="results-summary"></p><div><label for="result-sort">Sort<select id="result-sort"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label><button id="export-observations" class="reset-settings" type="button">Export CSV ↓</button></div></div>
+        <section class="spectral-map" aria-labelledby="spectral-map-heading">
+          <div class="spectral-map-heading"><div><h3 id="spectral-map-heading">102-channel wavelength map</h3><p>SPHEREx splits the infrared light across six detector arrays. The map shows which array observations cover; select a detector below to combine its images and bring out fainter detail.</p></div><span>0.75–5 μm</span></div>
+          <div id="spectral-lanes" class="spectral-lanes" role="img" aria-label="Wavelength coverage across the six SPHEREx detector arrays"></div>
+          <div class="spectral-axis" aria-hidden="true"><span>0.75 μm</span><span>2.9 μm</span><span>5 μm</span></div>
+          <p class="spectral-map-note">Detector ranges are approximate. Each bar summarizes loaded archive images; it does not draw individual channel response curves.</p>
+        </section>
+        <section id="quick-spectrum" class="quick-spectrum" aria-labelledby="quick-spectrum-heading">
+          <div class="quick-spectrum-heading"><div><h3 id="quick-spectrum-heading">Explore this source across wavelengths and time</h3><p>Measure the selected sky position in the loaded spectral images. Each point uses the wavelength at that exact position.</p></div><button id="build-spectrum" class="primary-button" type="button" disabled>Measure loaded images</button></div>
+          <div class="quick-spectrum-controls"><label for="spectrum-view">Show measurements by<select id="spectrum-view"><option value="wavelength">Wavelength</option><option value="time">Observation time</option></select></label><label for="wavelength-jump">Jump to wavelength<input id="wavelength-jump" type="number" min="0.75" max="5" step="0.001" placeholder="e.g. 2.2" disabled><span>μm</span></label><button id="jump-wavelength" class="reset-settings" type="button" disabled>Open nearest image ↗</button><button id="cancel-spectrum" class="text-button" type="button" hidden>Cancel</button></div>
+          <p id="spectrum-status" role="status" aria-live="polite">Quick-look extraction uses a small aperture, local background, image quality flags, and variance. Click a point to open its source image.</p>
+          <svg id="spectrum-chart" class="spectrum-chart" viewBox="0 0 760 300" role="img" aria-label="Quick-look source measurements" hidden></svg>
+          <p class="spectrum-caveat">Exploratory measurements only: this is not IRSA’s PSF-fit spectrophotometry or a calibrated 102-plane mosaic. Points may come from different observation times; use the time view and original images to check variability and artifacts.</p>
+          <p class="spectrum-official-link">For a mission-pipeline spectrum or a complete wavelength cube, use <a href="https://irsa.ipac.caltech.edu/applications/spherex/" target="_blank" rel="noopener noreferrer">IRSA’s SPHEREx Data Explorer ↗</a> and its Spectrophotometry or Mosaic Tool.</p>
+        </section>
         <div id="detector-summary" class="detector-summary" aria-label="Observations per detector"></div>
         <p id="results-provenance" class="results-provenance"></p>
         <div id="results-warnings" class="results-warnings" hidden></div>
@@ -254,14 +293,37 @@
     </div>
     <div id="settings-tooltip" class="settings-tooltip" role="tooltip" hidden></div>
   </main>
+
+  <dialog id="preview-loading" class="preview-loading" aria-labelledby="preview-loading-title" aria-describedby="preview-loading-fact" hidden>
+    <canvas id="loading-starfield" class="starfield" aria-hidden="true"></canvas>
+    <div class="hud-loading-content">
+      <p class="preview-loading-eyebrow">SPHEREx <span aria-hidden="true">/</span> SKY ATLAS</p>
+      <h2 id="preview-loading-title" class="sr-only">Loading sky images</h2>
+      <div class="hud-loading-meter" aria-hidden="true">
+        <div class="hud-loading-count"><span id="preview-loading-percent">00</span><small>%</small></div>
+        <div class="hud-loading-outline"><i></i><i></i></div>
+        <div class="preview-loading-track"><span id="preview-loading-progress"></span></div>
+        <div class="hud-loading-endpoints"><i></i><i></i></div>
+      </div>
+      <div class="hud-loading-fact">
+        <p class="hud-loading-fact-label">Did you know?</p>
+        <p id="preview-loading-fact" role="status" aria-live="polite" aria-atomic="true">The Milky Way alone contains more than 100 billion stars.</p>
+      </div>
+    </div>
+    <span class="hud-loading-corner hud-loading-corner-top" aria-hidden="true"></span>
+    <span class="hud-loading-corner hud-loading-corner-bottom" aria-hidden="true"></span>
+  </dialog>
+
   <footer><a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a></footer>
   <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <script type="module" src="starfield.js"></script>
   <script type="module" src="app.js"></script>
-  <script type="module" src="observations-ui.js"></script>
+  <script type="module" src="observations-ui.js?v=20261110"></script>
   <script type="module" src="fits-viewer.js"></script>
   <script type="module" src="timelapse.js"></script>
   <script type="module" src="share-ui.js"></script>
   <script type="module" src="workspace-ui.js"></script>
+  <script type="module" src="onboarding.js"></script>
   <script type="module" src="moving-target.js"></script>
   <script type="module" src="sky-context.js"></script>
   <script type="module" src="star-details.js"></script>

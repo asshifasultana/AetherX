@@ -1,4 +1,4 @@
-// Subtle animated starfield for the home page background.
+// Shared animated starfield for the homepage and full-screen search loader.
 // Three depth layers drift slowly and twinkle; the cursor adds a faint parallax.
 // Honors prefers-reduced-motion by drawing a single static frame.
 
@@ -13,7 +13,7 @@ const PARALLAX = 14; // max px shift at depth 1
 
 const rand = (min, max) => min + Math.random() * (max - min);
 
-export function mountStarfield(canvas) {
+export function mountStarfield(canvas, { paused = false } = {}) {
   const ctx = canvas.getContext('2d');
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let width = 0, height = 0, stars = [], frame = 0, last = 0;
@@ -83,11 +83,12 @@ export function mountStarfield(canvas) {
   function start() {
     cancelAnimationFrame(frame);
     last = 0;
+    if (paused) return;
     if (motion.matches) draw(0);
     else frame = requestAnimationFrame(tick);
   }
 
-  addEventListener('resize', () => { resize(); if (motion.matches) draw(0); });
+  addEventListener('resize', () => { resize(); if (!paused && motion.matches) draw(0); });
   addEventListener('pointermove', event => {
     if (event.pointerType !== 'mouse') return;
     pointer.tx = -(event.clientX / width - 0.5) * PARALLAX;
@@ -97,4 +98,20 @@ export function mountStarfield(canvas) {
 
   resize();
   start();
+  return {
+    setPaused(value) {
+      if (paused === value) return;
+      paused = value;
+      start();
+    }
+  };
+}
+
+// The loader uses exactly the homepage renderer, and runs it only while visible.
+const loadingCanvas = document.getElementById('loading-starfield');
+if (loadingCanvas) {
+  const loader = document.getElementById('preview-loading');
+  const starfield = mountStarfield(loadingCanvas, { paused: loader.hidden });
+  new MutationObserver(() => starfield.setPaused(loader.hidden))
+    .observe(loader, { attributes: true, attributeFilter: ['hidden'] });
 }

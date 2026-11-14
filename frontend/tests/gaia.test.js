@@ -42,7 +42,7 @@ test('Gaia reports truncation, rejects bad astrometry and bounds response size',
   }
 });
 test('Gaia deadlines abort upstream fetches and failures are not cached',async()=>{
-  let calls=0;const service=createGaiaCatalog({timeoutMs:5,fetchImpl:async(_,options)=>{
+  let calls=0;const service=createGaiaCatalog({timeoutMs:5,fallbackTimeoutMs:0,fetchImpl:async(_,options)=>{
     calls++;if(calls>1)return new Response(header);
     return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new DOMException('abort','AbortError'))));
   }});
@@ -56,12 +56,37 @@ test('catalog loader suppresses late results after target changes, even when tra
 });
 test('Gaia deadline cancels a stalled response body and releases its request slot',async()=>{
   let cancelled=false,calls=0;
-  const service=createGaiaCatalog({timeoutMs:10,fetchImpl:async()=>{
+  const service=createGaiaCatalog({timeoutMs:10,fallbackTimeoutMs:0,fetchImpl:async()=>{
     if(calls++)return new Response(header);
     return new Response(new ReadableStream({start(c){c.enqueue(new TextEncoder().encode(header));},cancel(){cancelled=true;}}));
   }});
   await assert.rejects(service(params()),{status:504});assert.equal(cancelled,true);
   assert.deepEqual((await service(params())).sources,[]);
+});
+test('Gaia switches to the same DR3 catalog at VizieR after an ESA timeout', async () => {
+  const calls = [];
+  const catalog = createGaiaCatalog({ timeoutMs: 5, fetchImpl: async (url, { signal, body }) => {
+    calls.push(url);
+    if (calls.length === 1) {
+      assert.match(body.get('QUERY'), /gaiadr3\.gaia_source/);
+      return new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason)));
+    }
+    const mirror = new URL(url);
+    assert.equal(mirror.searchParams.get('-source'), 'I/355/gaiadr3');
+    assert.equal(mirror.searchParams.get('Gmag'), '<=18');
+    return new Response([
+      '#Name: I/355/gaiadr3',
+      'Source\tRA_ICRS\tDE_ICRS\tpmRA\tpmDE\tGmag',
+      ' \tdeg\tdeg\tmas/yr\tmas/yr\tmag',
+      '----\t----\t----\t----\t----\t----',
+      '5350358584482202880\t269.45\t4.69\t-801.551\t10362.394\t9.5'
+    ].join('\n'));
+  } });
+  const result = await catalog(params());
+  assert.equal(result.endpoint, 'https://vizier.idia.ac.za/viz-bin/asu-tsv');
+  assert.equal(result.sources[0].sourceId, '5350358584482202880');
+  await catalog(params());
+  assert.equal(calls.length, 2);
 });
 test('display grid describes the actual center and single/daily midpoint, and excludes deep stacks',()=>{
   const observation={observedStartUtc:'2026-01-01T00:00:00Z',exposureSeconds:100};

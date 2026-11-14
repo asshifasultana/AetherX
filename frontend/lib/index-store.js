@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { preferredProducts } from '../observation-products.js';
+import { preferredProducts, COLLECTION_PATTERN } from '../observation-products.js';
 import { COLLECTIONS, MAX_RESULTS, TAP_URL, SearchError, createSearchService, validateSearch } from './observations.js';
 import { metadataResources } from './resources.js';
 import { defaultSearchStore } from './search-store.js';
@@ -17,7 +17,7 @@ export function createIndexStore({ directory = INDEX_DIRECTORY } = {}) {
     let data;
     try { data = JSON.parse(await readFile(path.join(directory, 'index.json'), 'utf8')); }
     catch (error) { if (error.code === 'ENOENT') return null; throw error; }
-    if (data.schemaVersion !== 1 || !Array.isArray(data.targets) || !Array.isArray(data.collections) || data.collections.some(c => !/^spherex_qr\d+(_deep)?$/.test(c))) throw new Error('Invalid observation index manifest.');
+    if (data.schemaVersion !== 1 || !Array.isArray(data.targets) || !Array.isArray(data.collections) || data.collections.some(c => !COLLECTION_PATTERN.test(c))) throw new Error('Invalid observation index manifest.');
     for (const target of data.targets) if (!snapshotNameIsValid(target.snapshot) || !/^[a-f0-9]{64}$/.test(target.hash) || !Number.isFinite(target.raDeg) || !Number.isFinite(target.decDeg)) throw new Error('Invalid indexed target.');
     return data;
   }

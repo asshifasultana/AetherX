@@ -22,7 +22,26 @@ import knownObjectsHandler from './api/known-objects.js';
 import agentVisionHandler from './api/agent-vision.js';
 import casesHandler from './api/cases.js';
 const root = fileURLToPath(new URL('.', import.meta.url));
-const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.json': 'application/json', '.md':'text/plain; charset=utf-8' };
+const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.json': 'application/json', '.md':'text/plain; charset=utf-8', '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.vtt': 'text/vtt; charset=utf-8' };
+const planetxMedia = ['media/planetx-intro.jpg', 'media/planetx-intro.mp4', 'media/planetx-intro.vtt'];
+
+function sendVideo(req, res, body) {
+  const headers = { 'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes' };
+  const range = req.method === 'GET' && /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '');
+  if (!range || (!range[1] && !range[2])) {
+    res.writeHead(200, { ...headers, 'Content-Length': body.length });
+    res.end(req.method === 'HEAD' ? undefined : body);
+    return;
+  }
+  const start = range[1] ? Number(range[1]) : Math.max(0, body.length - Number(range[2]));
+  const end = range[1] && range[2] ? Math.min(Number(range[2]), body.length - 1) : body.length - 1;
+  if (start > end) {
+    res.writeHead(416, { ...headers, 'Content-Range': `bytes */${body.length}` }).end();
+    return;
+  }
+  res.writeHead(206, { ...headers, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${body.length}` });
+  res.end(body.subarray(start, end + 1));
+}
 export function createAppServer() { return createServer(async (req, res) => {
   try {
     const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
@@ -46,10 +65,13 @@ export function createAppServer() { return createServer(async (req, res) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, { Allow: 'GET, HEAD' }).end(); return; }
     const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     const relative = path.relative(root, file).replaceAll('\\', '/');
-    if (!['index.html', 'viewer.html', 'planetx.html', 'planetx.js', 'planetx-case.html', 'planetx-case.js', 'lib/planetx-suspects.js', 'lib/planetx-votes.js', 'planetx-casefile.js', 'data/planetx-promoted.json', 'aladin-context.js', 'workspace-ui.js', 'onboarding.js', 'home.js', 'starfield.js', 'target-search.js', 'search-route.js', 'comet-benchmark.js', 'comet-benchmark.json', 'data/planet-nine.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'spectrum-explorer.js', 'wavelength-guide.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'search-loader.js', 'lib/constellation.js', 'lib/distance.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'viewer-settings.js', 'lib/colormaps.js', 'lib/display-scale.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js', 'lib/crop-codec.js',
-      'moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js', 'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js', 'lib/peak.js', ...AGENT_PUBLIC_FILES, ...CONTEXT_PUBLIC_FILES].includes(relative)) { res.writeHead(404).end(); return; }
-    res.writeHead(200, { 'Content-Type': types[path.extname(file)] });
-    res.end(await readFile(file));
+    if (!['index.html', 'viewer.html', 'planetx.html', 'planetx.js', 'planetx-lab.js', 'lib/planted-lab.js', 'lib/mystery-spectra.js', 'planetx-case.html', 'planetx-case.js', 'lib/planetx-suspects.js', 'lib/planetx-votes.js', 'planetx-casefile.js', 'data/planetx-promoted.json', 'aladin-context.js', 'workspace-ui.js', 'onboarding.js', 'home.js', 'starfield.js', 'target-search.js', 'search-route.js', 'comet-benchmark.js', 'comet-benchmark.json', 'data/planet-nine.json', 'data/planted-lab.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'spectrum-explorer.js', 'wavelength-guide.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'search-loader.js', 'lib/constellation.js', 'lib/distance.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'viewer-settings.js', 'lib/colormaps.js', 'lib/display-scale.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js', 'lib/crop-codec.js',
+      'moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js', 'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js', 'lib/peak.js', ...planetxMedia, ...AGENT_PUBLIC_FILES, ...CONTEXT_PUBLIC_FILES].includes(relative)) { res.writeHead(404).end(); return; }
+    const body = await readFile(file);
+    const extension = path.extname(file);
+    if (extension === '.mp4') { sendVideo(req, res, body); return; }
+    res.writeHead(200, { 'Content-Type': types[extension], 'Content-Length': body.length });
+    res.end(req.method === 'HEAD' ? undefined : body);
   } catch { res.writeHead(404).end('Not found'); }
 }); }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

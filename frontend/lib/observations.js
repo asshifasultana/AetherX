@@ -1,11 +1,12 @@
-import { preferredProducts } from '../observation-products.js';
+import { preferredProducts, RELEASE_PATTERN, COLLECTION_PATTERN, releaseFromCollection } from '../observation-products.js';
 import { createSearchResources } from './resources.js';
 import { exposureCenter, presetMotion } from '../presets.js';
 import { entryAge } from './search-store.js';
 // IRSA TAP/CAOM metadata adapter. The reference project's tools/build_index.py
 // informed the archive tables and processing-version selection; no code is copied.
 export const TAP_URL = 'https://irsa.ipac.caltech.edu/TAP/sync';
-export const COLLECTIONS = ['spherex_qr3', 'spherex_qr3_deep', 'spherex_qr2', 'spherex_qr2_deep'];
+// IRSA retired QR2 when DR1 was published; DR1 covers sky that QR3 never reached.
+export const COLLECTIONS = ['spherex_dr1', 'spherex_dr1_deep', 'spherex_qr3', 'spherex_qr3_deep'];
 export const MAX_RESULTS = 2000;
 export class SearchError extends Error {
   constructor(message, status = 502, code) { super(message); this.status = status; this.code = code; }
@@ -30,7 +31,7 @@ export function validateSearch(params) {
   const detector = params.get('detector') && params.get('detector') !== 'all' ? numeric(params.get('detector'), 'detector', 1, 6) : null;
   if (detector !== null && !Number.isInteger(detector)) throw new SearchError('Detector must be D1 through D6.', 400);
   const release = params.get('release') || 'all';
-  if (release !== 'all' && !/^qr[1-9]\d*$/.test(release)) throw new SearchError('Release must be all or a public QR release, such as qr3.', 400);
+  if (release !== 'all' && !(RELEASE_PATTERN.test(release) && release === release.toLowerCase())) throw new SearchError('Release must be all or a public release, such as dr1 or qr3.', 400);
   const startDate = params.get('startDate') || '', endDate = params.get('endDate') || '';
   const startMjd = dateBound(startDate, 'Start date', false), endMjd = dateBound(endDate, 'End date', true);
   if (startMjd !== null && endMjd !== null && startMjd >= endMjd) throw new SearchError('End date must be on or after the start date.', 400);
@@ -47,7 +48,7 @@ export function validateSearch(params) {
 
 export function buildQuery(search, { collections: available = COLLECTIONS } = {}) {
   const collections = available.filter(c => search.release === 'all' || c === 'spherex_' + search.release || c === 'spherex_' + search.release + '_deep');
-  if (!collections.length || collections.some(c => !/^spherex_qr\d+(_deep)?$/.test(c))) throw new SearchError('The selected archive release is not available.', 400);
+  if (!collections.length || collections.some(c => !COLLECTION_PATTERN.test(c))) throw new SearchError('The selected archive release is not available.', 400);
   const conditions = [
     `ob.collection IN (${collections.map(c => `'${c}'`).join(',')})`,
     "a.producttype='science'",
@@ -145,7 +146,7 @@ export const mjdToIso = value => {
 export function scienceUrl(uri) {
   if (!uri) return null;
   const path = uri.replace(/^https:\/\/irsa\.ipac\.caltech\.edu\//, '').replace(/^\//, '');
-  if (!/^ibe\/data\/spherex\/qr\d+\/level2\/[\w/.-]+\.fits$/.test(path) || path.includes('..')) return null;
+  if (!/^ibe\/data\/spherex\/(?:qr|dr)\d+\/level2\/[\w/.-]+\.fits$/.test(path) || path.includes('..')) return null;
   return 'https://irsa.ipac.caltech.edu/' + path;
 }
 export function normalizeRow(row) {
@@ -161,7 +162,7 @@ export function normalizeRow(row) {
     wavelengthMinUm: asNumber(row.em_min) === null ? null : Number(row.em_min) * 1e6,
     wavelengthMaxUm: asNumber(row.em_max) === null ? null : Number(row.em_max) * 1e6,
     wavelengthScope: 'image', collection: row.obs_collection,
-    release: /spherex_(qr\d+)/.exec(row.obs_collection || '')?.[1].toUpperCase() || null,
+    release: releaseFromCollection(row.obs_collection),
     processingVersion: version, pipelineVersion: row.provenance_version || null,
     processedAt: row.provenance_lastexecuted || null, releasedAt: row.obs_release_date || null,
     metadataModifiedAt: row.lastmodified || null, productModifiedAt: row.artifact_modified || null,

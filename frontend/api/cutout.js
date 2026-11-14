@@ -25,7 +25,7 @@ export function validateCutout(params) {
   const url = params.get('url') || '';
   let parsed;
   try { parsed = new URL(url); } catch { throw new CutoutError('Choose a valid SPHEREx FITS product.'); }
-  if (parsed.protocol !== 'https:' || parsed.hostname !== 'irsa.ipac.caltech.edu' || !/^\/ibe\/data\/spherex\/qr\d+\/level2\/[\w/.-]+\.fits$/.test(parsed.pathname) || parsed.pathname.includes('..')) throw new CutoutError('Only public SPHEREx science FITS products from IRSA can be cut out.');
+  if (parsed.protocol !== 'https:' || parsed.hostname !== 'irsa.ipac.caltech.edu' || !/^\/ibe\/data\/spherex\/(?:qr|dr)\d+\/level2\/[\w/.-]+\.fits$/.test(parsed.pathname) || parsed.pathname.includes('..')) throw new CutoutError('Only public SPHEREx science FITS products from IRSA can be cut out.');
   const number = (name, min, max, inclusive = true) => {
     const raw = params.get(name);
     if (raw === null || raw.trim() === '' || !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(raw)) throw new CutoutError(`Enter a valid ${name}.`);

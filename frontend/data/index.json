@@ -7,21 +7,21 @@
     "timeZone": "UTC",
     "description": "Daily, around 10:27 AM Asia/Dhaka (04:27 UTC)"
   },
-  "lastAttemptAt": "2026-11-12T13:02:45.056Z",
-  "lastSuccessfulCheckAt": "2026-11-12T13:04:02.801Z",
-  "lastChangedAt": "2026-11-07T14:11:39.212Z",
+  "lastAttemptAt": "2026-11-13T12:29:05.937Z",
+  "lastSuccessfulCheckAt": "2026-11-13T12:32:21.798Z",
+  "lastChangedAt": "2026-11-12T20:11:37.645Z",
   "collections": [
-    "spherex_qr2",
-    "spherex_qr2_deep",
+    "spherex_dr1",
+    "spherex_dr1_deep",
     "spherex_qr3",
     "spherex_qr3_deep"
   ],
-  "totalObservations": 3885,
+  "totalObservations": 3914,
   "changes": {
     "added": 0,
     "revised": 0,
     "removed": 0,
-    "unchanged": 3885
+    "unchanged": 3914
   },
   "targets": [
     {
@@ -29,16 +29,16 @@
       "name": "Barnard’s Star",
       "raDeg": 269.4521,
       "decDeg": 4.6934,
-      "snapshot": "snapshots/barnard-e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a.json",
-      "hash": "e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a",
-      "count": 364,
-      "productCount": 364,
-      "checkedAt": "2026-11-12T13:02:48.232Z",
+      "snapshot": "snapshots/barnard-10622ed9cd9c08625b974c25337c93d06eec1da831de845cef0c2ca6e44f0fa6.json",
+      "hash": "10622ed9cd9c08625b974c25337c93d06eec1da831de845cef0c2ca6e44f0fa6",
+      "count": 363,
+      "productCount": 363,
+      "checkedAt": "2026-11-13T12:30:03.069Z",
       "changes": {
         "added": 0,
         "revised": 0,
         "removed": 0,
-        "unchanged": 364
+        "unchanged": 363
       }
     },
     {
@@ -46,16 +46,16 @@
       "name": "Epsilon Indi B",
       "raDeg": 331.0441,
       "decDeg": -56.7828,
-      "snapshot": "snapshots/epsilon-8ba45b49b4f06ef758fab0ff538b6ea10d850df1878b1f5d7898758485fa49e3.json",
-      "hash": "8ba45b49b4f06ef758fab0ff538b6ea10d850df1878b1f5d7898758485fa49e3",
-      "count": 449,
-      "productCount": 449,
-      "checkedAt": "2026-11-12T13:02:56.511Z",
+      "snapshot": "snapshots/epsilon-0970f2e0edb517c69527a5169438602629f56f7f86957696e14c032bd669476e.json",
+      "hash": "0970f2e0edb517c69527a5169438602629f56f7f86957696e14c032bd669476e",
+      "count": 465,
+      "productCount": 465,
+      "checkedAt": "2026-11-13T12:30:30.108Z",
       "changes": {
         "added": 0,
         "revised": 0,
         "removed": 0,
-        "unchanged": 449
+        "unchanged": 465
       }
     },
     {
@@ -63,16 +63,16 @@
       "name": "WISE 0855",
       "raDeg": 133.79512916666667,
       "decDeg": -7.245147222222222,
-      "snapshot": "snapshots/wise-90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5.json",
-      "hash": "90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5",
-      "count": 256,
-      "productCount": 256,
-      "checkedAt": "2026-11-12T13:03:16.266Z",
+      "snapshot": "snapshots/wise-43c535b79a8fa262a1f0be1e81e02eb419eb199af9f60d3c997c4ee459997194.json",
+      "hash": "43c535b79a8fa262a1f0be1e81e02eb419eb199af9f60d3c997c4ee459997194",
+      "count": 258,
+      "productCount": 258,
+      "checkedAt": "2026-11-13T12:30:48.962Z",
       "changes": {
         "added": 0,
         "revised": 0,
         "removed": 0,
-        "unchanged": 256
+        "unchanged": 258
       }
     },
     {
@@ -80,16 +80,16 @@
       "name": "RW Aurigae",
       "raDeg": 76.9567,
       "decDeg": 30.4043,
-      "snapshot": "snapshots/aurigae-f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c.json",
-      "hash": "f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c",
-      "count": 333,
-      "productCount": 333,
-      "checkedAt": "2026-11-12T13:03:41.024Z",
+      "snapshot": "snapshots/aurigae-8f58fbf6d9341ad212dc444fe69ffaff63d3d2e8a6c3f84cb03a0b19e89b5c50.json",
+      "hash": "8f58fbf6d9341ad212dc444fe69ffaff63d3d2e8a6c3f84cb03a0b19e89b5c50",
+      "count": 335,
+      "productCount": 335,
+      "checkedAt": "2026-11-13T12:31:22.770Z",
       "changes": {
         "added": 0,
         "revised": 0,
         "removed": 0,
-        "unchanged": 333
+        "unchanged": 335
       }
     },
     {
@@ -97,25 +97,25 @@
       "name": "R Draconis",
       "raDeg": 248.1676,
       "decDeg": 66.755,
-      "snapshot": "snapshots/draconis-8085ceda0e4ea2de25c5859329581953808f60a65a74c40fa67b6dc0115bf4e9.json",
-      "hash": "8085ceda0e4ea2de25c5859329581953808f60a65a74c40fa67b6dc0115bf4e9",
-      "count": 2483,
-      "productCount": 2483,
-      "checkedAt": "2026-11-12T13:04:02.801Z",
+      "snapshot": "snapshots/draconis-4b9f2b0885934413ba46c9eee7bcf7d129a069a3e4c0da1a8de77a991c735c04.json",
+      "hash": "4b9f2b0885934413ba46c9eee7bcf7d129a069a3e4c0da1a8de77a991c735c04",
+      "count": 2493,
+      "productCount": 2493,
+      "checkedAt": "2026-11-13T12:32:21.798Z",
       "changes": {
         "added": 0,
         "revised": 0,
         "removed": 0,
-        "unchanged": 2483
+        "unchanged": 2493
       }
     }
   ],
   "previousSnapshots": [
-    "snapshots/barnard-e0d6b0e68092fe32dd6f312c9a1220ad33e519684a00a35ea8c43fc247db0c1a.json",
-    "snapshots/epsilon-8ba45b49b4f06ef758fab0ff538b6ea10d850df1878b1f5d7898758485fa49e3.json",
-    "snapshots/wise-90bb01669403cd82e9fd218efd0787f0aa4630bdc5ca987031cdae5b2aab60b5.json",
-    "snapshots/aurigae-f34bc871ca144805a728ac051fc42ce9dfc10e05ec3928319d42583db21e818c.json",
-    "snapshots/draconis-8085ceda0e4ea2de25c5859329581953808f60a65a74c40fa67b6dc0115bf4e9.json"
+    "snapshots/barnard-10622ed9cd9c08625b974c25337c93d06eec1da831de845cef0c2ca6e44f0fa6.json",
+    "snapshots/epsilon-0970f2e0edb517c69527a5169438602629f56f7f86957696e14c032bd669476e.json",
+    "snapshots/wise-43c535b79a8fa262a1f0be1e81e02eb419eb199af9f60d3c997c4ee459997194.json",
+    "snapshots/aurigae-8f58fbf6d9341ad212dc444fe69ffaff63d3d2e8a6c3f84cb03a0b19e89b5c50.json",
+    "snapshots/draconis-4b9f2b0885934413ba46c9eee7bcf7d129a069a3e4c0da1a8de77a991c735c04.json"
   ],
   "error": null
 }

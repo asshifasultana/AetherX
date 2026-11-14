@@ -1,8 +1,9 @@
 import { SearchError, scienceUrl, mjdToIso } from '../lib/observations.js';
-import { preferredProducts } from '../observation-products.js';
+import { preferredProducts, releaseFromPath } from '../observation-products.js';
 import { metadataResources } from '../lib/resources.js';
 import { defaultSearchStore, entryAge } from '../lib/search-store.js';
 import { gzipSync } from 'node:zlib';
+export const MOVING_CACHE_VERSION = 2;
 // Search results compress ~16x (Barnard's Star: 408 KB of JSON becomes 25 KB).
 function sendJson(req, res, data) {
   const body = Buffer.from(JSON.stringify(data));
@@ -55,7 +56,7 @@ export function parseMost(text) {
     return { observationId: row.observationid, productId: row.planeid, accessUrl, detector, startMjd, endMjd,
       observedStartUtc: mjdToIso(startMjd), observedEndUtc: mjdToIso(endMjd),
       exposureSeconds: Number(row.exposure_time) || (endMjd - startMjd) * 86400,
-      release: /\/(qr\d+)\//i.exec(accessUrl)[1].toUpperCase(),
+      release: releaseFromPath(accessUrl),
       processingVersion: /\/(l2b[^/]+)\//.exec(accessUrl)?.[1] ?? null };
   });
 }
@@ -189,7 +190,9 @@ export function createMovingSearch({ fetchImpl = fetch, resources = metadataReso
     const action = params.get('action');
     const signal = AbortSignal.any([AbortSignal.timeout(85000), ...(requestSignal ? [requestSignal] : [])]);
     const now = Date.now();
-    const key = JSON.stringify(['moving', object, ...[...params].sort()]);
+    // Bump the version when the accepted archive releases change (v2: DR1), so
+    // results saved under the old rules are searched again instead of reused.
+    const key = JSON.stringify(['moving', MOVING_CACHE_VERSION, object, ...[...params].sort()]);
     const cached = resources.get(key, now);
     if (cached) return cached;
     const stored = store ? await store.get('moving', key) : null;

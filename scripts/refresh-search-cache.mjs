@@ -5,7 +5,8 @@
 // Supabase project from pausing for inactivity.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createSearchService } from '../frontend/lib/observations.js';
+import { createSearchService, COLLECTIONS } from '../frontend/lib/observations.js';
+import { createIndexStore } from '../frontend/lib/index-store.js';
 import { createSearchResources } from '../frontend/lib/resources.js';
 import { createMovingSearch, movingEndDate } from '../frontend/api/moving-observations.js';
 import { defaultSearchStore, isRecentRange } from '../frontend/lib/search-store.js';
@@ -16,8 +17,13 @@ const SOLUTION_EPOCH = 60800; // Any valid mission epoch: only the orbit solutio
 export async function refreshSearchCache({
   store, now = Date.now(), limit = 60, log = console.log,
   observationsFactory = options => createSearchService(options),
-  movingFactory = options => createMovingSearch(options)
+  movingFactory = options => createMovingSearch(options),
+  collections = COLLECTIONS
 }) {
+  // Searches key on the collection list. Rows saved under an older list (QR2,
+  // before DR1) are never read again, so let them age out instead of refreshing.
+  const current = JSON.stringify([...collections].sort());
+  const isCurrent = row => JSON.stringify([...(row.params?.collections || [])].sort()) === current;
   const counts = { checked: 0, refreshed: 0, unchanged: 0, skipped: 0, failed: 0 };
   // Writes from the job keep last_used_at as is, so unused rows still age out.
   const writer = {
@@ -39,7 +45,7 @@ export async function refreshSearchCache({
       let rerun;
       if (row.kind === 'observations') {
         // Old fixed ranges are not re-run; they expire and refill on the next search.
-        if (!isRecentRange(query.get('endDate'), now)) { counts.skipped++; continue; }
+        if (!isRecentRange(query.get('endDate'), now) || !isCurrent(row)) { counts.skipped++; continue; }
         rerun = () => observationsFactory({ collections: row.params.collections, store: writer, resources: createSearchResources() })(query);
       } else if (row.kind === 'moving') {
         rerun = () => movingFactory({ store: writer, resources: createSearchResources() })(query);
@@ -67,5 +73,9 @@ export async function refreshSearchCache({
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const store = defaultSearchStore();
   if (!store) console.log('::warning::SUPABASE_URL and SUPABASE_SERVICE_KEY are not set; the shared search cache was not refreshed.');
-  else await refreshSearchCache({ store });
+  else {
+    // Live searches use the index's discovered collections (see index-store.js).
+    const manifest = await createIndexStore().manifest().catch(() => null);
+    await refreshSearchCache({ store, collections: manifest?.collections?.length ? manifest.collections : COLLECTIONS });
+  }
 }

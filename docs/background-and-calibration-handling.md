@@ -16,9 +16,9 @@ This scale is a visualization aid, not a calibrated photometric comparison. Fram
 
 ## Release provenance and warning
 
-Archive products already carry `release`, `collection`, and `processingVersion`. Timeline frames preserve this provenance. The current frame metadata and image caption show the release and processing version. Same-day combined frames summarize all releases represented in that group. If the search spans more than one release, a notice names them and says that cross-release calibration offsets are not corrected. This notice deliberately avoids asserting that QR2 and QR3 are photometrically interchangeable.
+Archive products already carry `release`, `collection`, and `processingVersion`. Timeline frames preserve this provenance. The current frame metadata and image caption show the release and processing version. Same-day combined frames summarize all releases represented in that group. If the search spans more than one release, a notice names them and says that cross-release calibration offsets are not corrected. This notice deliberately avoids asserting that DR1 and QR3 are photometrically interchangeable.
 
-For a release-controlled comparison, use the archive **release** filter (QR2 only or QR3 only) before searching. The metadata table also shows the archive release and processing version for each product.
+For a release-controlled comparison, use the archive **release** filter (DR1 only or QR3 only) before searching. The metadata table also shows the archive release and processing version for each product.
 
 ## Important limits of this milestone
 

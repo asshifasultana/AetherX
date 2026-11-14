@@ -8,9 +8,14 @@ export const searchMarkup = `
 <form id="target-search-form" class="target-search" novalidate aria-busy="false">
         <div class="target-search-row">
           <label class="target-kind" hidden><span class="search-field-label">Search for</span><select id="target-type" tabindex="-1" aria-hidden="true"><option value="object">Star / object</option><option value="moving">Moving object</option><option value="coordinates">Coordinates</option></select></label>
-          <div class="target-name-control"><fieldset id="name-fields" class="target-name-fields"><legend class="sr-only">Object name</legend><label for="lookup-name" id="lookup-label" class="search-field-label">Object name</label><input id="lookup-name" name="object" maxlength="200" required autocomplete="off" placeholder="Search a star, galaxy, comet or asteroid" aria-describedby="lookup-help lookup-status" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="target-autocomplete" aria-haspopup="listbox"></fieldset><div id="target-autocomplete" class="target-autocomplete" role="listbox" aria-label="Suggested targets" hidden></div></div>
+          <div class="target-name-control"><fieldset id="name-fields" class="target-name-fields"><legend class="sr-only">Object name</legend><label for="lookup-name" id="lookup-label" class="search-field-label">Object name</label><input id="lookup-name" name="object" maxlength="200" required autocomplete="off" placeholder="Object name" aria-describedby="lookup-help lookup-status" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="target-autocomplete" aria-haspopup="listbox"></fieldset><div id="target-autocomplete" class="target-autocomplete" role="listbox" aria-label="Suggested targets" hidden></div></div>
           <fieldset id="coordinate-fields" class="coordinate-fields" hidden disabled><legend class="sr-only">Sky coordinates</legend><label>Coordinate format<select id="coordinate-format"><option value="degrees">Decimal degrees</option><option value="sexagesimal">Hours / degrees, minutes, seconds</option></select></label><label>Right ascension <span id="ra-unit">degrees</span><input id="ra" value="269.4521" required autocomplete="off" placeholder="269.4521" aria-describedby="ra-error"><small id="ra-error" class="field-error"></small></label><label>Declination <span id="dec-unit">degrees</span><input id="dec" value="4.6934" required autocomplete="off" placeholder="+4.6934" aria-describedby="dec-error"><small id="dec-error" class="field-error"></small></label></fieldset>
           <button id="target-search-submit" class="primary-button" type="submit">Search <span aria-hidden="true">↗</span></button>
+          <button class="search-help-button" type="button" popovertarget="search-help" aria-label="Search help"><span aria-hidden="true">i</span></button>
+          <div id="search-help" class="search-help" popover>
+            <p>Find a patch of sky. See how it changes in infrared.</p>
+            <p id="lookup-help">Search by name or catalog identifier. Comets and asteroids use a date range.</p>
+          </div>
         </div>
         <button id="coordinate-toggle" class="coordinate-toggle" type="button" aria-expanded="false" aria-controls="coordinate-fields">Enter coordinates</button>
         <fieldset id="moving-fields" class="moving-fields" hidden disabled><legend class="sr-only">Moving-object search filters</legend>
@@ -20,7 +25,6 @@ export const searchMarkup = `
           <button type="button" id="moving-example">Try 3I/ATLAS</button>
         </fieldset>
         <div id="search-loading" class="search-loading" role="progressbar" aria-label="Loading" hidden><span></span></div>
-        <p id="lookup-help" class="coordinate-help">Search by name or catalog identifier. Comets and asteroids use a date range.</p>
         <p id="target-search-status" role="status" aria-live="polite"></p>
         <div id="preset-panel" class="target-quick-picks" role="group" aria-label="Quick picks"><span>Quick picks</span>
           <button type="button" data-target="barnard" aria-pressed="false">Barnard’s Star</button>
@@ -239,7 +243,7 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
     }
     $('lookup-name').value = drafts[mode] || ''; closeAutocomplete();
     $('lookup-name').maxLength = moving ? 80 : 200;
-    $('lookup-name').placeholder = moving ? 'Search a comet or asteroid' : 'Search a star, galaxy, comet or asteroid';
+    $('lookup-name').placeholder = moving ? 'Comet or asteroid' : 'Object name';
     $('coordinate-toggle').textContent = coordinates ? 'Search by name' : 'Enter coordinates';
     $('coordinate-toggle').setAttribute('aria-expanded', String(coordinates));
     $('lookup-label').textContent = moving ? 'Designation' : 'Object name';

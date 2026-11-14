@@ -1,4 +1,4 @@
-import { preferredProducts } from './observation-products.js';
+import { preferredProducts, releaseFromCollection, compareReleases } from './observation-products.js';
 import { observeCutout } from './fits-viewer.js';
 import { initialViewState } from './share.js';
 import { summarizeDetectorCoverage } from './timelapse-core.js';
@@ -17,8 +17,10 @@ const sourceLabel = data => data.browserCached ? 'Saved search (this browser)' :
 // Observation lists (metadata only, never images) are kept in the browser's Cache
 // Storage so a repeat search, such as Barnard's Star's multi-window proper-motion
 // query, returns instantly. Fallback results are never saved.
-const SEARCH_CACHE = 'spherex-observation-search-v1', SEARCH_CACHE_TTL_MS = 6 * 3600000, SEARCH_CACHE_ENTRIES = 40;
+// Bump the version when search coverage changes (v2: DR1) so old results are dropped.
+const SEARCH_CACHE_PREFIX = 'spherex-observation-search-', SEARCH_CACHE = SEARCH_CACHE_PREFIX + 'v2', SEARCH_CACHE_TTL_MS = 6 * 3600000, SEARCH_CACHE_ENTRIES = 40;
 const searchCacheAvailable = typeof caches !== 'undefined';
+if (searchCacheAvailable) caches.keys().then(names => Promise.all(names.filter(name => name.startsWith(SEARCH_CACHE_PREFIX) && name !== SEARCH_CACHE).map(name => caches.delete(name)))).catch(() => {});
 async function readSavedSearch(url) {
   try {
     const cache = await caches.open(SEARCH_CACHE), hit = await cache.match(url);
@@ -132,8 +134,12 @@ for (const id of ['search-start', 'search-end', 'search-release', 'search-detect
     scheduleFilterSearch();
   });
 }
-$('cancel-search').addEventListener('click', () => {
+function cancelObservationSearch() {
   clearTimeout(filterTimer); controller?.abort(); requestNumber++;
+}
+window.addEventListener('sky:search-cancel', cancelObservationSearch);
+$('cancel-search').addEventListener('click', () => {
+  cancelObservationSearch();
   searchFailed = false; setBusy(false); $('search-error').hidden = true;
   $('search-status').textContent = 'Search cancelled.';
   emit('sky:observations-loaded', { observations: [], targetName, position: { ...position }, failed: true });
@@ -338,7 +344,7 @@ async function loadIndexStatus() {
       if (target && target.hash !== result.source.indexHash) $('index-update-summary').textContent += ' Updated results are available—run your search again to load them.';
     }
     const selected = $('search-release').value;
-    const releases = [...new Set((status.collections || []).map(c => /^spherex_(qr\d+)/.exec(c)?.[1]).filter(Boolean))].sort((a, b) => Number(b.slice(2)) - Number(a.slice(2)));
+    const releases = [...new Set((status.collections || []).map(c => releaseFromCollection(c)?.toLowerCase()).filter(Boolean))].sort(compareReleases);
     if (releases.length) {
       $('search-release').replaceChildren(); const all = make('option', 'All public releases · prefer latest'); all.value = 'all'; $('search-release').append(all);
       for (const release of releases) { const option = make('option', release.toUpperCase() + ' only'); option.value = release; $('search-release').append(option); }

@@ -1,5 +1,7 @@
 // Pure helpers for the observation time-lapse. No DOM access here so the
 // frame ordering and date-gap rules can be unit tested in Node.
+import { releaseFromCollection, compareReleases } from './observation-products.js';
+
 const DAY_MS = 86400000;
 
 export const SPEEDS = [0.5, 1, 2, 4];
@@ -16,8 +18,8 @@ export function observationKey(observation) {
 }
 
 export function summarizeReleases(observations) {
-  const releases = [...new Set((observations || []).map(item => item.release || /^spherex_(qr\d+)/i.exec(item.collection || '')?.[1]?.toUpperCase()).filter(Boolean))]
-    .sort((a, b) => Number(b.replace(/^QR/i, '')) - Number(a.replace(/^QR/i, '')));
+  const releases = [...new Set((observations || []).map(item => item.release || releaseFromCollection(item.collection)).filter(Boolean))]
+    .sort(compareReleases);
   return { releases, mixed: releases.length > 1, label: releases.length > 1 ? `Mixed ${releases.join(' / ')}` : releases[0] || 'Release not reported' };
 }
 

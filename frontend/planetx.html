@@ -20,6 +20,34 @@
       <div class="px-status"><span class="px-status-dot"></span><span>MODELLED SKY REGION</span></div>
     </section>
 
+    <section class="px-video-intro" id="planetx-introduction" aria-labelledby="planetx-video-title">
+      <div class="px-video-copy">
+        <h2 id="planetx-video-title">Planet Nine in 30 seconds</h2>
+        <p>Why astronomers are looking beyond Neptune and how to explore the search on PlanetX.</p>
+        <button id="tour-restart" class="px-jump" type="button">Take the guided tour</button>
+      </div>
+      <div class="px-video-media">
+        <video controls playsinline preload="none" poster="media/planetx-intro.jpg" aria-labelledby="planetx-video-title">
+          <source src="media/planetx-intro.mp4" type="video/mp4">
+          <track kind="captions" src="media/planetx-intro.vtt" srclang="en" label="English" default>
+          <a href="media/planetx-intro.mp4">Download the PlanetX introduction</a>
+        </video>
+        <div class="px-video-source">
+          <span>Source</span>
+          <button type="button" popovertarget="planetx-video-sources" aria-label="Video sources"><span aria-hidden="true">i</span></button>
+        </div>
+        <div id="planetx-video-sources" class="px-video-sources" popover>
+          <ul>
+            <li><a href="https://science.nasa.gov/solar-system/planet-x/">Hypothetical Planet X · NASA Science</a></li>
+            <li><a href="https://science.nasa.gov/wp-content/uploads/2023/04/BURATTI_July_SC_PlutoTAGGED.pdf#page=11">Kuiper Belt diagram · NASA New Horizons science briefing</a></li>
+            <li><a href="https://science.nasa.gov/resource/kuiper-belt-object-arrokoth-2014-mu69/">New Horizons image of Arrokoth · NASA/JHUAPL/SwRI</a></li>
+            <li><a href="https://science.nasa.gov/universe/exoplanets/planet-nine/">Orbital alignment diagram · Caltech/R. Hurt (IPAC), via NASA Science</a></li>
+            <li><a href="https://science.nasa.gov/photojournal/sedna-discovery-image/">Sedna discovery exposures · NASA/Caltech</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
     <section class="px-map-card" aria-labelledby="map-title">
       <div class="px-map-head"><div><p class="px-kicker">ALL-SKY PROBABILITY</p><h2 id="map-title">Where to look</h2></div><div class="px-map-actions"><div class="px-map-action-row"><a id="jump-to-coordinate" class="px-jump" role="link" aria-disabled="true" title="Select a tile on the map first">Jump to coordinate <span aria-hidden="true">↗</span></a><div class="px-layer-toggle" role="radiogroup" aria-label="Map layer"><label><input type="radio" name="px-layer" value="model" checked> Model probability</label><label><input type="radio" name="px-layer" value="community"> Community evidence</label></div></div><div class="px-map-action-row px-map-overlays"><label class="px-check"><input id="ecliptic-toggle" type="checkbox" checked> Ecliptic</label><label class="px-check"><input id="grid-toggle" type="checkbox" checked> Coordinate grid</label></div></div></div>
       <div class="px-map-wrap"><canvas id="planetx-map" tabindex="0" role="img" aria-label="All-sky probability map for the hypothetical Planet Nine. Right ascension increases from right to left, declination runs north to south. Numbered rings mark suspicion patches. Select a cell for details."></canvas><div class="px-map-tooltip" id="map-tooltip" role="status" hidden></div><div class="px-declination-labels"><span>+90° N</span><span>0°</span><span>−90° S</span></div></div>
@@ -31,9 +59,79 @@
 
     <section class="px-details-grid">
 
-      <details class="px-detail-card px-selected px-disclosure px-coordinate-inspector" aria-live="polite"><summary><div><p class="px-kicker"><span class="px-inspector-dot" aria-hidden="true"></span> COORDINATE INSPECTOR</p><h2 id="cell-title">Choose a bright tile</h2></div><span class="px-disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="px-disclosure-body"><p id="cell-copy">Click or focus a probability tile on the map to see its position and modelled values.</p><dl class="px-stats"><div><dt>RA</dt><dd id="cell-ra">—</dd></div><div><dt>DEC</dt><dd id="cell-dec">—</dd></div><div><dt>MODEL SHARE</dt><dd id="cell-share">—</dd></div><div><dt>MEDIAN DISTANCE</dt><dd id="cell-distance">—</dd></div><div><dt>EST. VISUAL MAG.</dt><dd id="cell-magnitude">—</dd></div></dl><a id="open-case" class="px-open-link px-case-link" href="/planetx-case.html" hidden>Open case file <span>→</span></a><a id="open-spherex" class="px-open-link" href="/">Explore this coordinate in SPHEREx <span>↗</span></a></div></details>
       <details class="px-detail-card px-rank-card px-disclosure px-case-drawer"><summary><div><p class="px-kicker">BROWSE THE SEARCH</p><h2><span class="px-folder-icon" aria-hidden="true">▱</span> Where the model points</h2></div><span class="px-case-open"><span class="px-when-closed">Browse →</span><span class="px-when-open">Close ↑</span></span></summary><div class="px-disclosure-body"><p class="px-rank-copy">Each patch groups neighbouring bright tiles. Open its case file, inspect the sky and say whether anything looks worth following up. Any other tile can be filed too: pick it on the map and jump to it. Tiles many people back can be promoted to public case files.</p><ol id="case-list" class="px-region-list px-case-list"><li>Loading model data…</li></ol></div></details>
     </section>
+    <details class="px-evidence px-lab" id="planetx-lab">
+      <summary class="ev-toggle"><span class="ev-toggle-icon lab-toggle-icon" aria-hidden="true">⊕</span><span class="ev-toggle-copy"><span class="px-kicker">PRACTICE THE SEARCH</span><strong>Try the Planted Planet Lab</strong><span>Hide a fake planet in a real SPHEREx image, spot a methane dip, and see what searches really find.</span></span><span class="ev-toggle-action"><span class="ev-closed-label">Try it</span><span class="ev-open-label">Close</span><span class="ev-chevron" aria-hidden="true">⌄</span></span></summary>
+      <div class="lab-tabs" role="tablist" aria-label="Lab sections">
+        <button type="button" role="tab" id="lab-tab-plant" aria-controls="lab-panel-plant" aria-selected="true"><span>01</span> Plant a planet</button>
+        <button type="button" role="tab" id="lab-tab-methane" aria-controls="lab-panel-methane" aria-selected="false" tabindex="-1"><span>02</span> Spot the methane dip</button>
+        <button type="button" role="tab" id="lab-tab-gallery" aria-controls="lab-panel-gallery" aria-selected="false" tabindex="-1"><span>03</span> What you’ll really find</button>
+      </div>
+
+      <section class="lab-panel" role="tabpanel" id="lab-panel-plant" aria-labelledby="lab-tab-plant" tabindex="0">
+        <p class="lab-intro">Choose how far away and how bright a planet is. We draw a fake one into two <strong>real</strong> SPHEREx photos of the most likely Planet Nine patch, taken days apart, and blink them. Watch where it sinks into the noise and how far it hops.</p>
+        <div class="lab-plant">
+          <div class="lab-stage">
+            <div class="lab-canvas-wrap">
+              <canvas id="lab-canvas" role="img" aria-label="A real SPHEREx image with a fake planet drawn in, blinking between two dates."></canvas>
+              <span class="lab-frame-label" id="lab-frame-label">Loading real images…</span>
+              <span class="lab-compass" aria-hidden="true">N ↑ · E ←</span>
+            </div>
+            <div class="lab-stage-tools">
+              <button type="button" class="lab-button" id="lab-blink" aria-pressed="true">Pause blink</button>
+              <button type="button" class="lab-button" id="lab-flip">Flip frame</button>
+              <button type="button" class="lab-button" id="lab-ring" aria-pressed="true">Hide marker</button>
+              <button type="button" class="lab-button is-accent" id="lab-hide">Hide it from me</button>
+            </div>
+            <p class="lab-game-status" id="lab-game-status" role="status"></p>
+          </div>
+          <div class="lab-controls">
+            <div class="lab-slider">
+              <label for="lab-distance">Distance <output id="lab-distance-out" for="lab-distance">—</output></label>
+              <div class="lab-range"><span class="lab-band" id="lab-distance-band" title="Planet Nine models"></span><input id="lab-distance" type="range" min="0" max="1000" step="1" value="700"></div>
+              <div class="lab-scale"><span>closer · 50 AU</span><span class="lab-band-key">▬ Planet Nine models</span><span>1,500 AU · farther</span></div>
+            </div>
+            <div class="lab-slider">
+              <label for="lab-mag">Brightness <output id="lab-mag-out" for="lab-mag">—</output></label>
+              <div class="lab-range"><span class="lab-band" id="lab-mag-band" title="Planet Nine models"></span><span class="lab-limit-tick" id="lab-limit-tick" title="This image’s 5σ limit"></span><input id="lab-mag" type="range" min="14" max="24" step="0.1" value="16"></div>
+              <div class="lab-scale"><span>brighter · 14</span><span class="lab-band-key"><i class="lab-tick-key"></i> this image’s limit</span><span>24 · fainter</span></div>
+            </div>
+            <button type="button" class="lab-button lab-p9" id="lab-planet-nine">Plant a model Planet Nine</button>
+            <dl class="lab-readout">
+              <div><dt>Signal</dt><dd id="lab-sigma">—</dd></div>
+              <div><dt>Verdict</dt><dd><span class="lab-verdict" id="lab-verdict">—</span></dd></div>
+              <div><dt>Hop between the two dates</dt><dd id="lab-shift">—</dd></div>
+              <div><dt>This image’s 5σ limit</dt><dd id="lab-limit">—</dd></div>
+            </dl>
+            <p class="lab-verdict-note" id="lab-verdict-note"></p>
+            <p class="lab-verdict-note" id="lab-hop-note"></p>
+            <div class="lab-banner" id="lab-limit-banner" hidden>
+              <strong>This is SPHEREx’s limit — and Planet Nine is probably past it.</strong>
+              <p id="lab-limit-copy">Models put Planet Nine near visual magnitude 21–24, fainter than the roughly 19.5–19.9 AB that one SPHEREx channel reaches. V and AB are different scales, so treat this as a rough comparison.</p>
+            </div>
+          </div>
+        </div>
+        <p class="lab-note" id="lab-provenance">The planet is fake; the stars and the noise are real.</p>
+      </section>
+
+      <section class="lab-panel" role="tabpanel" id="lab-panel-methane" aria-labelledby="lab-tab-methane" tabindex="0" hidden>
+        <p class="lab-intro">SPHEREx measures each spot at 102 infrared colours. Cold worlds carry hydrogen, water and methane in their air, and methane swallows light near <strong>3.3 μm</strong>. Which of these three is the cold object?</p>
+        <div class="lab-spectra" id="lab-spectra"></div>
+        <div class="lab-spectra-tools">
+          <button type="button" class="lab-button" id="lab-methane-hint" aria-pressed="false">Show where methane absorbs</button>
+          <button type="button" class="lab-button" id="lab-shuffle">New order</button>
+        </div>
+        <div class="lab-result" id="lab-spectra-result" role="status"></div>
+        <p class="lab-note">Illustrative spectra shaped like real ones (a Sun-like star, a dusty galaxy and a ~285 K brown dwarf like WISE 0855), sampled where SPHEREx samples. They are teaching templates, not measurements. Your answer is checked by the same methane-dip code the AI guide uses on real spectra.</p>
+      </section>
+
+      <section class="lab-panel" role="tabpanel" id="lab-panel-gallery" aria-labelledby="lab-tab-gallery" tabindex="0" hidden>
+        <p class="lab-intro">Searching for Planet Nine mostly turns up other things, and they are worth finding. Each card opens the viewer on real SPHEREx data.</p>
+        <ul class="lab-gallery" id="lab-gallery"></ul>
+        <p class="lab-note lab-reality">Reality check: the citizen-science search <a href="https://www.zooniverse.org/projects/marckuchner/backyard-worlds-planet-9" target="_blank" rel="noopener noreferrer">Backyard Worlds: Planet 9 <span aria-hidden="true">↗</span></a> has turned up thousands of brown dwarfs, including some of the coldest known, but no Planet Nine. That is what a careful search usually finds.</p>
+      </section>
+    </details>
     <details class="px-evidence" id="planetx-evidence">
       <summary class="ev-toggle"><span class="ev-toggle-icon" aria-hidden="true">◎</span><span class="ev-toggle-copy"><span class="px-kicker">THE SCIENCE BEHIND THE SEARCH</span><strong id="evidence-title">Explore the evidence</strong><span>What supports Planet Nine — and what challenges it.</span></span><span class="ev-toggle-action"><span class="ev-closed-label">Explore</span><span class="ev-open-label">Close</span><span class="ev-chevron" aria-hidden="true">⌄</span></span></summary>
       <header class="ev-header"><div><p class="px-kicker">THE OPEN QUESTION</p><h2>Evidence for and against Planet X</h2><p>Intriguing patterns. Competing explanations.<br>A distant planet is still an open question.</p></div><span class="ev-status"><i></i> HYPOTHESIS · UNCONFIRMED</span></header>
@@ -48,6 +146,8 @@
     <footer class="px-footer"><span>SPHEREx sky tools</span><span>Hypothesis map · not a discovery claim</span></footer>
   </main>
   <script type="module" src="planetx.js"></script>
+  <script type="module" src="planetx-lab.js"></script>
   <script type="module" src="aladin-context.js"></script>
+  <script type="module" src="onboarding.js"></script>
 </body>
 </html>

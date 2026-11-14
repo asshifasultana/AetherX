@@ -3,6 +3,7 @@
 // model's arguments before touching the viewer), so both always agree.
 
 import { checkSetting, settingRule, VIEW_MODES } from '../viewer-settings.js';
+import { spotRadius, MIN_SPOT_RADIUS_ARCSEC, MAX_SPOT_RADIUS_ARCSEC } from './spots.js';
 
 export const PRESET_IDS = ['barnard', 'epsilon', 'wise', 'aurigae', 'draconis'];
 export const PLAYBACK_ACTIONS = ['play', 'pause', 'step_forward', 'step_back', 'go_to_frame', 'go_to_date', 'set_speed', 'first_frame', 'last_frame'];
@@ -105,9 +106,13 @@ export const AGENT_TOOLS = Object.freeze([
   tool('find_changes', 'List compact brighter/fainter patches in the difference view on screen (use compare_frames view=difference or pick_epochs first). Marks the strongest as agent spots and reports moved pairs.', {
     limit: int('1-6, default 3'), mark: bool('default true')
   }),
-  tool('mark_spot', 'Mark a numbered agent spot at raDeg/decDeg.', {
-    raDeg: { type: 'number' }, decDeg: { type: 'number' }, label: str()
+  tool('mark_spot', 'Mark a numbered agent spot at raDeg/decDeg: a point, or a circular area when radius_arcsec is given (e.g. a nebula, a galaxy or a region to watch).', {
+    raDeg: { type: 'number' }, decDeg: { type: 'number' }, label: str(),
+    radius_arcsec: { type: 'number', description: `area radius ${MIN_SPOT_RADIUS_ARCSEC}-${MAX_SPOT_RADIUS_ARCSEC}; omit for a point (1 pixel = 6.15)` }
   }, ['raDeg', 'decDeg']),
+  tool('resize_spot', 'Change a spot into an area of radius_arcsec, or back into a point with radius_arcsec 0. Use when the visitor asks to make a spot bigger or smaller.', {
+    spot: int(), radius_arcsec: { type: 'number', description: `0 or ${MIN_SPOT_RADIUS_ARCSEC}-${MAX_SPOT_RADIUS_ARCSEC}` }
+  }, ['spot', 'radius_arcsec']),
   tool('remove_spots', 'Remove spots from the image: the listed spots, all except keep, or all of them. Use when the visitor asks to clear, delete or keep only some spots.', {
     spots: { type: 'array', items: int(), description: 'spots to remove' }, keep: { type: 'array', items: int(), description: 'remove every other spot' }, all: bool()
   }),
@@ -276,7 +281,15 @@ export function validateToolCall(name, rawArgs) {
     case 'mark_spot': {
       const ra = Number(args.raDeg), dec = Number(args.decDeg);
       if (!Number.isFinite(ra) || !Number.isFinite(dec) || dec < -90 || dec > 90) errors.push('raDeg/decDeg are out of range.');
-      return done({ raDeg: ((ra % 360) + 360) % 360, decDeg: dec, label: sanitizeNote(args.label, 40) });
+      const radius = args.radius_arcsec === undefined || args.radius_arcsec === null ? null : Number(args.radius_arcsec);
+      if (radius !== null && !(radius >= MIN_SPOT_RADIUS_ARCSEC && radius <= MAX_SPOT_RADIUS_ARCSEC)) errors.push(`radius_arcsec must be ${MIN_SPOT_RADIUS_ARCSEC}-${MAX_SPOT_RADIUS_ARCSEC}, or omitted for a point.`);
+      return done({ raDeg: ((ra % 360) + 360) % 360, decDeg: dec, label: sanitizeNote(args.label, 40), ...(radius !== null ? { radiusArcsec: spotRadius(radius) } : {}) });
+    }
+    case 'resize_spot': {
+      const spot = spotNumber(args.spot), radius = Number(args.radius_arcsec);
+      if (!spot) errors.push(`spot must be 1-${MAX_SPOT}.`);
+      if (!(radius === 0 || (radius >= MIN_SPOT_RADIUS_ARCSEC && radius <= MAX_SPOT_RADIUS_ARCSEC))) errors.push(`radius_arcsec must be 0 (point) or ${MIN_SPOT_RADIUS_ARCSEC}-${MAX_SPOT_RADIUS_ARCSEC}.`);
+      return done({ spot, radiusArcsec: spotRadius(radius) });
     }
     case 'take_snapshot': {
       return done({ caption: sanitizeNote(args.caption, 80) });

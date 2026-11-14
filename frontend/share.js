@@ -105,16 +105,17 @@ if (typeof window !== 'undefined') {
     update({
       markRaDeg: first ? first.raDeg : null,
       markDecDeg: first ? first.decDeg : null,
-      extraSpots: rest.map(spot => ({ raDeg: spot.raDeg, decDeg: spot.decDeg }))
+      markRadiusArcsec: first?.radiusArcsec ?? null,
+      extraSpots: rest.map(spot => ({ raDeg: spot.raDeg, decDeg: spot.decDeg, radiusArcsec: spot.radiusArcsec ?? null }))
     });
   });
 
   window.addEventListener('sky:source-marked', event => {
     const detail = event.detail || {};
     if (Number.isFinite(detail.raDeg) && Number.isFinite(detail.decDeg)) {
-      update({ markRaDeg: detail.raDeg, markDecDeg: detail.decDeg });
+      update({ markRaDeg: detail.raDeg, markDecDeg: detail.decDeg, markRadiusArcsec: detail.radiusArcsec ?? null });
     } else {
-      update({ markRaDeg: null, markDecDeg: null });
+      update({ markRaDeg: null, markDecDeg: null, markRadiusArcsec: null });
     }
   });
 

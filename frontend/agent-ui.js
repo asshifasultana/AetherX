@@ -47,7 +47,8 @@ const describe = {
   take_snapshot: () => 'Took a snapshot of the viewer',
   compare_side_by_side: args => 'Put ' + args.panels.length + ' views side by side',
   find_changes: () => 'Listed the changes in the difference image',
-  mark_spot: () => 'Marked a spot',
+  mark_spot: args => args.radiusArcsec ? 'Marked an area' : 'Marked a spot',
+  resize_spot: args => args.radiusArcsec ? `Resized spot ${args.spot}` : `Made spot ${args.spot} a point`,
   remove_spots: args => args.all ? 'Removed all spots' : args.keep ? `Kept only spot${args.keep.length > 1 ? 's' : ''} ${args.keep.join(', ')}` : `Removed spot${args.spots.length > 1 ? 's' : ''} ${args.spots.join(', ')}`,
   measure_source: args => `Measured spot ${args.spot} on each date`,
   get_spectrum: args => `Measured spot ${args.spot} across wavelengths`,
@@ -79,6 +80,7 @@ const ACTIVITY = {
   compare_side_by_side: 'Photographing each view…',
   find_changes: 'Squinting at pixels…',
   mark_spot: 'Placing a marker…',
+  resize_spot: 'Resizing the marker…',
   remove_spots: 'Tidying up the markers…',
   measure_source: 'Measuring brightness on each date…',
   get_spectrum: 'Splitting the light into colours…',
@@ -295,7 +297,7 @@ function renderCase(summary) {
   const heading = document.createElement('div');
   heading.className = 'case-head';
   const title = document.createElement('strong');
-  title.textContent = `Spot ${summary.spot} · case file`;
+  title.textContent = `Spot ${summary.spot} · ${summary.radiusArcsec ? 'area ' : ''}case file`;
   const badge = document.createElement('span');
   badge.className = `case-verdict is-${summary.verdict.label.split(' ')[0].replace(/[^a-z]/g, '')}`;
   badge.textContent = summary.verdict.label;
@@ -310,6 +312,14 @@ function renderCase(summary) {
     const label = document.createElement('span'); label.textContent = suspect.label;
     row.append(icon, label);
     if (suspect.evidence) { const why = document.createElement('small'); why.textContent = suspect.evidence; row.append(why); }
+    list.append(row);
+  }
+  for (const finding of summary.findings || []) {
+    const row = document.createElement('li');
+    row.className = 'is-finding';
+    const icon = document.createElement('span'); icon.className = 'case-icon'; icon.textContent = '•'; icon.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span'); label.textContent = finding;
+    row.append(icon, label);
     list.append(row);
   }
   const detail = document.createElement('p');
@@ -382,7 +392,7 @@ function renderChips() {
   if (!row) return;
   const chips = knownSpots.filter(spot => attached.has(spot.n)).map(spot => {
     const chip = document.createElement('span');
-    chip.className = `ai-guide-chip is-${spot.origin}`;
+    chip.className = `ai-guide-chip is-${spot.origin}${spot.found ? ' is-found' : ''}`;
     const label = document.createElement('span');
     label.textContent = `↩ Spot ${spot.n} · ${formatSpot(spot)}`;
     const remove = document.createElement('button');
@@ -513,7 +523,7 @@ async function converse(text, chips) {
     // A background-only turn: no visitor bubble, just the results.
     history.push({ role: 'user', content: `[Guide check] ${BACKGROUND_TURN}` });
   } else {
-    const prefix = chips.map(spot => `[Spot ${spot.n}: ra=${spot.raDeg.toFixed(5)}, dec=${spot.decDeg.toFixed(5)}, origin=${spot.origin}]`).join('\n');
+    const prefix = chips.map(spot => `[Spot ${spot.n}: ra=${spot.raDeg.toFixed(5)}, dec=${spot.decDeg.toFixed(5)}${spot.radiusArcsec ? `, area radius=${spot.radiusArcsec}arcsec` : ''}, origin=${spot.origin}]`).join('\n');
     const content = prefix ? `${prefix}\n${text}` : text;
     history.push({ role: 'user', content });
     addEntry('user', text, { chips });

@@ -5,9 +5,11 @@ import { runInNewContext } from 'node:vm';
 import { parseCoordinate, formatSexagesimal } from '../coordinates.js';
 import { presets } from '../presets.js';
 import { suggestNames } from '../object-names.js';
-import { DEFAULT_VIEW_STATE, encodeViewState } from '../url-state.js';
+import { DEFAULT_VIEW_STATE, decodeViewState, encodeViewState } from '../url-state.js';
 
-const [html, app, lookup, moving] = await Promise.all(['index.html', 'app.js', 'object-lookup.js', 'moving-target.js'].map(file => readFile(new URL('../' + file, import.meta.url), 'utf8')));
+import { searchMarkup } from '../target-search.js';
+import { readSearchEntry, viewerUrl, legacyViewerDestination } from '../search-route.js';
+const [viewerHtml, homeHtml, app, lookup, moving, searchController, home] = await Promise.all(['viewer.html', 'index.html', 'app.js', 'object-lookup.js', 'moving-target.js', 'target-search.js', 'home.js'].map(file => readFile(new URL('../' + file, import.meta.url), 'utf8')));
 const withoutImports = source => source.replace(/^import .*\r?\n/gm, '').replace(/^export /gm, '');
 const flush = async () => { for (let i = 0; i < 4; i++) await new Promise(resolve => setImmediate(resolve)); };
 const resolved = { submittedName: 'Sirius', resolvedName: '* alf CMa', raDeg: 101.287, decDeg: -16.716, frame: 'icrs', source: { name: 'SIMBAD', resolver: 'Sesame' }, retrievedAt: '2026-11-07' };
@@ -15,7 +17,10 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), { status
 
 // Exercise the real entrypoints together. Every requested ID must exist in the
 // shipped HTML; only DOM and network boundaries are replaced, as in observations-ui.test.js.
-function mount({ fetchImpl = async () => json(resolved), initial = {} } = {}) {
+function mount({ fetchImpl = async () => json(resolved), initial = {}, page = 'viewer', search = '' } = {}) {
+  const html = (page === 'home' ? homeHtml : viewerHtml) + searchMarkup;
+  const navigations = [];
+  const location = { pathname: page === 'home' ? '/' : '/viewer.html', search, hash: '', assign: url => navigations.push(url), replace: url => navigations.push(url) };
   const elements = new Map(), targets = [], requests = [], events = [], workerMessages = [];
   let focused;
   function element(attributes = {}) {
@@ -54,10 +59,11 @@ function mount({ fetchImpl = async () => json(resolved), initial = {} } = {}) {
   form.requestSubmit = () => form.dispatchEvent({ type: 'submit', preventDefault() {} });
   const window = element(), dispatch = window.dispatchEvent.bind(window);
   window.dispatchEvent = event => { events.push(event); return dispatch(event); };
-  const document = { getElementById: get, createElement: () => element(), documentElement: element(), querySelectorAll: selector => selector === '[data-target]' ? targets : [] };
+  window.self = window.top = window;
+  const document = { getElementById: id => elements.get(id) || null, createElement: () => element(), documentElement: element(), querySelectorAll: selector => selector === '[data-target]' ? targets : [] };
   const context = {
-    document, window, parseCoordinate, formatSexagesimal, presets, suggestNames, encodeViewState,
-    initialViewState: { ...DEFAULT_VIEW_STATE, ...initial }, isEmbedded: false, initialViewIssues: [],
+    document, window, location, readSearchEntry, viewerUrl, legacyViewerDestination, parseCoordinate, formatSexagesimal, presets, suggestNames, encodeViewState,
+    initialViewState: { ...decodeViewState(search).state, ...initial }, isEmbedded: false, initialViewIssues: [],
     AbortController, URLSearchParams, URL, clearInterval, setInterval, setTimeout, clearTimeout, Event,
     Worker: class { postMessage(message) { workerMessages.push(message); } terminate() {} },
     CustomEvent: class { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } },
@@ -65,10 +71,11 @@ function mount({ fetchImpl = async () => json(resolved), initial = {} } = {}) {
     Option: class { constructor(label, value) { this.textContent = label; this.value = value; } },
     fetch: async (url, options) => { requests.push({ url, options }); return fetchImpl(url, options); }
   };
-  runInNewContext(withoutImports(lookup) + '\n(function(){\n' + withoutImports(app) + '\n})();\n(function(){\n' + moving.replaceAll('import.meta.url', "'http://localhost/moving-target.js'") + '\n})();', context);
+  const source = withoutImports(searchController) + '\n' + withoutImports(lookup) + (page === 'home' ? '\n' + withoutImports(home) : '\n(function(){\n' + withoutImports(app) + '\n})();\n(function(){\n' + withoutImports(moving).replaceAll('import.meta.url', "'http://localhost/moving-target.js'") + '\n})();');
+  runInNewContext(source, context);
   const mode = value => { get('target-type').value = value; get('target-type').dispatchEvent({ type: 'change' }); };
   const selections = () => events.filter(event => event.type === 'sky:target-selected');
-  return { get, mode, form, targets, requests, selections, events, window, workerMessages, focus: () => focused };
+  return { get, mode, form, targets, navigations, requests, selections, events, window, workerMessages, focus: () => focused };
 }
 
 test('unified entry defaults to names and preserves separate drafts and inactive fieldsets', () => {
@@ -192,4 +199,69 @@ test('shared links restore their exact position and preset identity through the 
   assert.equal(ui.selections()[0].detail.raDeg, 12.34);
   assert.equal(ui.selections()[0].detail.decDeg, -5.67);
   assert.equal(ui.selections()[0].detail.targetId, 'barnard');
+});
+
+test('homepage name searches navigate without resolving or loading viewer modules', () => {
+  const ui = mount({ page: 'home' }); ui.get('lookup-name').value = 'Sirius'; ui.form.requestSubmit();
+  assert.equal(ui.navigations.length, 1); assert.equal(ui.requests.length, 0);
+  const url = new URL(ui.navigations[0], 'http://localhost');
+  assert.equal(url.pathname, '/viewer.html'); assert.equal(url.searchParams.get('q'), 'Sirius');
+  assert.equal(url.searchParams.get('searchType'), 'object'); assert.equal(url.searchParams.has('ra'), false);
+});
+
+test('homepage validates coordinates and moving dates before navigating', () => {
+  const ui = mount({ page: 'home' }); ui.mode('coordinates'); ui.get('ra').value = '360'; ui.form.requestSubmit();
+  assert.equal(ui.navigations.length, 0); assert.ok(ui.get('ra-error').textContent);
+  ui.get('coordinate-format').value = 'sexagesimal'; ui.get('ra').value = '08:00:00'; ui.get('dec').value = '-07:30:00'; ui.form.requestSubmit();
+  const coords = new URL(ui.navigations[0], 'http://localhost');
+  assert.equal(coords.searchParams.get('ra'), '120'); assert.equal(coords.searchParams.get('dec'), '-7.5');
+  assert.equal(coords.searchParams.get('format'), 'sexagesimal');
+  ui.mode('moving'); ui.form.elements.object.value = '4 Vesta'; ui.form.elements.startDate.value = '2025-08-15'; ui.form.elements.endDate.value = '2025-08-10'; ui.form.requestSubmit();
+  assert.equal(ui.navigations.length, 1); assert.match(ui.get('moving-status').textContent, /End date/);
+  ui.form.elements.endDate.value = '2025-08-20'; ui.form.elements.detector.value = '2'; ui.form.requestSubmit();
+  const moving = new URL(ui.navigations[1], 'http://localhost');
+  assert.equal(moving.searchParams.get('q'), '4 Vesta'); assert.equal(moving.searchParams.get('from'), '2025-08-15');
+  assert.equal(moving.searchParams.get('detector'), '2'); assert.equal(ui.requests.length, 0);
+});
+
+test('homepage quick picks carry preset identity and explicit coordinates into the viewer', () => {
+  const ui = mount({ page: 'home' }); ui.targets[1].click();
+  const url = new URL(ui.navigations[0], 'http://localhost');
+  assert.equal(url.searchParams.get('target'), 'epsilon');
+  assert.equal(Number(url.searchParams.get('ra')), presets.epsilon.raDeg);
+  assert.equal(Number(url.searchParams.get('dec')), presets.epsilon.decDeg);
+});
+
+test('viewer startup resolves an incoming name once and restores resolved names without another lookup', async () => {
+  const pending = mount({ search: '?searchType=object&q=Sirius' }); pending.window.dispatchEvent({ type: 'load' }); await flush();
+  assert.equal(pending.requests.length, 1); assert.equal(pending.selections().length, 1);
+  const saved = mount({ search: '?searchType=object&q=Sirius&ra=101.287&dec=-16.716' }); saved.window.dispatchEvent({ type: 'load' }); await flush();
+  assert.equal(saved.requests.length, 0); assert.equal(saved.selections().length, 1);
+  assert.equal(saved.selections()[0].detail.raDeg, 101.287); assert.equal(saved.get('lookup-name').value, 'Sirius');
+  assert.equal(saved.get('object-name').textContent, 'Sirius');
+});
+
+test('moving-object startup restores its form and submits only the moving pipeline once', async () => {
+  const ui = mount({ search: '?searchType=moving&q=4+Vesta&from=2025-08-10&to=2025-08-15&detector=2', fetchImpl: async () => json({ exposures: [] }) });
+  assert.equal(ui.get('target-type').value, 'moving'); ui.window.dispatchEvent({ type: 'load' }); await flush();
+  assert.equal(ui.requests.length, 1); assert.match(ui.requests[0].url, /^\/api\/moving-observations/);
+  assert.equal(ui.selections().length, 0); assert.equal(ui.form.elements.detector.value, '2');
+});
+
+test('coordinate format changes convert the current draft rather than discarding it', () => {
+  const ui = mount({ page: 'home' }); ui.mode('coordinates'); ui.get('ra').value = '120'; ui.get('dec').value = '-7.5';
+  ui.get('coordinate-format').value = 'sexagesimal'; ui.get('coordinate-format').dispatchEvent({ type: 'change' });
+  assert.equal(ui.get('ra').value, '08:00:00.000'); assert.equal(ui.get('dec').value, '-07:30:00.000');
+});
+
+test('Back navigation reconciles restored native form values with visible fields', () => {
+  const ui = mount({ page: 'home' });
+  ui.get('target-type').value = 'coordinates';
+  ui.window.dispatchEvent({ type: 'pageshow' });
+  assert.equal(ui.get('coordinate-fields').hidden, false);
+  assert.equal(ui.get('name-fields').hidden, true);
+  ui.get('target-type').value = 'moving'; ui.get('lookup-name').value = '4 Vesta';
+  ui.window.dispatchEvent({ type: 'pageshow' });
+  assert.equal(ui.get('moving-fields').hidden, false);
+  assert.equal(ui.get('lookup-name').value, '4 Vesta');
 });

@@ -1,3 +1,5 @@
+import { ensureSearchForm } from './target-search.js';
+ensureSearchForm();
 const $ = id => document.getElementById('moving-' + id);
 const form = document.getElementById('target-search-form'), status = $('status'), canvas = $('canvas'), detector = $('detector');
 const daySlider = $('day'), minWave = $('min'), maxWave = $('max');
@@ -112,9 +114,8 @@ function listExposures() {
     : `${exposures.length} exposures selected on D${detector.value}.`;
 }
 
-form.addEventListener('submit', async event => {
+window.addEventListener('sky:moving-search-requested', async () => {
   if (document.getElementById('target-type').value !== 'moving') return;
-  event.preventDefault();
   if (!form.reportValidity()) return;
   if (form.elements.startDate.value > form.elements.endDate.value) {
     status.textContent = 'End date must be on or after the start date.';
@@ -267,15 +268,6 @@ $('play').addEventListener('click', () => {
   timer = setInterval(() => showDay((Number(daySlider.value) + 1) % displayedDays.length), 600);
 });
 $('cancel').addEventListener('click', () => { invalidate(); status.textContent = 'Cancelled.'; });
-$('example').addEventListener('click', () => {
-  const type = document.getElementById('target-type');
-  if (type.value !== 'moving') { type.value = 'moving'; type.dispatchEvent(new Event('change')); }
-  Object.assign(form.elements.object, { value: '3I/ATLAS' });
-  form.elements.startDate.value = '2025-08-10';
-  form.elements.endDate.value = '2025-08-15';
-  form.elements.detector.value = '1';
-  form.requestSubmit();
-});
 $('download').addEventListener('click', () => {
   const { object, name, observer, solution } = search;
   const excludedCandidates = search.exposures.filter(e => !loadedIds.has(e.productId)).map(e => ({

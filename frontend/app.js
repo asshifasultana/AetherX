@@ -1,8 +1,11 @@
-import { parseCoordinate, formatSexagesimal } from './coordinates.js';
+import { ensureSearchForm, mountTargetSearch } from './target-search.js';
+import { readSearchEntry } from './search-route.js';
 import { presets } from './presets.js';
 import { mountObjectLookup } from './object-lookup.js';
-import { initialViewIssues, initialViewState, isEmbedded } from './share.js';
+import { initialViewState, isEmbedded } from './share.js';
 import { encodeViewState } from './url-state.js';
+ensureSearchForm();
+const initialEntry = readSearchEntry(typeof location === 'undefined' ? '' : location.search);
 const $ = id => document.getElementById(id);
 // A shared link is authoritative. A curated target supplies the label and the
 // highlighted quick pick, while explicit coordinates in the link always win.
@@ -21,13 +24,6 @@ const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, maxSta
 let viewerSettings = { ...defaultSettings, band: initialViewState.band, fovArcmin: initialViewState.fovArcmin };
 const ranges = ['0.75 – 1.09', '1.10 – 1.62', '1.63 – 2.41', '2.42 – 3.82', '3.83 – 4.41', '4.42 – 5.00'];
 const signed = n => `${n < 0 ? '' : '+'}${n.toFixed(4)}`;
-function fillInputs() {
-  const sex = $('coordinate-format').value === 'sexagesimal';
-  for (const axis of ['ra', 'dec']) $(axis).value = sex ? formatSexagesimal(position[axis + 'Deg'], axis) : String(position[axis + 'Deg']);
-  $('ra-unit').textContent = sex ? 'HH:MM:SS' : 'degrees';
-  $('dec-unit').textContent = sex ? '±DD:MM:SS' : 'degrees';
-}
-function clearErrors() { for (const axis of ['ra', 'dec']) { $(axis + '-error').textContent = ''; $(axis).removeAttribute('aria-invalid'); } }
 function updateSelection() { document.querySelectorAll('[data-target]').forEach(b => { const active = b.dataset.target === selected; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); }); }
 function showPosition(data) {
   $('object-name').textContent = data.name;
@@ -39,43 +35,24 @@ function showPosition(data) {
 }
 const objectLookup = mountObjectLookup(data => {
   position = { raDeg: data.raDeg, decDeg: data.decDeg, frame: data.frame };
-  selected = null; updateSelection(); clearErrors();
+  selected = null; updateSelection();
   showPosition({ name: data.resolvedName || data.submittedName, type: 'CATALOG POSITION · ICRS', description: `Resolved through ${data.source.name} / ${data.source.resolver}. Fixed catalog position; no proper-motion correction.` });
 });
-document.querySelectorAll('[data-target]').forEach(button => button.addEventListener('click', () => {
-  objectLookup.invalidate();
-  selected = button.dataset.target; const target = presets[selected];
-  position = { raDeg: target.raDeg, decDeg: target.decDeg, frame: 'icrs', targetId: selected };
-  $('lookup-name').value = target.name;
-  updateSelection(); clearErrors(); showPosition(target);
-}));
-const nameDrafts = { object: '', moving: '' };
-let currentEntryMode = 'object';
-function entryMode(mode) {
-  nameDrafts[currentEntryMode] = $('lookup-name').value;
-  objectLookup.invalidate();
-  currentEntryMode = mode;
-  $('target-type').value = mode;
-  const coordinates = mode === 'coordinates', moving = mode === 'moving';
-  for (const [id, active] of [['name-fields', !coordinates], ['coordinate-fields', coordinates], ['moving-fields', moving]]) {
-    $(id).hidden = !active; $(id).disabled = !active;
-  }
-  $('lookup-name').value = nameDrafts[mode] || '';
-  $('lookup-name').maxLength = moving ? 80 : 200;
-  $('lookup-name').placeholder = moving ? 'e.g. 3I/ATLAS or 4 Vesta' : 'e.g. Sirius or M31';
-  $('lookup-label').textContent = moving ? 'Designation' : 'Object name';
-  $('lookup-help').textContent = coordinates
-    ? 'ICRS reference frame · RA 0° to <360° · Dec −90° to +90°'
-    : moving ? 'Enter a comet or asteroid designation and a UTC date range.'
-    : 'Enter a common name or catalog identifier, or choose a quick pick below.';
-  $('preset-panel').hidden = mode !== 'object';
-  $('lookup-feedback').hidden = mode !== 'object';
-  $('moving-feedback').hidden = !moving;
-  $('target-search-status').hidden = moving;
-  clearErrors();
-}
-$('target-type').addEventListener('change', () => entryMode($('target-type').value));
-$('moving-search-link').addEventListener('click', () => { entryMode('moving'); $('lookup-name').focus(); });
+const targetSearch = mountTargetSearch({
+  initialPosition: position,
+  invalidate: objectLookup.invalidate,
+  onEdit: () => { selected = null; updateSelection(); },
+  onObject: query => objectLookup.resolve(query),
+  onCoordinates: coordinates => {
+    position = { ...coordinates, frame: 'icrs' }; selected = null; updateSelection();
+    showPosition({ name: 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Searching observations at your selected sky position.' });
+  },
+  onPreset: (targetId, target) => {
+    selected = targetId; position = { raDeg: target.raDeg, decDeg: target.decDeg, frame: 'icrs', targetId };
+    updateSelection(); showPosition(target);
+  },
+  onMoving: () => window.dispatchEvent(new CustomEvent('sky:moving-search-requested'))
+});
 // Keep archive progress and failures next to the entry point as well as results.
 window.addEventListener('sky:observations-loading', event => {
   $('target-search-status').textContent = `Searching observations for ${event.detail.targetName}…`;
@@ -83,25 +60,6 @@ window.addEventListener('sky:observations-loading', event => {
 window.addEventListener('sky:observations-loaded', event => {
   $('target-search-status').textContent = event.detail.failed && !$('search-error').hidden
     ? $('search-error').textContent : $('search-status').textContent;
-});
-$('coordinate-format').addEventListener('change', () => { fillInputs(); clearErrors(); });
-for (const axis of ['ra', 'dec']) $(axis).addEventListener('input', () => { selected = null; updateSelection(); $(axis + '-error').textContent = ''; $(axis).removeAttribute('aria-invalid'); });
-$('target-search-form').addEventListener('submit', event => {
-  event.preventDefault();
-  if (currentEntryMode === 'moving') return;
-  if (currentEntryMode === 'object') {
-    if ($('target-search-form').reportValidity()) objectLookup.resolve($('lookup-name').value);
-    return;
-  }
-  clearErrors(); const parsed = {}; let firstInvalid;
-  for (const axis of ['ra', 'dec']) {
-    try { parsed[axis + 'Deg'] = parseCoordinate($(axis).value, axis, $('coordinate-format').value); }
-    catch (error) { $(axis + '-error').textContent = error.message; $(axis).setAttribute('aria-invalid', 'true'); firstInvalid ??= $(axis); }
-  }
-  if (firstInvalid) { firstInvalid.focus(); return; }
-  objectLookup.invalidate();
-  position = { ...parsed, frame: 'icrs' }; selected = null; updateSelection();
-  showPosition({ name: 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Searching observations at your selected sky position.' });
 });
 const modeDescriptions = {
   'time-lapse': 'Play observations in date order to follow changes over time.',
@@ -163,10 +121,11 @@ $('reset-button').addEventListener('click', () => {
 });
 renderSettings();
 updateSelection();
-fillInputs();
+targetSearch.setEntry(initialEntry);
 if (isEmbedded) document.documentElement.classList.add('is-embed');
 function restoredTarget() {
   if (restoredTargetId) return presets[restoredTargetId];
+  if (initialEntry.query) return { name: initialEntry.query, type: 'CATALOG POSITION · ICRS', description: 'Restored catalog position from this link.' };
   return {
     name: 'Shared sky position',
     type: 'SHARED COORDINATES · ICRS',
@@ -178,7 +137,13 @@ function restoredTarget() {
 // the visitor to choose a target.
 window.addEventListener('load', () => {
   emitSettings();
-  if (restoredView) showPosition(restoredTarget());
+  if (initialEntry.type === 'moving') {
+    document.getElementById('target-search-form').requestSubmit();
+  } else if (initialEntry.resolved || restoredView && !initialEntry.query) {
+    showPosition(restoredTarget());
+  } else if (initialEntry.query) {
+    document.getElementById('target-search-form').requestSubmit();
+  }
 }, { once: true });
 $('expand-button').addEventListener('click', async () => {
   try {

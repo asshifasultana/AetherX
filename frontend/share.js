@@ -5,9 +5,8 @@
 // events. Writes go through history.replaceState so sharing never adds history
 // entries the back button has to fight through.
 
-import {
-  decodeViewState, encodeViewState, viewStateSignature
-} from './url-state.js';
+import { decodeViewState } from './url-state.js';
+import { readSearchEntry, encodeSearchView } from './search-route.js';
 
 const hasLocation = typeof location !== 'undefined' && typeof location.search === 'string';
 const decoded = decodeViewState(hasLocation ? location.search : '');
@@ -19,7 +18,8 @@ export const initialViewState = initial;
 export const initialViewIssues = Object.freeze([...decoded.issues]);
 
 const live = { ...initial };
-let lastWritten = viewStateSignature(live);
+let entry = hasLocation ? readSearchEntry(location.search) : null;
+let lastWritten = encodeSearchView(live, entry);
 let timer = null;
 // The frame date a shared link asked for, consumed once by the timeline.
 let pendingFrameDate = initial.frameDate;
@@ -27,10 +27,10 @@ let pendingFrameDate = initial.frameDate;
 function writeNow() {
   timer = null;
   if (!hasLocation || typeof history === 'undefined') return;
-  const signature = viewStateSignature(live);
+  const signature = encodeSearchView(live, entry);
   if (signature === lastWritten) return;
   lastWritten = signature;
-  const query = encodeViewState(live);
+  const query = signature;
   const url = location.pathname + (query ? `?${query}` : '') + location.hash;
   try { history.replaceState(history.state, '', url); } catch { /* A sandboxed frame may refuse. */ }
 }
@@ -57,15 +57,21 @@ function isoDate(value) {
 }
 
 if (typeof window !== 'undefined') {
+  window.addEventListener('sky:search-entry', event => {
+    entry = { ...event.detail, resolved: false };
+    scheduleWrite();
+  });
   window.addEventListener('sky:target-selected', event => {
     const detail = event.detail || {};
     if (!Number.isFinite(detail.raDeg) || !Number.isFinite(detail.decDeg)) return;
+    if (entry) entry = { ...entry, resolved: true };
     update({
       raDeg: detail.raDeg,
       decDeg: detail.decDeg,
       // Only a curated target has an id; a manual or resolved position clears it.
       targetId: typeof detail.targetId === 'string' ? detail.targetId : null
     });
+    scheduleWrite();
   });
 
   window.addEventListener('sky:viewer-settings-changed', event => {
@@ -120,9 +126,9 @@ export function currentViewState() {
  */
 export function shareUrl({ embed = isEmbedded, absolute = true } = {}) {
   const state = { ...live, embed };
-  const query = encodeViewState(state);
+  const query = encodeSearchView(state, entry);
   if (!hasLocation) return query ? `?${query}` : '';
-  const base = `${location.origin}${location.pathname}`;
+  const base = `${location.origin}/viewer.html`;
   const url = `${base}${query ? `?${query}` : ''}`;
   return absolute ? url : url.slice(location.origin.length);
 }

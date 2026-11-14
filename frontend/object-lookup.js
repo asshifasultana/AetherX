@@ -41,7 +41,11 @@ export function mountObjectLookup(select) {
       const label = document.createElement('p'); label.textContent = 'Did you mean…? Suggestions require catalog verification.'; $('lookup-suggestions').append(label);
       for (const suggestion of suggestions) {
         const button = document.createElement('button'); button.type = 'button'; button.textContent = suggestion.name;
-        button.addEventListener('click', () => { input.value = suggestion.query; lookup.resolve(suggestion.query); });
+        button.addEventListener('click', () => {
+          input.value = suggestion.query;
+          window.dispatchEvent(new CustomEvent('sky:search-entry', { detail: { type: 'object', query: suggestion.query } }));
+          lookup.resolve(suggestion.query);
+        });
         $('lookup-suggestions').append(button);
       }
     }

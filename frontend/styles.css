@@ -347,3 +347,43 @@ footer p,footer>span{font-size:15px;color:#59695e}
   .target-search .moving-fields label { flex-basis: auto; }
   .target-quick-picks > span { flex-basis: 100%; }
 }
+
+/* The homepage keeps the search at the center of a quiet, light canvas. */
+.home-page { min-height: 100vh; }
+.home-page .site-header { border-bottom: 0; }
+.home-viewer-link { font-size: 14px; color: var(--teal); padding: 10px 0; }
+.home-main { min-height: calc(100svh - 100px); display: grid; place-items: center; padding-top: 40px; padding-bottom: 120px; }
+.home-search { width: min(100%, 820px); }
+.home-search > .eyebrow { justify-content: center; font-size: 13px; letter-spacing: 2.4px; }
+.home-search h1 { text-align: center; font-size: clamp(30px, 3.6vw, 46px); letter-spacing: -1.8px; margin-bottom: 32px; }
+.home-search .target-search-row { padding: 16px; background: white; border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 35px #243a3706; }
+.home-search .coordinate-help { text-align: center; }
+.home-search .target-quick-picks { justify-content: center; }
+.home-search .moving-fields { padding: 0 16px; }
+.home-search #lookup-status, .home-search #moving-status { text-align: center; }
+.viewer-page .intro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 620px); align-items: start; gap: 32px; }
+.viewer-search { min-width: 0; padding-top: 4px; }
+.viewer-search .target-search-row { grid-template-columns: minmax(145px, .85fr) minmax(0, 1.4fr) auto; gap: 10px; }
+.viewer-search .target-search-row > .primary-button { padding: 11px 16px; }
+.viewer-search .target-search label { font-size: 13px; }
+.viewer-search .coordinate-help { font-size: 13px; margin-top: 10px; }
+.viewer-search .target-quick-picks { gap: 6px; margin-top: 12px; }
+.viewer-search .target-quick-picks button { font-size: 12px; padding: 6px 10px; min-height: 36px; }
+.viewer-search .target-quick-picks > span { font-size: 12px; }
+.viewer-search #target-search-status, .viewer-search #lookup-status, .viewer-search #moving-status { font-size: 13px; }
+.viewer-search .target-search .coordinate-fields { grid-column: 2 / -1; }
+.viewer-search .target-search-row:has(#coordinate-fields:not([hidden])) > .primary-button { grid-column: 2 / -1; }
+@media (max-width: 1100px) {
+  .viewer-page .intro { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .viewer-search { width: 100%; max-width: none; }
+}
+@media (max-width: 760px) {
+  .home-main { padding-top: 28px; padding-bottom: 64px; min-height: calc(100svh - 90px); }
+  .home-search h1 { margin-bottom: 24px; }
+  .home-search .target-search-row { padding: 16px; }
+  .home-search .target-quick-picks > span { flex-basis: 100%; text-align: center; }
+  .viewer-search .target-search-row { grid-template-columns: minmax(0, 1fr); }
+  .viewer-search .target-search .coordinate-fields, .viewer-search .target-search-row:has(#coordinate-fields:not([hidden])) > .primary-button { grid-column: 1; }
+  .viewer-page .intro { gap: 20px; padding-bottom: 28px; }
+  .viewer-search .target-quick-picks button { min-height: 44px; }
+}

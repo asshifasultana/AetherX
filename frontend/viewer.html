@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f5f6f2">
+  <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
+  <title>SPHEREx — A sky in motion</title>
+  <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:5173/');
+    if (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top) document.documentElement.classList.add('is-embed');</script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="viewer-page">
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx<span class="brand-divider"></span><span class="brand-sub">SKY ATLAS</span></a>
+    <nav aria-label="Main navigation"><a class="nav-active" href="#explorer">Explore the sky</a><a id="moving-search-link" href="#target-picker">Track moving object</a><a href="#comet-benchmark">3I/ATLAS stack</a><a href="#mission">The mission <span aria-hidden="true">↗</span></a></nav>
+    <span class="header-note"><span class="status-dot"></span> A different view of the universe</span>
+  </header>
+
+  <main>
+    <div id="share-notice" class="share-notice" role="note" hidden></div>
+    <section class="intro" aria-labelledby="page-title">
+      <div><p class="eyebrow"><span></span> AN INFRARED PERSPECTIVE</p><h1 id="page-title">The sky is never <em>still.</em></h1></div>
+      <div id="target-picker" class="viewer-search" role="search" aria-label="Search the sky"></div>
+    </section>
+
+    <section id="explorer" class="explorer" aria-label="Sky image viewer">
+      <div class="viewer" role="region" aria-label="Aligned SPHEREx FITS cutout viewer">
+        <canvas id="sky-canvas" tabindex="0" role="img" aria-label="North-up sky image. Enable Inspect pixel quality to read a pixel value and its flag reasons."></canvas>
+        <p id="coverage-note" class="coverage-note" hidden></p>
+        <div id="quality-legend" class="quality-legend" aria-label="Quality flag legend" hidden><span><i style="--flag-colour:#f26e85"></i>Transient / outlier</span><span><i style="--flag-colour:#efaa4f"></i>Detector defect</span><span><i style="--flag-colour:#78b7d1"></i>Correction / persistence</span><span><i style="--flag-colour:#b48ae0"></i>Optical / electronic artifact</span><span><i style="--flag-colour:#a9c981"></i>Caution / informational</span><span><i style="--flag-colour:#f3d365"></i>Missing pixel data</span><span><i style="--flag-colour:#7866a7"></i>Outside detector</span></div>
+        <div id="quality-hover-readout" class="quality-hover-readout" role="status" aria-live="off" hidden></div>
+        <div class="sky-grid" aria-hidden="true"></div><div id="target-marker" class="target-marker" hidden aria-hidden="true"></div>
+        <div class="canvas-top"><span id="cutout-cache-state" class="cutout-cache-state">No cutout loaded</span><div class="canvas-actions"><button id="export-sky-png" class="canvas-button export-png" type="button" disabled>PNG ↓</button><button id="expand-button" class="canvas-button" aria-label="Expand sky viewer" title="Expand sky viewer">⛶</button></div></div>
+        <div class="canvas-bottom"><span id="cutout-caption">Choose an observation to view its cutout</span><span class="compass">N<span>↑</span></span></div>
+        <p id="cutout-status" class="cutout-status" role="status" aria-live="polite">Scroll down past the timeline and settings to Find your observations. Choose Details + on a result, then View aligned cutout.</p>
+        <div id="source-mark" class="source-mark" hidden><span class="source-mark-ring" aria-hidden="true"></span><span id="source-mark-label" class="source-mark-label"></span></div>
+      </div>
+      <aside class="observation-panel">
+        <div class="panel-overline"><span class="step-number">02</span> YOUR OBSERVATION <span class="tiny-star">✦</span></div>
+        <div class="object-title"><span id="object-type" class="object-type">RED DWARF · OPHIUCHUS</span><h2 id="object-name">Barnard’s Star</h2><p id="object-description">One of our closest stellar neighbors, tracing a remarkable path across the night sky.</p></div>
+        <dl class="coordinate-display"><div><dt>RIGHT ASCENSION</dt><dd id="display-ra">269.4521<span>°</span></dd></div><div><dt>DECLINATION</dt><dd id="display-dec">+4.6934<span>°</span></dd></div></dl>
+        <div class="control-section wavelength-section">
+          <div class="control-heading"><h3>Detector & wavelength</h3></div>
+          <p class="settings-help">Choose an infrared band. Wavelengths are shown in micrometres (μm).</p>
+          <div class="band-buttons" role="group" aria-label="Detector band">
+            <button data-band="1" aria-pressed="false"><strong>D1</strong><span>0.75–1.09 μm</span></button>
+            <button data-band="2" class="selected" aria-pressed="true"><strong>D2</strong><span>1.10–1.62 μm</span></button>
+            <button data-band="3" aria-pressed="false"><strong>D3</strong><span>1.63–2.41 μm</span></button>
+            <button data-band="4" aria-pressed="false"><strong>D4</strong><span>2.42–3.82 μm</span></button>
+            <button data-band="5" aria-pressed="false"><strong>D5</strong><span>3.83–4.41 μm</span></button>
+            <button data-band="6" aria-pressed="false"><strong>D6</strong><span>4.42–5.00 μm</span></button>
+          </div>
+          <div class="band-legend"><span id="band-range">1.10 – 1.62 μm</span><span class="spectrum-line"></span><span>INFRARED</span></div>
+        </div>
+        <div class="demo-note"><span aria-hidden="true">ⓘ</span><p>Cutouts are centered on the selected sky position and rendered north up at the same scale, so comparing observations keeps the sky fixed.</p></div>
+        <section id="pixel-inspector" class="pixel-inspector" aria-live="polite" hidden><strong>Pixel inspection</strong><p id="pixel-inspector-result">Turn on Inspect pixel quality, then click a pixel in the image.</p></section>
+      </aside>
+
+      <div class="timeline-panel" aria-labelledby="timeline-heading">
+        <div class="timeline-heading"><div><span class="step-number">03</span><h3 id="timeline-heading">A little time travel</h3><span class="demo-chip">ARCHIVE TIMELAPSE</span></div><span id="frame-count">NO IMAGES LOADED</span></div>
+        <div class="timeline-now"><strong id="timeline-date">Waiting for observations</strong><span id="timeline-meta">Search for a target to build a dated timeline.</span></div>
+        <details id="frame-provenance" class="frame-provenance"><summary>Frame contribution record</summary><p id="frame-provenance-text">Search for observations to see which exposures contribute to a frame.</p><button id="export-frame-csv" class="reset-settings" type="button" disabled>Export frame contributions CSV ↓</button></details>
+        <div class="playback-row">
+          <div class="step-controls" role="group" aria-label="Frame stepping">
+            <button id="step-back" class="step-button" type="button" aria-label="Previous observation" disabled><span aria-hidden="true">◀</span></button>
+            <button id="play-button" class="play-button" type="button" aria-label="Play observation time-lapse" aria-pressed="false" disabled>▶</button>
+            <button id="step-forward" class="step-button" type="button" aria-label="Next observation" disabled><span aria-hidden="true">▶</span></button>
+          </div>
+          <div class="timeline-track">
+            <input id="timeline" type="range" min="0" max="1000" step="1" value="0" aria-label="Observation timeline" aria-valuetext="No observations loaded" disabled>
+            <div id="timeline-ticks" class="timeline-ticks" aria-hidden="true"></div>
+            <div id="timeline-gaps" class="timeline-gaps" aria-hidden="true"></div>
+            <div class="timeline-labels"><span id="timeline-start">FIRST FRAME</span><span id="timeline-gap-note">SPACED BY ACTUAL DATE</span><span id="timeline-end">LATEST FRAME</span></div>
+          </div>
+          <button id="speed-button" class="speed-button" type="button" aria-label="Playback speed, 1 times" disabled><strong id="speed-value">1×</strong> <span>speed</span></button>
+        </div>
+        <div id="timeline-filmstrip" class="timeline-filmstrip" role="group" aria-label="Observation thumbnails"></div>
+        <p id="release-calibration-note" class="timeline-status calibration-note" role="note" hidden></p>
+        <p id="timeline-status" class="timeline-status" role="status" aria-live="polite">Search for a target to build a dated time-lapse. Timeline ticks are placed at the real observation dates, so long gaps appear as long spaces.</p>
+        <div class="share-bar" aria-label="Share this view">
+          <div class="share-actions">
+            <button id="copy-link" class="share-button" type="button">Copy link</button>
+            <button id="copy-embed" class="share-button" type="button">Embed this view</button>
+            <button id="clear-mark" class="share-button mark-button" type="button" hidden>Clear mark</button>
+          </div>
+          <p id="share-summary" class="share-summary">Coordinates, field of view, detector band and dates are kept in the link.</p>
+          <p id="share-status" class="share-status" role="status" aria-live="polite"></p>
+          <div id="embed-panel" class="embed-panel" hidden>
+            <label for="embed-code">Embed code</label>
+            <textarea id="embed-code" readonly rows="3" spellcheck="false"></textarea>
+            <p class="share-help">Paste this into any page. The frame opens the same coordinates, field of view, detector band, date range and marked source.</p>
+          </div>
+        </div>
+      </div>
+      <section class="viewer-settings" aria-labelledby="settings-heading">
+        <div class="settings-title"><div><p class="eyebrow">YOUR SKY, YOUR PERSPECTIVE</p><h2 id="settings-heading">Shape your observation</h2></div><button id="reset-button" class="reset-settings" type="button">Reset settings ↺</button></div>
+        <div class="settings-grid">
+          <section class="settings-card" aria-labelledby="view-heading">
+            <div class="control-heading"><h3 id="view-heading">View & processing</h3><span>01</span></div>
+            <fieldset class="settings-fieldset"><legend>View mode</legend><div class="mode-buttons" role="group" aria-label="View mode">
+              <button data-mode="time-lapse" class="selected" aria-pressed="true">Time-lapse</button><button data-mode="blink" aria-pressed="false">Blink</button><button data-mode="difference" aria-pressed="false">Difference</button><button data-mode="motion-trail" aria-pressed="false">Motion trail</button><button data-mode="deep-stack" aria-pressed="false">Deep stack</button>
+            </div><p id="mode-description" class="settings-help" aria-live="polite">Play observations in date order to follow changes over time.</p></fieldset>
+            <fieldset class="settings-fieldset"><legend>Field of view <span class="unit-label">arcminutes</span></legend><div class="fov-buttons" role="group" aria-label="Field of view">
+              <button data-fov="5" aria-pressed="false">5′</button><button data-fov="10" aria-pressed="false">10′</button><button data-fov="16" class="selected" aria-pressed="true">16′</button><button data-fov="25" aria-pressed="false">25′</button>
+            </div></fieldset>
+            <label class="range-row" for="max-stack-frames">Maximum deep-stack frames <output id="max-stack-frames-value" for="max-stack-frames">80 frames</output></label><input id="max-stack-frames" class="range" type="range" min="4" max="400" step="4" value="80"><p class="settings-help">Deep median uses up to this many chronological UTC-day frames.</p>
+            <div class="processing-options"><label class="check-row"><input id="combine-exposures" type="checkbox" checked><span>Combine exposures from the same day<small>UTC calendar date, per detector. Quality-masked pixels are excluded; each output pixel uses the median of valid inputs. Different dates remain separate.</small></span></label><label class="check-row"><input id="hide-bad-pixels" type="checkbox" checked><span>Hide unreliable pixels<small>Excludes flagged samples before interpolation; bright-source overflow and streak flags stay visible</small></span></label><label class="check-row"><input id="reject-visit-glitches" type="checkbox" checked><span>Reject isolated same-observation glitches<small>Requires at least three usable exposures with the same OBSID; can be turned off</small></span></label></div>
+          </section>
+          <section class="settings-card" aria-labelledby="display-heading">
+            <div class="control-heading"><h3 id="display-heading">Display & overlays</h3><span>02</span></div>
+            <div class="select-row"><label for="stretch">Stretch</label><select id="stretch"><option value="asinh">Asinh</option><option value="linear">Linear</option><option value="log">Logarithmic</option><option value="sqrt">Square root</option></select></div>
+            <div class="select-row"><label for="colours">Colours</label><select id="colours"><option value="grayscale">Grayscale</option><option value="inferno">Inferno</option><option value="viridis">Viridis</option><option value="magma">Magma</option></select></div>
+            <label class="range-row" for="contrast">Contrast <output id="contrast-value" for="contrast">65%</output></label><input id="contrast" class="range" type="range" min="10" max="100" value="65">
+            <label class="check-row"><input id="consistent-brightness" type="checkbox" checked><span>Consistent brightness<small>Use one shared display scale across frames. The first displayed frame sets the limits.</small></span></label>
+            <div class="overlay-options"><label class="check-row"><input id="quality-overlay" type="checkbox"><span>Show quality flags<small>Colors identify transient, detector, correction, artifact, missing and uncovered pixels</small></span></label><label class="check-row"><input id="inspect-pixels" type="checkbox"><span>Inspect pixel quality<small>Click the image for flags and same-observation transient checks</small></span></label><label class="check-row"><input id="invert" type="checkbox"><span>Invert image<small>Black stars on a white background</small></span></label><label class="check-row"><input id="crosshair-toggle" type="checkbox" checked><span>Show target marker</span></label><label class="check-row"><input id="label-asteroids" type="checkbox"><span>Label known asteroids</span></label></div>
+            <div class="select-row asteroid-row"><label for="asteroid-magnitude">Asteroids brighter than</label><select id="asteroid-magnitude" aria-describedby="magnitude-help"><option value="14">V 14</option><option value="16">V 16</option><option value="18">V 18</option><option value="20" selected>V 20</option><option value="22">V 22</option></select></div>
+            <p id="magnitude-help" class="settings-help">Visual magnitude limit. Lower values show brighter objects.</p>
+          </section>
+        </div>
+        <p class="settings-notice">A robust, sigma-clipped median of valid pixels estimates and subtracts the sky level independently for each cutout. This display-only estimate can be biased by crowded fields, extended emission, or gradients. Mixed release frames are labelled, but release calibration offsets are not corrected.</p>
+      </section>
+    </section>
+
+    <section id="moving-target" class="observations-section moving-target" aria-labelledby="moving-heading">
+      <h2 id="moving-heading">Track moving object</h2>
+      <p>Find SPHEREx exposures along the path of a known comet or asteroid.</p>
+      <div id="moving-selection" hidden>
+        <label>Stack detector <select id="moving-detector"></select></label>
+        <details><summary>Inspect and select exposures</summary><div id="moving-exposures" class="moving-exposures"></div></details>
+        <button type="button" id="moving-load">Load selected exposures</button>
+      </div>
+      <div id="moving-display" hidden>
+        <canvas id="moving-canvas" width="49" height="49" role="img" aria-label="Moving-object cutout"></canvas>
+        <p id="moving-caption"></p>
+        <div id="moving-controls" class="moving-fields" hidden>
+          <button type="button" id="moving-play">Play</button>
+          <label>UTC day <input type="range" id="moving-day" min="0" value="0"></label>
+          <label>Min wavelength (µm) <input id="moving-min" type="number" step="any" min="0"></label>
+          <label>Max wavelength (µm) <input id="moving-max" type="number" step="any" min="0"></label>
+          <button type="button" id="moving-stack">Build tracked stack</button>
+          <button type="button" id="moving-enhance" disabled>Enhanced contrast</button>
+          <label id="moving-stage-control" hidden>Stack view <select id="moving-stage"><option value="tracked">Tracked median</option><option value="enhanced">Enhanced contrast</option></select></label>
+          <button type="button" id="moving-download">Download result</button>
+        </div>
+        <p id="moving-metrics"></p>
+        <details id="moving-report" hidden><summary>Exposure and reference details</summary><ul id="moving-report-list"></ul></details>
+      </div>
+    </section>
+    <section id="comet-benchmark" class="observations-section comet-benchmark" aria-labelledby="comet-heading">
+      <div class="comet-benchmark-copy">
+        <p class="eyebrow">MOVING-TARGET BENCHMARK</p>
+        <h2 id="comet-heading">Comet 3I/ATLAS</h2>
+        <p>Compare the same six August 2025 D1 exposures before and after PSF-matched sky subtraction and weighted stacking.</p>
+        <p id="comet-benchmark-status" role="status">Loading the saved benchmark stack…</p>
+        <div id="comet-benchmark-controls" hidden>
+          <label for="comet-benchmark-stage">Stack to display</label>
+          <select id="comet-benchmark-stage">
+            <option value="1">PSF-matched weighted stack</option>
+            <option value="0">Tracked median</option>
+          </select>
+          <dl class="comet-benchmark-scores">
+            <div><dt id="comet-score-label">Best measured aperture contrast</dt><dd id="comet-score" aria-live="polite"></dd></div>
+            <div><dt>Background scatter</dt><dd id="comet-scatter"></dd></div>
+          </dl>
+          <p id="comet-benchmark-method"></p>
+          <details><summary>Exposure provenance</summary><ul id="comet-exposures"></ul></details>
+          <a class="comet-download" href="comet-benchmark.json" download>Download stack data ↓</a>
+        </div>
+      </div>
+      <figure id="comet-benchmark-figure" hidden>
+        <div class="comet-benchmark-image">
+          <canvas id="comet-benchmark-canvas" role="img"></canvas>
+          <span id="comet-aperture" aria-hidden="true"></span>
+        </div>
+        <figcaption>North up. The ring marks the scoring aperture. Both views use the same display scale.</figcaption>
+      </figure>
+    </section>
+
+    <section id="observations" class="observations-section" aria-labelledby="observations-heading">
+      <div class="observation-search-title"><div><p class="eyebrow">NASA / IPAC INFRARED SCIENCE ARCHIVE</p><h2 id="observations-heading">Find your observations</h2><p id="search-target" class="search-target">Barnard’s Star · 269.4521°, +4.6934° · ICRS</p></div><span id="archive-mode-label" class="archive-badge">IRSA archive</span></div>
+      <div class="index-update-status" aria-labelledby="index-update-heading"><div><h3 id="index-update-heading">Automatic archive updates</h3><p id="index-update-summary" role="status" aria-live="polite">Checking index status…</p><p id="index-update-changes"></p></div><p class="index-update-scope">Fresh daily snapshots serve fixed preset positions. Moving targets and custom coordinates use cached live IRSA searches; older snapshots remain available during archive outages.</p></div>
+      <form id="observation-search-form" class="observation-filters">
+        <label for="search-detector">Detector<select id="search-detector"><option value="all">All detectors</option><option value="1">D1 · 0.75–1.09 μm</option><option value="2">D2 · 1.10–1.62 μm</option><option value="3">D3 · 1.63–2.41 μm</option><option value="4">D4 · 2.42–3.82 μm</option><option value="5">D5 · 3.83–4.41 μm</option><option value="6">D6 · 4.42–5.00 μm</option></select></label>
+        <label for="search-release">Archive release<select id="search-release"><option value="all">All public releases · prefer latest</option><option value="qr3">QR3 only</option><option value="qr2">QR2 only</option></select></label>
+        <label for="search-start">From date (UTC)<input id="search-start" type="date" min="2025-03-01"></label>
+        <label for="search-end">Through date (UTC)<input id="search-end" type="date" min="2025-03-01"></label>
+        <button id="find-observations" class="primary-button" type="submit">Find observations ↗</button>
+      </form>
+      <div class="search-status-row"><p id="search-status" role="status" aria-live="polite">Choose a target, then search for images covering that exact sky position.</p><button id="cancel-search" class="text-button" type="button" hidden>Cancel search</button></div>
+      <p id="search-error" class="search-error" role="alert" hidden></p>
+      <div id="observation-results" hidden>
+        <div class="results-toolbar"><p id="results-summary"></p><div><label for="result-sort">Sort<select id="result-sort"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label><button id="export-observations" class="reset-settings" type="button">Export CSV ↓</button></div></div>
+        <div id="detector-summary" class="detector-summary" aria-label="Observations per detector"></div>
+        <p id="results-provenance" class="results-provenance"></p>
+        <div id="results-warnings" class="results-warnings"></div>
+        <div class="observation-table-wrapper" role="region" aria-label="Observation metadata, scroll horizontally on small screens" tabindex="0">
+          <table class="observation-table"><caption class="sr-only">SPHEREx spectral images covering the selected position. Expand details for identifiers, provenance and quality inspection.</caption><thead><tr><th scope="col">Observed (UTC)</th><th scope="col">Detector</th><th scope="col">Coverage (μm)</th><th scope="col">Archive quality</th><th scope="col">Release / processing</th><th scope="col">Details</th></tr></thead><tbody id="observation-rows"></tbody></table>
+        </div>
+        <div class="results-pagination"><button id="results-previous" class="reset-settings" type="button">← Previous</button><p id="results-page" role="status"></p><button id="results-next" class="reset-settings" type="button">Next →</button></div>
+        <button id="load-more-observations" class="reset-settings" type="button" hidden>Load more observations ↓</button>
+      </div>
+    </section>
+
+    <section id="mission" class="mission"><span class="mission-symbol" aria-hidden="true">✳</span><div><p class="eyebrow">ONE SKY. COUNTLESS STORIES.</p><h2>There’s more than meets the eye.</h2><p>SPHEREx studies the universe in infrared light. This atlas is a place to explore familiar objects through a different lens, one sky position at a time.</p></div><a href="https://science.nasa.gov/mission/spherex/" target="_blank" rel="noopener noreferrer">Meet the mission <span>↗</span></a></section>
+  </main>
+  <footer><a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a></footer>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+  <script type="module" src="observations-ui.js"></script>
+  <script type="module" src="fits-viewer.js"></script>
+  <script type="module" src="timelapse.js"></script>
+  <script type="module" src="share-ui.js"></script>
+  <script type="module" src="comet-benchmark.js"></script>
+  <script type="module" src="moving-target.js"></script>
+</body>
+</html>

@@ -1095,6 +1095,9 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .spot-mark .source-mark-ring { width:20px; height:20px; }
 .spot-mark.is-agent .source-mark-ring { border-color:#8fd3ff; box-shadow:0 0 0 1px #101b2099,0 0 12px #8fd3ff66; }
 .spot-mark.is-predicted .source-mark-ring { border-style:dashed; border-color:#c9a7ff; box-shadow:0 0 0 1px #101b2099; }
+/* Global button:hover/:active rules reset transform, which would drop the label's
+   centering offset and make it jump out from under the cursor. Keep it fixed. */
+.source-mark-label:is(:hover,:active,:focus) { transform:translate(-50%,-100%); }
 .spot-label { pointer-events:auto; cursor:pointer; min-width:22px; padding:1px 6px; font-weight:700; font-size:12px; line-height:1.4; }
 .spot-mark.is-agent .spot-label { color:#8fd3ff; border-color:#8fd3ff66; }
 .spot-mark.is-predicted .spot-label { color:#c9a7ff; border-color:#c9a7ff66; }

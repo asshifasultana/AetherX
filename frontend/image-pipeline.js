@@ -2,6 +2,8 @@ import { loadCutout } from './cutout-loader.js';
 import { readFits, prepareImage, projectImage, projectionKey } from './lib/fits-engine.js';
 import { combineStack } from './lib/stack.js';
 import { ImageScheduler, abortError } from './lib/image-scheduler.js';
+import { cropQuery } from './lib/crop-codec.js';
+import { bakedCropUrl } from './lib/baked-view.js';
 
 // Decoding and projection are independent per exposure, so they spread across a
 // small pool of workers; one core is left for the page itself.
@@ -77,7 +79,10 @@ export class ImagePipeline {
       // 'legacy' skips the worker transports entirely; 's3' skips only the cropping proxy.
       const mode = loaderMode(), forceLegacy = mode === 'legacy';
       const payload = { accessUrl, target, settings, revision: new URL(url, 'http://localhost').searchParams.get('revision') || '' };
-      if (mode !== 's3' && mode !== 'legacy') { const proxyUrl = proxyEndpoint(); if (proxyUrl) payload.proxyUrl = proxyUrl; }
+      if (mode !== 's3' && mode !== 'legacy') {
+        const proxyUrl = proxyEndpoint();
+        if (proxyUrl) { payload.proxyUrl = proxyUrl; payload.bakedUrl = bakedCropUrl(cropQuery(payload)); }
+      }
       if (!forceLegacy && await this.start()) {
         try { return await this.request('load', payload, jobSignal); }
         catch (error) { if (jobSignal.aborted || error.name === 'ImageBudgetError') throw error; }

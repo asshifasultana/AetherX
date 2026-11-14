@@ -11,6 +11,7 @@
     "cache:culture-anchors": "node scripts/cache-sky-anchors.mjs",
     "update:index": "node scripts/update-observation-index.mjs",
     "refresh:cache": "node scripts/refresh-search-cache.mjs",
+    "bake:tour": "node scripts/bake-tour-view.mjs",
     "build": "node scripts/build-vercel.mjs",
     "dev": "node --env-file-if-exists=.env frontend/server.mjs",
     "start": "node frontend/server.mjs",

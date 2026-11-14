@@ -9,7 +9,7 @@ import { presetMotion } from '../presets.js';
 const source = (await readFile(new URL('../observations-ui.js', import.meta.url), 'utf8')).replace(/^import .*\r?\n/gm, '');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
-function mount(initialViewState = { startDate: '', endDate: '' }, clock = { setTimeout, clearTimeout }) {
+function mount(initialViewState = { startDate: '', endDate: '' }, clock = { setTimeout, clearTimeout }, savedView = null) {
   function element() {
     return { textContent: '', value: '', hidden: false, disabled: false, children: [], listeners: {},
       setAttribute() {}, append(...items) { this.children.push(...items); }, replaceChildren(...items) { this.children = items; },
@@ -35,6 +35,8 @@ function mount(initialViewState = { startDate: '', endDate: '' }, clock = { setT
     // The module reads the validated share state at import time; the VM harness
     // strips imports, so the decoded state is supplied the same way the page does.
     initialViewState, summarizeDetectorCoverage, presetMotion,
+    // lib/baked-view.js: the search result saved with the site for the guided tour.
+    isTourArrival: () => Boolean(savedView), bakedObservations: async query => savedView && savedView.query === query ? savedView.response : null,
     fetch: async (url, options) => {
       if (url === '/api/index-status') return json({ available: false });
       return new Promise(resolve => requests.push({ url, options, resolve }));
@@ -42,7 +44,9 @@ function mount(initialViewState = { startDate: '', endDate: '' }, clock = { setT
   });
   const select = (raDeg = 101.287155333, decDeg = -16.716115861) => window.listeners['sky:target-selected']({ detail: { raDeg, decDeg, frame: 'icrs' } });
   const submit = () => get('observation-search-form').listeners.submit({ preventDefault() {} });
-  return { get, requests, select, submit, events };
+  const selectPreset = (raDeg, decDeg, targetId) => window.listeners['sky:target-selected']({ detail: { raDeg, decDeg, frame: 'icrs', targetId } });
+  const searchEntry = () => window.listeners['sky:search-entry']({ detail: { type: 'object' } });
+  return { get, requests, select, selectPreset, searchEntry, submit, events };
 }
 const emptyResult = (source = { kind: 'live', name: 'NASA/IPAC IRSA', retrievedAt: '2026-11-05T00:00:00Z' }) => ({ observations: [], count: 0, duplicatesRemoved: 0, source, warnings: [] });
 
@@ -154,4 +158,33 @@ test('invalid archive dates cancel the current request and never schedule an inv
 test('changing filters before target selection does not start a default-target search', () => {
   const clock = fakeClock(), ui = mount(undefined, clock);
   ui.get('search-detector').listeners.change(); clock.advance(300); assert.equal(ui.requests.length, 0);
+});
+
+test('the tour arrival opens the saved example without a search or a loading screen', async () => {
+  const response = { ...emptyResult({ kind: 'saved-example', name: 'NASA/IPAC IRSA', retrievedAt: '2026-11-14T00:00:00Z' }), observations: [], count: 0 };
+  const query = 'raDeg=269.4521&decDeg=4.6934&detector=3&release=qr2&startDate=2025-05-01&endDate=2025-05-31&targetId=barnard';
+  const ui = mount(undefined, undefined, { query, response });
+  // Select the preset the way app.js does, including its targetId.
+  ui.selectPreset(269.4521, 4.6934, 'barnard');
+  await flush();
+  assert.equal(ui.requests.length, 0, 'the archive is not asked');
+  const loading = ui.events.find(event => event.type === 'sky:observations-loading');
+  assert.equal(loading.detail.instant, true, 'the loading screen is told to stay closed');
+  assert.equal(ui.events.find(event => event.type === 'sky:observations-loaded').detail.source.kind, 'saved-example');
+  assert.equal(ui.get('archive-mode-label').textContent, 'Saved tour example');
+  // A search the visitor starts afterwards goes to the live archive as usual.
+  ui.events.length = 0;
+  ui.searchEntry();
+  ui.selectPreset(269.4521, 4.6934, 'barnard');
+  await flush();
+  assert.equal(ui.requests.length, 1);
+  assert.equal(ui.events.find(event => event.type === 'sky:observations-loading').detail.instant, false);
+});
+
+test('a tour arrival whose saved example is unavailable searches the archive normally', async () => {
+  const ui = mount(undefined, undefined, { query: 'something-else', response: emptyResult() });
+  ui.selectPreset(269.4521, 4.6934, 'barnard');
+  await flush();
+  assert.equal(ui.requests.length, 1);
+  assert.equal(ui.events.find(event => event.type === 'sky:observations-loading').detail.instant, false);
 });

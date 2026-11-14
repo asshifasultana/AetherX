@@ -8,6 +8,8 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const frontend = path.join(root, 'frontend');
 const output = path.join(root, '.vercel', 'output');
 const publicFiles = ['index.html', 'viewer.html', 'planetx.html', 'planetx.js', 'planetx-lab.js', 'lib/planted-lab.js', 'lib/mystery-spectra.js', 'data/planted-lab.json', 'planetx-case.html', 'planetx-case.js', 'lib/planetx-suspects.js', 'lib/planetx-votes.js', 'planetx-casefile.js', 'data/planetx-promoted.json', 'aladin-context.js', 'workspace-ui.js', 'onboarding.js', 'home.js', 'starfield.js', 'target-search.js', 'search-route.js', 'comet-benchmark.js', 'comet-benchmark.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'viewer-settings.js', 'lib/colormaps.js', 'lib/display-scale.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js', 'lib/crop-codec.js'];
+// The guided tour's saved view of Barnard's Star (scripts/bake-tour-view.mjs).
+publicFiles.push('lib/baked-view.js', 'data/tour/barnard.json');
 // Emit Vercel's documented Build Output API, avoiding framework auto-detection.
 publicFiles.push('moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js',
   'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js', 'lib/peak.js');
@@ -25,6 +27,8 @@ for (const file of publicFiles) {
   await mkdir(path.dirname(destination), { recursive: true });
   await copyFile(path.join(frontend, file), destination);
 }
+// One saved crop per exposure; lib/baked-view.js finds them through barnard.json.
+await cp(path.join(frontend, 'data', 'tour', 'crops'), path.join(output, 'static', 'data', 'tour', 'crops'), { recursive: true });
 // A browser module that imports an uncopied file 404s on Vercel and takes its whole import graph down with it.
 {
   const published = new Set(publicFiles.map(file => path.posix.normalize(file)));
@@ -76,7 +80,8 @@ for (const [name, maxDuration] of [['observations', 120], ['moving-observations'
     for (const library of libraries) await copyFile(path.join(frontend, 'lib', library), path.join(directory, 'lib', library));
   }
   if (!['moving-observations', 'observation-quality', 'cutout', 'crop', 'resolve-object','gaia-sources','wise-sources'].includes(name)) {
-    try { await cp(path.join(frontend, 'data'), path.join(directory, 'data'), { recursive: true }); }
+    // The tour's saved view is served as static files; functions never read it.
+    try { await cp(path.join(frontend, 'data'), path.join(directory, 'data'), { recursive: true, filter: source => path.relative(path.join(frontend, 'data'), source).split(path.sep)[0] !== 'tour' }); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }
   }
   await writeFile(path.join(directory, 'package.json'), JSON.stringify({ type: 'module' }));
@@ -121,10 +126,14 @@ for (const [host, { routes, maxDuration }] of Object.entries(ROUTE_GROUPS)) {
   await writeFile(path.join(directory, 'api', '_group.js'), `import { createRouteGroup } from '../lib/route-group.js';\n${imports}\nexport default createRouteGroup({\n${table}\n}, ${JSON.stringify(host)});\n`);
   await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: 'api/_group.js', launcherType: 'Nodejs', maxDuration }, null, 2));
 }
-const routes = Object.entries(ROUTE_GROUPS).map(([host, group]) => ({
-  src: `^/api/(${group.routes.filter(name => name !== host).join('|')})/?$`,
-  dest: `/api/${host}?__route=$1`,
-}));
+const routes = [
+  // A crop's name is a hash of the request it answers, so its bytes never change.
+  { src: '^/data/tour/crops/[a-f0-9]{20}\\.spxc$', headers: { 'Cache-Control': 'public, max-age=31536000, immutable' }, continue: true },
+  ...Object.entries(ROUTE_GROUPS).map(([host, group]) => ({
+    src: `^/api/(${group.routes.filter(name => name !== host).join('|')})/?$`,
+    dest: `/api/${host}?__route=$1`,
+  })),
+];
 // A function that imports an uncopied file crashes on load (FUNCTION_INVOCATION_FAILED
 // for every request), so walk each function's import graph from its handler.
 {

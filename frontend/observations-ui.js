@@ -3,6 +3,7 @@ import { observeCutout } from './fits-viewer.js';
 import { initialViewState } from './share.js';
 import { summarizeDetectorCoverage } from './timelapse-core.js';
 import { presetMotion } from './presets.js';
+import { bakedObservations, isTourArrival } from './lib/baked-view.js';
 import './spectrum-explorer.js?v=20261110';
 const $ = id => document.getElementById(id);
 const make = (tag, text, className) => { const element = document.createElement(tag); if (text !== undefined) element.textContent = text; if (className) element.className = className; return element; };
@@ -12,8 +13,12 @@ const pageSize = 25;
 let position = { raDeg: 269.4521, decDeg: 4.6934, frame: 'icrs' };
 let targetName = 'Barnard’s Star', result = null, page = 0, controller, requestNumber = 0;
 let submittedParams, searchFailed = false, hasTarget = false, filterTimer;
+// The saved tour example answers only the search the tour itself opened; any
+// search the visitor starts afterwards goes to the live archive.
+let tourArrival = isTourArrival();
+window.addEventListener('sky:search-entry', () => { tourArrival = false; });
 const qualityCache = new Map();
-const sourceLabel = data => data.browserCached ? 'Saved search (this browser)' : data.source.stale ? 'Saved search (IRSA unavailable)' : data.source.sharedCache ? 'Shared search cache' : data.source.kind === 'scheduled-index' ? (data.source.fallback ? 'Preset index fallback' : 'Scheduled preset index') : data.cached ? 'Cached IRSA search' : 'Live IRSA search';
+const sourceLabel = data => data.source.kind === 'saved-example' ? 'Saved tour example' : data.browserCached ? 'Saved search (this browser)' : data.source.stale ? 'Saved search (IRSA unavailable)' : data.source.sharedCache ? 'Shared search cache' : data.source.kind === 'scheduled-index' ? (data.source.fallback ? 'Preset index fallback' : 'Scheduled preset index') : data.cached ? 'Cached IRSA search' : 'Live IRSA search';
 // Observation lists (metadata only, never images) are kept in the browser's Cache
 // Storage so a repeat search, such as Barnard's Star's multi-window proper-motion
 // query, returns instantly. Fallback results are never saved.
@@ -74,12 +79,17 @@ async function search() {
   const params = new URLSearchParams({ raDeg: position.raDeg, decDeg: position.decDeg, detector: $('search-detector').value, release: $('search-release').value, startDate, endDate });
   if (presetMotion(position)) params.set('targetId', position.targetId);
   submittedParams = params;
-  emit('sky:observations-loading', { targetName, position: { ...position } });
+  // The tour's example star opens from the copy saved with the site (see
+  // lib/baked-view.js). It is in hand before anything is announced, so the
+  // loading screen knows there is nothing to wait for and stays closed.
+  const saved = tourArrival ? await bakedObservations(params.toString()) : null;
+  if (current !== requestNumber) return;
+  emit('sky:observations-loading', { targetName, position: { ...position }, instant: Boolean(saved) });
   setBusy(true); $('search-status').textContent = '';
   const timeout = setTimeout(() => activeController.abort('timeout'), 100000);
   try {
     const url = '/api/observations?' + params;
-    let data = searchCacheAvailable ? await readSavedSearch(url) : null;
+    let data = saved || (searchCacheAvailable ? await readSavedSearch(url) : null);
     if (!data) {
       const response = await fetch(url, { signal: activeController.signal });
       const contentType = response.headers.get('content-type') || '';
@@ -158,7 +168,7 @@ function renderResults() {
   $('load-more-observations').hidden = !result.nextCursor; $('load-more-observations').disabled = false; $('load-more-observations').textContent = 'Load more observations ↓';
   const indexed = result.source.kind === 'scheduled-index';
   $('archive-mode-label').textContent = sourceLabel(result);
-  $('results-provenance').textContent = `Source: ${result.source.name} · ${indexed ? 'Preset index checked' : 'Retrieved'} ${formatTime(result.source.retrievedAt)}${result.browserCached ? ' · Saved in this browser (up to 6 hours)' : result.source.stale ? ' · Saved copy shown while IRSA is unavailable' : result.source.sharedCache ? ' · Shared cache, refreshed daily' : !indexed && result.cached ? ' · Cached (up to 5 minutes)' : ''} · ${result.duplicatesRemoved} duplicate / older products removed.`;
+  $('results-provenance').textContent = `Source: ${result.source.name} · ${indexed ? 'Preset index checked' : 'Retrieved'} ${formatTime(result.source.retrievedAt)}${result.source.kind === 'saved-example' ? ' · Saved with the site for the guided tour; search again for the live archive' : result.browserCached ? ' · Saved in this browser (up to 6 hours)' : result.source.stale ? ' · Saved copy shown while IRSA is unavailable' : result.source.sharedCache ? ' · Shared cache, refreshed daily' : !indexed && result.cached ? ' · Cached (up to 5 minutes)' : ''} · ${result.duplicatesRemoved} duplicate / older products removed.`;
   $('detector-summary').replaceChildren();
   const searchedDetector = submittedParams?.get('detector') || 'all';
   const coverage = summarizeDetectorCoverage(result.observations, { searchedDetector });

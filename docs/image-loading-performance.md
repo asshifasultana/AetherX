@@ -16,6 +16,17 @@ Measured on 2026-11-07 for Barnard D1 (16 days, 60 exposures, 16′), direct S3 
 
 The range loader now converts only the cropped columns of each fetched row (FLAGS rows are still Rice-decoded in full). In an isolated microbenchmark on 2040-pixel rows this cut decoding from 27 ms to 16 ms per exposure. The browser runs `min(4, cores - 1)` image workers, and each load goes to the least-busy worker.
 
+## Saved tour view
+
+The guided tour hands off to the viewer at Barnard's Star. That search follows proper motion, so it is a live multi-window IRSA query (15–25 s measured on 2026-11-14) followed by 47 exposure downloads, all behind the loading screen. The tour instead opens from files saved with the site:
+
+- `frontend/data/tour/barnard.json` holds the search result and an index of saved crops; `frontend/data/tour/crops/*.spxc` holds one gzipped `/api/crop` payload per D2 exposure at the default 16′ field (61 files, 2.6 MB). Each crop is filed under the exact proxy query it answers, and its name is a hash of that query.
+- Gzip alone saves little on float pixels, whose low bits are noise: the exact values came to 5.7 MB at the maximum level, and byte-shuffling before gzip would only reach about 5.0 MB. The bake therefore rounds each pixel to a power-of-two step of at most 1/16 of that image's own noise before gzipping, so every saved value is within 1/32 of the noise of the archive's (largest measured difference 0.025σ). The layout is still exactly a proxy payload, so the decoder is unchanged. The results panel states the rounding, and `npm run bake:tour -- --lossless` keeps the exact values instead.
+- `lib/baked-view.js` serves the saved search only to the search the tour itself opens (`viewer.html?target=barnard&tour=N`). The search then announces itself as instant and the loading screen stays closed. Measured locally: first image 0.85 s after navigation, all 16 frames 7 s, against 15 s or more before the first image.
+- The image worker tries a saved crop before the proxy. The file has the proxy payload's layout, so decoding, projection, stacking and inspection are unchanged. Another detector, field of view, proper-motion tracking or a revised product is simply a miss and loads through the proxy as usual.
+- The results panel labels the list "Saved tour example" with the date it was saved. Any search the visitor starts afterwards uses the live archive.
+- Refresh with `npm run bake:tour` after the archive adds or revises Barnard exposures. Unchanged crops are kept, outdated ones are removed, and `tests/baked-view.test.js` fails if the saved files stop matching what the default view requests.
+
 ## Direct S3 path
 
 The direct S3 path is unchanged apart from the column-only decode. It keeps live metadata searches and existing contribution records. No account, database, persistent server image cache, or new external package is required.

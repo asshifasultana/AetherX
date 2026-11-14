@@ -1477,6 +1477,9 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
    glides across the tab bar. Each page's main has its own name, so the direction
    follows which page is leaving. */
 html:has(.project-tabs) { scrollbar-gutter:stable both-edges; }
+/* The reserved gutters show the root's own background, which is the light paper
+   colour by default, so on the dark pages they read as a pale frame. */
+html:has(body.home-page) { background:#050409; color-scheme:dark; }
 .home-page .site-header:has(.project-tabs) {
   display:grid;
   grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);

@@ -31,15 +31,32 @@ const retryDelay = (ms, signal) => new Promise((resolve, reject) => {
   const abort = () => { clearTimeout(timer); reject(signal.reason); };
   signal.addEventListener('abort', abort, { once: true });
 });
-// Fetches the exposure already cropped next to the S3 bucket. Returns null when
-// the proxy cannot serve this request, so the caller reads S3 directly instead.
-export async function loadViaProxy({ proxyUrl, accessUrl, target, settings, revision }, signal, fetchImpl = fetch) {
-  if (!proxyUrl || !(settings.fovArcmin <= PROXY_MAX_FOV)) return null;
-  const url = new URL(proxyUrl);
-  url.search = new URLSearchParams({
+// The query that fully determines a crop. It addresses the proxy and is also the
+// key under which scripts/bake-tour-view.mjs files a crop saved with the site.
+export function cropQuery({ accessUrl, target, settings, revision }) {
+  return new URLSearchParams({
     url: accessUrl, raDeg: String(((target.raDeg % 360) + 360) % 360), decDeg: String(target.decDeg), fovArcmin: String(settings.fovArcmin), revision: revision || '',
     flags: settings.hideBadPixels === false && settings.includeFlags !== true ? '0' : '1', variance: settings.includeVariance ? '1' : '0'
   }).toString();
+}
+
+// A crop saved with the site: the proxy's own gzipped payload as a static file.
+// Returns null on any failure, so the caller asks the proxy as usual.
+async function loadBaked(bakedUrl, signal, fetchImpl) {
+  try {
+    const response = await fetchImpl(bakedUrl, { signal });
+    if (!response.ok) { await response.body?.cancel().catch(() => {}); return null; }
+    return decodeCrop(await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+  } catch (error) { if (signal?.aborted) throw signal.reason; return null; }
+}
+
+// Fetches the exposure already cropped next to the S3 bucket. Returns null when
+// the proxy cannot serve this request, so the caller reads S3 directly instead.
+export async function loadViaProxy({ proxyUrl, bakedUrl, accessUrl, target, settings, revision }, signal, fetchImpl = fetch) {
+  if (!proxyUrl || !(settings.fovArcmin <= PROXY_MAX_FOV)) return null;
+  if (bakedUrl) { const baked = await loadBaked(bakedUrl, signal, fetchImpl); if (baked) return baked; }
+  const url = new URL(proxyUrl);
+  url.search = cropQuery({ accessUrl, target, settings, revision });
   const timeout = AbortSignal.timeout(PROXY_TIMEOUT_MS), combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
   let response;
   // A busy instance (503) usually frees a slot within a moment; retry briefly

@@ -220,7 +220,10 @@ window.addEventListener('sky:target-selected', event => {
   if (lookup) requestDistance(lookup);
 });
 
-window.addEventListener('sky:observations-loading', () => {
+window.addEventListener('sky:observations-loading', event => {
+  // The guided tour's example opens from files saved with the site: there is
+  // nothing to wait for, so the viewer is shown straight away.
+  if (event.detail?.instant && (!active || leaving)) return;
   if (!active || leaving) { open(); return; }
   // A new search while the previous card is still up starts the card over.
   clearTimeout(exitTimer); exitTimer = null;

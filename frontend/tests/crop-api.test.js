@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { createServer, get } from 'node:http';
 import { once } from 'node:events';
 import { createCropHandler, cropCacheControl, encodeCrop, validateCrop } from '../api/crop.js';
-import { decodeCrop, loadViaProxy } from '../lib/crop-codec.js';
+import { gzipSync } from 'node:zlib';
+import { cropQuery, decodeCrop, loadViaProxy } from '../lib/crop-codec.js';
 import { createFitsRangeLoader } from '../lib/range-fits.js';
 import { createWorkGate } from '../lib/resources.js';
 import { makeFits } from './fixtures/fits-builder.js';
@@ -109,4 +110,29 @@ test('client proxy loader falls back on outages, surfaces coverage errors and sk
   assert.equal(called, false);
   const controller = new AbortController(); controller.abort();
   await assert.rejects(loadViaProxy(payload, controller.signal, async (_, { signal }) => { signal.throwIfAborted(); }), { name: 'AbortError' });
+});
+
+test('a crop saved with the site is used before the proxy, and a bad one falls back to it', async () => {
+  const bytes = makeFits(), settings = { fovArcmin: 1, hideBadPixels: true };
+  const direct = await rangeLoader(bytes)(accessUrl, target, settings);
+  const bakedUrl = 'https://viewer.test/data/tour/crops/0123456789abcdef0123.spxc';
+  const payload = { proxyUrl: 'https://viewer.test/api/crop', bakedUrl, accessUrl, target, settings, revision: 'r1' };
+  // The key the bake script files a crop under is the query the proxy is asked.
+  let proxied;
+  await loadViaProxy({ ...payload, bakedUrl: '' }, undefined, async url => { proxied = url; return new Response(encodeCrop(direct)); });
+  assert.equal(proxied.search.slice(1), cropQuery(payload));
+  assert.equal(new URLSearchParams(cropQuery(payload)).get('raDeg'), '359.999');
+  // Saved files hold the proxy's gzipped body with no Content-Encoding header.
+  const saved = () => new Response(gzipSync(encodeCrop(direct)));
+  let requests = [];
+  sameImage(await loadViaProxy(payload, undefined, async url => { requests.push(String(url)); return saved(); }), direct);
+  assert.deepEqual(requests, [bakedUrl], 'the proxy is not asked when the saved crop loads');
+  for (const broken of [() => new Response('missing', { status: 404 }), () => new Response('not gzip'), () => { throw new TypeError('network'); }]) {
+    requests = [];
+    sameImage(await loadViaProxy(payload, undefined, async url => { requests.push(String(url)); return String(url) === bakedUrl ? broken() : new Response(encodeCrop(direct)); }), direct);
+    assert.equal(requests.length, 2); assert.match(requests[1], /\/api\/crop\?/);
+  }
+  let called = false;
+  assert.equal(await loadViaProxy({ ...payload, proxyUrl: '' }, undefined, async () => { called = true; }), null);
+  assert.equal(called, false, 'loader overrides that skip the proxy skip saved crops too');
 });

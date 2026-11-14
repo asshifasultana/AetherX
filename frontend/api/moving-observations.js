@@ -105,11 +105,40 @@ export function parseHorizons(text, requested) {
   return { name: target[1], solution: target[2], observer, points: points.map((p, i) => ({ ...p, mjd: requested[i] })) };
 }
 
+// Sun-object angle (Horizons quantity 23) for each epoch, in degrees.
+export function parseElongations(text, count) {
+  const table = /\$\$SOE\s*([\s\S]*?)\$\$EOE/.exec(text);
+  const values = table ? table[1].trim().split(/\r?\n/).map(line => Number(line.split(',')[3])) : [];
+  if (values.length !== count || values.some(v => !(v >= 0 && v <= 180))) throw error('Horizons returned incomplete Sun angles.', 502, 'NO_SPACECRAFT_EPHEMERIS');
+  return values;
+}
+
+// MOST clips the search to the archive's coverage; report where public data ends when it falls short.
+export function mostDataThrough(text, requestedEnd) {
+  const match = /^\\user_input_end_time\s*=\s*"(\d{4}) (\d\d) (\d\d)/m.exec(text);
+  if (!match) return null;
+  const time = Date.UTC(+match[1], +match[2] - 1, +match[3]);
+  return time < requestedEnd ? new Date(time).toISOString().slice(0, 10) : null;
+}
+
 // The latest date a request covers: its end date, or its latest epoch for position lookups.
 export function movingEndDate(params) {
   if (params.get('action') !== 'positions') return params.get('endDate') || '';
   const latest = Math.max(...params.getAll('mjd').map(Number).filter(Number.isFinite));
   return Number.isFinite(latest) ? new Date((latest - 40587) * day).toISOString().slice(0, 10) : '';
+}
+
+// Horizons reads a bare number as a major body and "N;" as a small body; "499:MB" keeps planets explicit.
+export function horizonsCommand(object) {
+  const smallBody = /^(\d+):NID$/i.exec(object)?.[1], majorBody = /^(\d+):MB$/i.exec(object)?.[1];
+  return smallBody ? `DES=${smallBody};` : majorBody || (/^\d+$/.test(object) ? object + ';' : object);
+}
+
+// A bare planet name matches its barycenter and spacecraft in Horizons; MOST names the body it chose, e.g. "Mars (499)".
+export function mostBody(text, object) {
+  const name = /^\\object_name\s*=\s*"([^"]+)"/m.exec(text)?.[1];
+  const id = /\((\d{1,3})\)\s*$/.exec(name || '')?.[1];
+  return { name, target: id && !/:(?:NID|MB)$/i.test(object) ? id + ':MB' : object };
 }
 
 export function createMovingSearch({ fetchImpl = fetch, resources = metadataResources, store = defaultSearchStore() } = {}) {
@@ -118,12 +147,10 @@ export function createMovingSearch({ fetchImpl = fetch, resources = metadataReso
     let identity;
     for (let i = 0; i < times.length; i += 60) {
       const batch = times.slice(i, i + 60);
-      const id = /^(\d+):NID$/i.exec(object)?.[1];
-      const command = id ? `DES=${id};` : /^\d+$/.test(object) ? object + ';' : object;
       const url = new URL('https://ssd.jpl.nasa.gov/api/horizons.api');
       url.searchParams.set('format', 'json');
       for (const [key, value] of Object.entries({
-        COMMAND: command, CENTER: '500@' + observer, EPHEM_TYPE: 'OBSERVER', TLIST_TYPE: 'JD',
+        COMMAND: horizonsCommand(object), CENTER: '500@' + observer, EPHEM_TYPE: 'OBSERVER', TLIST_TYPE: 'JD',
         TLIST: batch.map(t => (t + 2400000.5).toFixed(9)).join(' '),
         QUANTITIES: '1', ANG_FORMAT: 'DEG', CSV_FORMAT: 'YES', CAL_FORMAT: 'JD', EXTRA_PREC: 'YES',
       })) url.searchParams.set(key, "'" + value + "'");
@@ -142,6 +169,21 @@ export function createMovingSearch({ fetchImpl = fetch, resources = metadataReso
     return { name: identity.name, solution: identity.solution, observer, points };
   }
 
+  // Where the object sat relative to the Sun, as seen from SPHEREx: explains empty searches.
+  async function sunAngles(object, times, signal) {
+    const url = new URL('https://ssd.jpl.nasa.gov/api/horizons.api');
+    url.searchParams.set('format', 'json');
+    for (const [key, value] of Object.entries({
+      COMMAND: horizonsCommand(object), CENTER: '500@' + observer,
+      EPHEM_TYPE: 'OBSERVER', TLIST_TYPE: 'JD', TLIST: times.map(t => (t + 2400000.5).toFixed(9)).join(' '),
+      QUANTITIES: '23', CSV_FORMAT: 'YES', CAL_FORMAT: 'JD',
+    })) url.searchParams.set(key, "'" + value + "'");
+    const response = await fetchImpl(url, { signal });
+    if (!response.ok) { await response.body?.cancel(); throw error('JPL Horizons is temporarily unavailable.', 502, 'NO_SPACECRAFT_EPHEMERIS'); }
+    const values = parseElongations(JSON.parse(await boundedText(response, 256 * 1024)).result || '', times.length);
+    return { min: Math.min(...values), max: Math.max(...values) };
+  }
+
   return async (params, { signal: requestSignal } = {}) => {
     const object = designation(params.get('object'));
     const action = params.get('action');
@@ -150,7 +192,10 @@ export function createMovingSearch({ fetchImpl = fetch, resources = metadataReso
     const key = JSON.stringify(['moving', object, ...[...params].sort()]);
     const cached = resources.get(key, now);
     if (cached) return cached;
-    const saved = store ? await store.get('moving', key) : null;
+    const stored = store ? await store.get('moving', key) : null;
+    // Empty results saved before Sun angles were added explain nothing, so search again.
+    const outdated = !action && stored?.result?.exposures?.length === 0 && !('dataThrough' in stored.result);
+    const saved = outdated ? null : stored;
     const age = entryAge(saved, movingEndDate(params), now);
     const savedAt = saved ? new Date(saved.savedAt).toISOString() : null;
     if (age === 'fresh') {
@@ -186,11 +231,12 @@ export function createMovingSearch({ fetchImpl = fetch, resources = metadataReso
       const exposures = preferredProducts(parseMost(text)).filter(e => (!detector || e.detector === Number(detector))
         && e.startMjd >= start / day + 40587 && e.startMjd < (end + day) / day + 40587);
       if (exposures.length > 240) throw error('More than 240 exposures matched. Narrow the dates or select one detector.', 422, 'TOO_MANY_EXPOSURES');
+      const body = mostBody(text, object);
       let trajectory = null, trajectoryError = null;
       if (exposures.length) {
         const times = [...new Set(exposures.flatMap(e => [e.startMjd, (e.startMjd + e.endMjd) / 2, e.endMjd]))].sort((a, b) => a - b);
         try {
-          trajectory = await positions(object, times, signal);
+          trajectory = await positions(body.target, times, signal);
           const at = new Map(times.map((t, i) => [t, trajectory.points[i]]));
           for (const e of exposures) e.positions = [e.startMjd, (e.startMjd + e.endMjd) / 2, e.endMjd].map(t => at.get(t));
         } catch (err) {
@@ -198,15 +244,24 @@ export function createMovingSearch({ fetchImpl = fetch, resources = metadataReso
           trajectoryError = err instanceof SearchError ? err.message : 'Could not obtain spacecraft-relative positions.';
         }
       }
-      const result = { object, name: trajectory?.name || /^\\object_name\s*=\s*"([^"]+)"/m.exec(text)?.[1] || object,
+      // object is what later position requests send back, so it carries the resolved Horizons body.
+      const result = { object: body.target, name: trajectory?.name || body.name || object,
         observer: trajectory?.observer, solution: trajectory?.solution, trajectoryError, exposures };
+      if (!exposures.length) {
+        result.dataThrough = mostDataThrough(text, end + day);
+        const last = result.dataThrough ? Math.max(start, Date.parse(result.dataThrough + 'T00:00:00Z')) : end;
+        try { result.sunAngle = await sunAngles(body.target, [start, (start + last) / 2, last].map(t => t / day + 40587), signal); }
+        catch { requestSignal?.throwIfAborted(); }
+      }
       if (!trajectoryError) resources.set(key, result, now + 300000, now);
       return result;
     };
     const release = resources.gate.acquire();
     try {
       const result = await run();
-      if (store && !result.trajectoryError) await store.put('moving', key, { query: new URLSearchParams([...params].sort()).toString(), object }, result);
+      // An empty result without a Sun angle means JPL failed; don't keep that for a day and a half.
+      const unexplained = result.exposures?.length === 0 && !result.sunAngle;
+      if (store && !result.trajectoryError && !unexplained) await store.put('moving', key, { query: new URLSearchParams([...params].sort()).toString(), object }, result);
       return result;
     } catch (err) {
       // Horizons or MOST outage: an older saved copy, clearly marked, beats an error.

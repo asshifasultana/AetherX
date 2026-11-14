@@ -119,6 +119,20 @@ function listExposures() {
     : `${exposures.length} exposures selected on D${detector.value}.`;
 }
 
+// SPHEREx scans only sky roughly 90 degrees from the Sun (planet exposures fall near 87-97 degrees),
+// so say where the object was and how far public data reaches instead of a bare "no results".
+function emptyMovingMessage({ name, sunAngle, dataThrough }) {
+  const parts = [`No public exposures matched ${name || 'this object'} in this date range.`];
+  if (sunAngle) {
+    const low = Math.round(sunAngle.min), high = Math.round(sunAngle.max);
+    const angle = low === high ? `${low}°` : `${low}°–${high}°`;
+    const outside = sunAngle.max < 85 || sunAngle.min > 100;
+    parts.push(`It was ${angle} from the Sun then, and SPHEREx only observes about 90° from the Sun${outside ? ', so it was out of view. Try months when it is nearer 90°' : ''}.`);
+  }
+  if (dataThrough) parts.push(`Public SPHEREx data currently runs through ${new Date(dataThrough + 'T00:00:00Z').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })}.`);
+  return parts.join(' ');
+}
+
 window.addEventListener('sky:moving-search-requested', async () => {
   if (document.getElementById('target-type').value !== 'moving') return;
   if (!form.reportValidity()) return;
@@ -151,7 +165,7 @@ window.addEventListener('sky:moving-search-requested', async () => {
       throw new Error(data.error || 'Moving-object search failed.');
     }
     search = data;
-    if (!data.exposures.length) { status.setAttribute('data-error', 'true'); status.textContent = 'No public exposures matched this object and date range.'; return; }
+    if (!data.exposures.length) { status.setAttribute('data-error', 'true'); status.textContent = emptyMovingMessage(data); return; }
     const detectors = [...new Set(data.exposures.map(e => e.detector))].sort();
     detector.replaceChildren(...detectors.map(d => new Option('D' + d, d)));
     $('selection').hidden = false;

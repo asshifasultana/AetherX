@@ -45,7 +45,8 @@ export async function refreshSearchCache({
         rerun = () => movingFactory({ store: writer, resources: createSearchResources() })(query);
         if (!isRecentRange(movingEndDate(query), now)) {
           const stored = row.result?.solution;
-          if (!stored || await currentSolution(row.params.object || query.get('object')) === stored) {
+          // result.object is the resolved Horizons body (e.g. 599:MB); a bare planet name is ambiguous there.
+          if (!stored || await currentSolution(row.result?.object || row.params.object || query.get('object')) === stored) {
             await store.markChecked(row.key); counts.unchanged++; continue;
           }
         }

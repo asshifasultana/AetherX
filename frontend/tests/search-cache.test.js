@@ -7,7 +7,7 @@ import { gunzipSync } from 'node:zlib';
 import { createSearchService } from '../lib/observations.js';
 import { createSearchResources } from '../lib/resources.js';
 import { createSearchStore, defaultSearchStore, cacheRowKey, FRESH_RECENT_MS, STALE_MS } from '../lib/search-store.js';
-import { createMovingSearch } from '../api/moving-observations.js';
+import { createMovingSearch, MOVING_CACHE_VERSION } from '../api/moving-observations.js';
 import { createObservationsHandler } from '../api/observations.js';
 import { refreshSearchCache } from '../../scripts/refresh-search-cache.mjs';
 
@@ -165,7 +165,7 @@ test('the daily job re-runs only what can have changed and removes unused rows',
   const now = Date.parse('2026-11-08T05:00:00Z'), iso = time => new Date(time).toISOString();
   const supabase = fakeSupabase(() => now), store = storeFor(supabase, () => now);
   const seed = (name, kind, query, result = {}, { used = now - DAY, extra = {} } = {}) =>
-    supabase.rows.set(name, { key: name, kind, params: { query: new URLSearchParams(query).toString(), collections: ['spherex_qr2'], ...extra }, result, saved_at: iso(now - 3 * DAY), checked_at: iso(now - 3 * DAY), last_used_at: iso(used) });
+    supabase.rows.set(name, { key: name, kind, params: { query: new URLSearchParams(query).toString(), collections: ['spherex_qr3', 'spherex_dr1'], ...extra }, result, saved_at: iso(now - 3 * DAY), checked_at: iso(now - 3 * DAY), last_used_at: iso(used) });
   seed('star-recent', 'observations', { raDeg: '1', decDeg: '2' });
   seed('star-old', 'observations', { raDeg: '1', decDeg: '2', endDate: '2025-05-31' });
   seed('star-page-2', 'observations', { raDeg: '1', decDeg: '2', cursor: 'abc' });
@@ -174,6 +174,8 @@ test('the daily job re-runs only what can have changed and removes unused rows',
   seed('comet-revised', 'moving', { object: 'C/2024 X', endDate: '2025-08-11' }, { solution: 'JPL#1' }, { extra: { object: 'C/2024 X' } });
   seed('comet-recent', 'moving', { object: '3I', endDate: '2026-11-01' }, { solution: 'JPL#55' }, { extra: { object: '3I' } });
   seed('forgotten', 'observations', { raDeg: '5', decDeg: '5' }, {}, { used: now - 10 * DAY });
+  // Saved before DR1: no search reads this key any more, so it is left to age out.
+  seed('star-qr2-era', 'observations', { raDeg: '3', decDeg: '4' }, {}, { extra: { collections: ['spherex_qr2', 'spherex_qr3'] } });
 
   const reruns = [];
   const observationsFactory = ({ store: writer }) => async query => {
@@ -189,9 +191,10 @@ test('the daily job re-runs only what can have changed and removes unused rows',
     return {};
   };
   const logs = [];
-  const counts = await refreshSearchCache({ store, now, observationsFactory, movingFactory, log: message => logs.push(message) });
+  const counts = await refreshSearchCache({ store, now, observationsFactory, movingFactory, collections: ['spherex_dr1', 'spherex_qr3'], log: message => logs.push(message) });
 
-  assert.deepEqual(counts, { checked: 7, refreshed: 3, unchanged: 1, skipped: 2, failed: 1 });
+  assert.deepEqual(counts, { checked: 8, refreshed: 3, unchanged: 1, skipped: 3, failed: 1 });
+  assert.equal(supabase.rows.get('star-qr2-era').checked_at, iso(now - 3 * DAY));
   assert.deepEqual(reruns.sort(), ['comet 3I 2026-11-01', 'comet C/2024 X 2025-08-11', 'star null']);
   assert.equal(supabase.rows.get('comet-same').checked_at, iso(now));
   assert.equal(supabase.rows.get('star-old').checked_at, iso(now - 3 * DAY));
@@ -234,7 +237,16 @@ const recentJupiter = () => {
   const day = time => new Date(time).toISOString().slice(0, 10);
   return new URLSearchParams({ object: 'Jupiter', startDate: day(Date.now() - 10 * DAY), endDate: day(Date.now()) });
 };
-const movingKey = params => JSON.stringify(['moving', params.get('object'), ...[...params].sort()]);
+const movingKey = params => JSON.stringify(['moving', MOVING_CACHE_VERSION, params.get('object'), ...[...params].sort()]);
+
+test('moving results saved before DR1 support are searched again', async () => {
+  const supabase = fakeSupabase(), store = storeFor(supabase, Date.now), params = recentJupiter();
+  const oldKey = JSON.stringify(['moving', params.get('object'), ...[...params].sort()]);
+  await store.put('moving', oldKey, { query: params.toString(), object: 'Jupiter' }, { object: 'Jupiter', name: 'Jupiter (599)', exposures: [], sunAngle: { min: 1, max: 2 } });
+  const archive = planetUpstream();
+  const result = await createMovingSearch({ store, fetchImpl: archive.fetchImpl, resources: createSearchResources() })(params);
+  assert.equal(result.cache, undefined); assert.ok(archive.calls.some(url => url.includes('MOST')));
+});
 
 test('empty results saved before Sun angles existed are searched again; new ones are reused', async () => {
   const supabase = fakeSupabase(), store = storeFor(supabase, Date.now), params = recentJupiter();

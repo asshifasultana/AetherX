@@ -73,6 +73,7 @@ const targetSearch = mountTargetSearch({
   },
   onMoving: () => window.dispatchEvent(new CustomEvent('sky:moving-search-requested'))
 });
+window.addEventListener('sky:search-cancel', objectLookup.invalidate);
 window.addEventListener('sky:navigate-context',event=>{
   const data=event.detail;
   if(!Number.isFinite(data?.raDeg)||!Number.isFinite(data?.decDeg)||Math.abs(data.decDeg)>90)return;

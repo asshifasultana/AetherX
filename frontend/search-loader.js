@@ -9,6 +9,8 @@ import { presets } from './presets.js';
 const $ = id => document.getElementById(id);
 const root = document.documentElement;
 const loader = $('preview-loading');
+const embedded = root.classList.contains('is-embed');
+let cancelling = false;
 const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
 const reduced = () => Boolean(reducedMotion?.matches);
 
@@ -83,7 +85,7 @@ function startFacts() {
 }
 
 function open({ instant = false } = {}) {
-  if (!loader) return;
+  if (!loader || cancelling) return;
   clearTimers();
   clearTimeout(revealTimer); root.classList.remove('is-revealing');
   root.classList.add('is-searching');
@@ -112,7 +114,7 @@ function setStage(next) { stage = next; if (loader) loader.dataset.stage = next;
 
 // Page fades first, then the loader appears in the space it left.
 function beginSearch() {
-  if (active && !leaving) return;
+  if (cancelling || (active && !leaving)) return;
   root.classList.add('is-searching');
   clearTimeout(openTimer);
   openTimer = setTimeout(() => open(), ms(PAGE_FADE_MS));
@@ -240,7 +242,21 @@ window.addEventListener('sky:loader-ready', () => {
   scheduleExit();
 });
 
-// Escape must not strand the viewer half-loaded; the loader leaves on its own.
-loader?.addEventListener('cancel', event => { if (active) event.preventDefault(); });
+function cancelSearch() {
+  if (embedded || cancelling) return;
+  cancelling = true;
+  clearTimers();
+  clearTimeout(revealTimer);
+  stopFacts();
+  window.dispatchEvent(new Event('sky:search-cancel'));
+  announce('Search cancelled. Returning to the search page.');
+  location.replace('/');
+}
+
+$('loader-cancel')?.addEventListener('click', cancelSearch);
+loader?.addEventListener('cancel', event => {
+  event.preventDefault();
+  cancelSearch();
+});
 
 if (root.classList.contains('is-arriving')) open({ instant: true });

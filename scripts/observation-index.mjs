@@ -2,25 +2,34 @@ import { mkdir, open, readFile, writeFile, rename, unlink, readdir } from 'node:
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { INDEX_DIRECTORY, createIndexStore, snapshotNameIsValid, UPDATE_SCHEDULE } from '../frontend/lib/index-store.js';
-import { buildQuery, queryArchive, normalizeRow, validateSearch, scienceUrl, MAX_RESULTS } from '../frontend/lib/observations.js';
-import { preferredProducts } from '../frontend/observation-products.js';
+import { buildQuery, queryArchive, normalizeRow, validateSearch, scienceUrl, MAX_RESULTS, TAP_URL, COLLECTIONS } from '../frontend/lib/observations.js';
+import { preferredProducts, COLLECTION_PATTERN } from '../frontend/observation-products.js';
 import { presets } from '../frontend/presets.js';
 
-export async function discoverCollections({ fetchImpl = fetch, knownCollections = [] } = {}) {
-  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 30000);
+// Ask TAP, the same service searches use, which collections exist. IRSA's SIA
+// collection list lagged behind (it still offered QR2 and never listed DR1).
+// DISTINCT scans the whole table, so IRSA takes over a minute to answer.
+export async function discoverCollections({ fetchImpl = fetch, timeoutMs = 180000 } = {}) {
+  const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const latest = knownCollections.filter(c => /^spherex_qr\d+$/.test(c)).sort((a, b) => Number(b.match(/\d+$/)[0]) - Number(a.match(/\d+$/)[0]))[0] || 'spherex_qr3';
-    const response = await fetchImpl(`https://irsa.ipac.caltech.edu/SIA?COLLECTION=${latest}&POS=CIRCLE+0+0+0.00001`, { signal: controller.signal });
+    const response = await fetchImpl(TAP_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'text/csv' },
+      body: new URLSearchParams({ REQUEST: 'doQuery', LANG: 'ADQL', FORMAT: 'csv', QUERY: 'SELECT DISTINCT collection FROM spherex.observation' }),
+      signal: controller.signal
+    });
     if (!response.ok) throw new Error('IRSA collection discovery failed.');
     const text = await response.text();
     if (text.length > 2_000_000) throw new Error('Unexpected collection discovery response.');
-    const names = [...new Set([...text.matchAll(/value=["'](spherex_qr\d+(?:_deep)?)["']/g)].map(m => m[1]))].sort();
+    const names = [...new Set(text.split(/\r?\n/).map(line => line.trim().replace(/^"|"$/g, '')).filter(name => COLLECTION_PATTERN.test(name)))].sort();
     if (!names.length) throw new Error('No public SPHEREx spectral-image collections were discovered.');
     return names;
   } finally { clearTimeout(timeout); }
 }
 
-export async function fetchTargetProducts(target, collections, { query = queryArchive, onProgress = () => {} } = {}) {
+// The scheduled job can wait longer than a visitor: IRSA sometimes needs over two
+// minutes for one target, which the 90-second interactive limit would reject.
+const INDEX_QUERY_TIMEOUT_MS = 300000;
+export async function fetchTargetProducts(target, collections, { query = text => queryArchive(text, { timeoutMs: INDEX_QUERY_TIMEOUT_MS }), onProgress = () => {} } = {}) {
   const search = validateSearch(new URLSearchParams({ raDeg: target.raDeg, decDeg: target.decDeg }));
   const products = new Map(), cursors = new Set(); let pages = 0;
   while (true) {
@@ -72,8 +81,14 @@ export async function updateIndex({ directory = INDEX_DIRECTORY, targets = prese
   try {
     await lock.writeFile(String(process.pid));
     previous = await store.manifest();
-    const collections = await discover({ knownCollections: previous?.collections || [] });
-    if (!collections.length || collections.some(c => !/^spherex_qr\d+(_deep)?$/.test(c))) throw new Error('Invalid archive collections.');
+    let collections;
+    try { collections = await discover(); }
+    catch (error) {
+      // A slow listing should not cost the whole daily check: search the known releases.
+      log(`Collection discovery failed (${error.message}); using ${COLLECTIONS.join(', ')}.`);
+      collections = COLLECTIONS;
+    }
+    if (!collections.length || collections.some(c => !COLLECTION_PATTERN.test(c))) throw new Error('Invalid archive collections.');
     const completed = [], changes = { added: 0, revised: 0, removed: 0, unchanged: 0 };
     // Low concurrency deliberately avoids overwhelming IRSA. No file is published
     // until every target has completed every page successfully.

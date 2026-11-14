@@ -841,7 +841,7 @@ window.addEventListener('sky:peak-requested', event => {
   const peak = snapToPeak(values, width, at.x, at.y, radiusPx);
   if (peak.noSource) { respond({ noSource: true }); return; }
   const sky = canvasToSky({ x: peak.x, y: peak.y, size: width, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
-  respond(sky ? { raDeg: sky.raDeg, decDeg: sky.decDeg, peakSigma: peak.peakSigma, offsetArcsec: Number((Math.hypot(peak.x - at.x, peak.y - at.y) * PIXEL_ARCSEC).toFixed(1)) } : null);
+  respond(sky ? { raDeg: sky.raDeg, decDeg: sky.decDeg, peakSigma: peak.peakSigma, edge: Boolean(peak.edge), offsetArcsec: Number((Math.hypot(peak.x - at.x, peak.y - at.y) * PIXEL_ARCSEC).toFixed(1)) } : null);
 });
 
 // The AI guide's find_changes tool reads the difference image on screen.

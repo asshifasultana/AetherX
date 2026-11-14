@@ -290,7 +290,7 @@ table(
     ["#", "Consideration from the brief", "Status in the project"],
     [
         ["1", "New data arrives fast; design so the tool is easy to update with the latest releases.",
-         "Met. Live IRSA TAP queries plus a daily scheduled index; QR2/QR3 selectable."],
+         "Met. Live IRSA TAP queries plus a daily scheduled index; DR1/QR3 selectable."],
         ["2", "Display the 102 infrared bands; combine data per detector array; spectra on the fly (extra kudos).",
          "Partly. Six detector bands are selectable. Spectra are not exposed yet — but see §6.1, the data is already downloaded."],
         ["3", "Let users add together or subtract images taken at different times.",

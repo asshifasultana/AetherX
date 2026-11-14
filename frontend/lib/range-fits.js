@@ -5,7 +5,7 @@ const BLOCK = 2880;
 export const MAX_RANGE_BYTES = 24 * 1024 * 1024;
 export function cloudUrl(url) {
   const parsed = new URL(url);
-  if (parsed.origin !== 'https://irsa.ipac.caltech.edu' || parsed.search || parsed.hash || !/^\/ibe\/data\/spherex\/qr\d+\/level2\/[\w/.-]+\.fits$/.test(parsed.pathname) || parsed.pathname.includes('..')) throw new Error('Invalid science product URL.');
+  if (parsed.origin !== 'https://irsa.ipac.caltech.edu' || parsed.search || parsed.hash || !/^\/ibe\/data\/spherex\/(?:qr|dr)\d+\/level2\/[\w/.-]+\.fits$/.test(parsed.pathname) || parsed.pathname.includes('..')) throw new Error('Invalid science product URL.');
   return 'https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/' + parsed.pathname.slice('/ibe/data/spherex/'.length);
 }
 const sleep = (ms, signal) => new Promise((resolve, reject) => {

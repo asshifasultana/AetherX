@@ -65,6 +65,7 @@ test('frames retain release provenance and flag same-day release mixtures', () =
   assert.equal(frames[0].mixed, true);
   assert.equal(frames[1].label, 'QR3');
   assert.equal(summarizeReleases([{ collection: 'spherex_qr2_deep' }]).label, 'QR2');
+  assert.equal(summarizeReleases([{ release: 'QR3' }, { collection: 'spherex_dr1' }, { release: 'QR2' }]).label, 'Mixed DR1 / QR3 / QR2');
 });
 
 test('timeline ticks are time-proportional, so uneven gaps stay uneven', () => {

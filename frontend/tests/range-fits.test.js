@@ -113,5 +113,6 @@ test('range reads accept browser-hidden Content-Range, retry transient errors an
 
 test('cloud mapping accepts archive releases and rejects other services', () => {
   assert.equal(cloudUrl(url), 'https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr3/level2/test.fits');
+  assert.equal(cloudUrl(url.replace('/qr3/', '/dr1/')), 'https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/dr1/level2/test.fits');
   for (const value of ['http://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/x.fits', 'https://evil.example/x.fits', url + '?x=1']) assert.throws(() => cloudUrl(value));
 });

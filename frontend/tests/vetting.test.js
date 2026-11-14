@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { snapToPeak } from '../lib/peak.js';
-import { locateTarget } from '../lib/target-locate.js';
+import { locateTarget, nearestBrightStar } from '../lib/target-locate.js';
 import { fitLinearMotion } from '../lib/motion-fit.js';
 import { chooseEpochPair, epochPairScore } from '../lib/epochs.js';
 import { findBlobs } from '../lib/blobs.js';
@@ -46,6 +46,38 @@ test('snapToPeak finds a Gaussian centre, re-centres on a ring with a NaN core, 
   assert.ok(Math.hypot(ring.x - 20, ring.y - 20) < 0.4, `${ring.x}, ${ring.y}`);
 
   assert.equal(snapToPeak(field(width, { x0: 20, y0: 20, amplitude: 0, seed: 3 }), width, 20, 20, 2).noSource, true);
+  assert.equal(star.edge, false);
+  assert.equal(ring.edge, false);
+});
+
+test('snapToPeak flags a window that only holds the wing of a brighter star outside it', () => {
+  // As in a crowded bulge field: a bare position 3.3 px from a bright star,
+  // searched 2 px wide. The centroid creeps toward the star and stops at the
+  // window edge; that is the star's wing, not a source of its own.
+  const width = 40;
+  const values = field(width, { x0: 22, y0: 22.6, amplitude: 2000, sigma: 1.2, seed: 4 });
+  const wing = snapToPeak(values, width, 20, 20, 2);
+  assert.ok(!wing.noSource);
+  assert.equal(wing.edge, true);
+  // Started on the star itself, the same image gives a clean snap.
+  const onStar = snapToPeak(values, width, 21.5, 22, 2);
+  assert.equal(onStar.edge, false);
+  assert.ok(Math.hypot(onStar.x - 22, onStar.y - 22.6) < 0.3, `${onStar.x}, ${onStar.y}`);
+});
+
+test('nearestBrightStar names the G ≤ 15 star nearest a position, with distance and direction', () => {
+  // Gaia DR3 stars near 277.5°, −32.5° (a bare coordinate with no star of its own).
+  const stars = [
+    { sourceId: '4045063872321100032', raDeg: 277.50393250399605, decDeg: -32.4953543984307, refEpoch: 2016, pmra: 3.0, pmdec: -3.0, gMag: 14.015027 },
+    { sourceId: '4045063837961363200', raDeg: 277.49683202756773, decDeg: -32.50027196433651, refEpoch: 2016, pmra: 5.0, pmdec: -4.5, gMag: 15.687674 },
+    { sourceId: '4045063837941966080', raDeg: 277.5001633124685, decDeg: -32.499136456130614, refEpoch: 2016, pmra: 0, pmdec: 0, gMag: 19.279358 }
+  ];
+  const near = nearestBrightStar({ position: { raDeg: 277.5, decDeg: -32.5 }, frameTime: Date.parse('2026-09-03T00:00:00Z'), gaiaSources: stars });
+  assert.equal(near.sourceId, '4045063872321100032');
+  assert.equal(near.gMag, 14);
+  assert.ok(Math.abs(near.separationArcsec - 20.5) < 0.5, String(near.separationArcsec));
+  assert.equal(near.direction, 'north-east');
+  assert.equal(nearestBrightStar({ position: { raDeg: 277.5, decDeg: -32.5 }, gaiaSources: stars.slice(1) }), null);
 });
 
 // Barnard's Star: SIMBAD J2000 position and Gaia EDR3 proper motion (as in presets.js), moved to Gaia's 2016 epoch.

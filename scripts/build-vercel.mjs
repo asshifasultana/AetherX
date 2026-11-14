@@ -7,7 +7,7 @@ import { AGENT_PUBLIC_FILES } from '../frontend/agent-assets.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const frontend = path.join(root, 'frontend');
 const output = path.join(root, '.vercel', 'output');
-const publicFiles = ['index.html', 'viewer.html', 'planetx.html', 'planetx.js', 'planetx-case.html', 'planetx-case.js', 'lib/planetx-suspects.js', 'lib/planetx-votes.js', 'planetx-casefile.js', 'data/planetx-promoted.json', 'aladin-context.js', 'workspace-ui.js', 'onboarding.js', 'home.js', 'starfield.js', 'target-search.js', 'search-route.js', 'comet-benchmark.js', 'comet-benchmark.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'viewer-settings.js', 'lib/colormaps.js', 'lib/display-scale.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js', 'lib/crop-codec.js'];
+const publicFiles = ['index.html', 'viewer.html', 'planetx.html', 'planetx.js', 'planetx-lab.js', 'lib/planted-lab.js', 'lib/mystery-spectra.js', 'data/planted-lab.json', 'planetx-case.html', 'planetx-case.js', 'lib/planetx-suspects.js', 'lib/planetx-votes.js', 'planetx-casefile.js', 'data/planetx-promoted.json', 'aladin-context.js', 'workspace-ui.js', 'onboarding.js', 'home.js', 'starfield.js', 'target-search.js', 'search-route.js', 'comet-benchmark.js', 'comet-benchmark.json', 'styles.css', 'app.js', 'coordinates.js', 'presets.js', 'object-lookup.js', 'object-names.js', 'observations-ui.js', 'observation-products.js', 'fits-viewer.js', 'cutout-loader.js', 'timelapse.js', 'timelapse-core.js', 'url-state.js', 'sky-projection.js', 'share.js', 'share-ui.js', 'lib/pixel-quality.js', 'lib/rice.js', 'lib/background.js', 'lib/stack.js', 'viewer-settings.js', 'lib/colormaps.js', 'lib/display-scale.js', 'image-worker.js', 'image-pipeline.js', 'lib/fits-engine.js', 'lib/range-fits.js', 'lib/image-resources.js', 'lib/image-scheduler.js', 'lib/crop-codec.js'];
 // Emit Vercel's documented Build Output API, avoiding framework auto-detection.
 publicFiles.push('moving-target.js', 'moving-worker.js', 'lib/moving-view.js', 'lib/moving-stack.js', 'lib/moving-psf.js',
   'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js', 'lib/peak.js');
@@ -15,6 +15,7 @@ publicFiles.push(...AGENT_PUBLIC_FILES);
 publicFiles.push('spectrum-explorer.js', 'wavelength-guide.js');
 // The search loading screen and the constellation/distance lines it shows.
 publicFiles.push('search-loader.js', 'lib/constellation.js', 'lib/distance.js');
+publicFiles.push('media/planetx-intro.jpg', 'media/planetx-intro.mp4', 'media/planetx-intro.vtt');
 publicFiles.push(...CONTEXT_PUBLIC_FILES);
 // Start clean so functions dropped or merged since the last build do not linger.
 await rm(output, { recursive: true, force: true });
@@ -35,10 +36,18 @@ for (const file of publicFiles) {
       if (!published.has(target)) missing.push(`${file} imports ${target}`);
     }
   }
-  // Pages load their entry modules and stylesheets by tag, not by import.
+  // Data files fetched by a root-relative literal (fetch('/data/x.json')) 404 the same way.
+  for (const file of publicFiles.filter(name => name.endsWith('.js'))) {
+    const source = await readFile(path.join(frontend, file), 'utf8');
+    for (const [, reference] of source.matchAll(/fetch\(\s*['"`]\/([^'"`?#$]+\.(?:json|txt|csv|bin))['"`]/g)) {
+      if (!published.has(path.posix.normalize(reference))) missing.push(`${file} fetches ${reference}`);
+    }
+  }
+  // Pages load their entry modules, stylesheets and media by tag, not by import.
   for (const file of publicFiles.filter(name => name.endsWith('.html'))) {
     const source = await readFile(path.join(frontend, file), 'utf8');
-    for (const [, reference] of source.matchAll(/<(?:script|link)\b[^>]*?\s(?:src|href)="([^"]+)"/g)) {
+    const assetTags = source.matchAll(/<(?:script|link|video|source|track)\b[^>]*>/g);
+    for (const [, reference] of Array.from(assetTags).flatMap(([tag]) => [...tag.matchAll(/\s(?:src|href|poster)="([^"]+)"/g)])) {
       if (/^(?:[a-z]+:|\/\/|#|\/$)/i.test(reference)) continue;
       const target = path.posix.normalize(path.posix.join(path.posix.dirname(file), reference.split(/[?#]/)[0].replace(/^\//, '')));
       if (!published.has(target)) missing.push(`${file} loads ${target}`);

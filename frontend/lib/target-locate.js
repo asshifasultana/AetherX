@@ -4,7 +4,7 @@
 // Pure and DOM-free; the browser supplies the nearby catalogue stars.
 
 import { presetMotion, motionPosition } from '../presets.js';
-import { fastStarPasses, yearOf } from './proper-motion.js';
+import { fastStarPasses, yearOf, compassDirection } from './proper-motion.js';
 import { propagateGaia } from '../gaia-core.js';
 import { separationArcsec } from './ecliptic.js';
 
@@ -50,4 +50,34 @@ export function locateTarget({ target, frameTime, gaiaSources = [] }) {
   if (best) return result(best.position, 'catalogue-star', { sourceId: String(best.star.sourceId) });
   // 4. Nothing better: the position as given.
   return result(target, 'catalogue');
+}
+
+const BRIGHT_G_MAG = 15;
+const BRIGHT_REACH_ARCSEC = 45;
+
+/**
+ * The nearest bright Gaia star (G ≤ 15) within 45″ of a position, moved to the
+ * frame date: when a position has no star of its own, its light is usually the
+ * wing of this one. Null when there is none.
+ * @returns {{sourceId:string, gMag:number, raDeg:number, decDeg:number, separationArcsec:number, direction:string} | null}
+ */
+export function nearestBrightStar({ position, frameTime, gaiaSources = [] }) {
+  if (!Number.isFinite(position?.raDeg) || !Number.isFinite(position?.decDeg)) return null;
+  const year = yearOf(Number.isFinite(frameTime) ? frameTime : Date.now());
+  let best = null;
+  for (const star of Array.isArray(gaiaSources) ? gaiaSources : []) {
+    const gMag = Number(star.gMag);
+    if (!(gMag <= BRIGHT_G_MAG) || !Number.isFinite(star.raDeg) || !Number.isFinite(star.decDeg)) continue;
+    const now = propagateGaia({ ...star, refEpoch: Number(star.refEpoch) || 2016, pmra: Number(star.pmra) || 0, pmdec: Number(star.pmdec) || 0 }, year);
+    const separation = separationArcsec(position, now);
+    if (separation <= BRIGHT_REACH_ARCSEC && (!best || separation < best.separation)) best = { star, now, separation, gMag };
+  }
+  if (!best) return null;
+  const dRa = ((best.now.raDeg - position.raDeg + 540) % 360) - 180;
+  const east = dRa * Math.cos(position.decDeg * Math.PI / 180) * 3600, north = (best.now.decDeg - position.decDeg) * 3600;
+  return {
+    sourceId: String(best.star.sourceId), gMag: Number(best.gMag.toFixed(1)),
+    raDeg: fixed(((best.now.raDeg % 360) + 360) % 360), decDeg: fixed(best.now.decDeg),
+    separationArcsec: Number(best.separation.toFixed(1)), direction: compassDirection(east, north)
+  };
 }

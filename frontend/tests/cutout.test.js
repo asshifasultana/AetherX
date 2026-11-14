@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { createCutoutHandler, MAX_CUTOUT_BYTES, clearLegacyCutoutCache } from '../api/cutout.js';
+import { createCutoutHandler, MAX_CUTOUT_BYTES, clearLegacyCutoutCache, validateCutout } from '../api/cutout.js';
 import { createWorkGate } from '../lib/resources.js';
 import { mkdtemp, mkdir, writeFile, access, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -18,6 +18,12 @@ async function withServer(fetchImpl, run, options = {}) {
   try { await run(`http://127.0.0.1:${server.address().port}/api/cutout?${params}`, gate); }
   finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
 }
+
+test('DR1 science products can be cut out; calibration and other paths cannot', () => {
+  const dr1 = 'https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/2025W39_2A/l2b-v27-2026-239/1/level2_2025W39_2A_0373_1D1_spx_l2b-v27-2026-239.fits';
+  assert.equal(validateCutout(new URLSearchParams({ url: dr1, raDeg: 1, decDeg: 2, fovArcmin: 16 })).url, dr1);
+  for (const url of [dr1.replace('/dr1/', '/dr1_cal/'), dr1.replace('/level2/', '/level1/')]) assert.throws(() => validateCutout(new URLSearchParams({ url, raDeg: 1, decDeg: 2, fovArcmin: 16 })));
+});
 
 test('aligned fallback pads the detector cutout while ordinary API requests keep their requested size', async () => {
   let requested;

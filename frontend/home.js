@@ -6,7 +6,7 @@ const starfield = document.getElementById('starfield');
 if (starfield) mountStarfield(starfield, {
   labels: true,
   // Keep names clear of the header and of each visible block of the search panel.
-  avoid: ['.site-header', '.home-search .eyebrow', '#home-title', '.home-description', '#target-picker']
+  avoid: ['.site-header', '#home-title', '#target-picker']
 });
 
 // Pointer launches fade the homepage chrome out over the still-running

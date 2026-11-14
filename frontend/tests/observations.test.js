@@ -32,12 +32,15 @@ test('coordinates, release and detector input cannot alter the query', () => {
   assert.equal(validateSearch(valid({ decDeg: '+90' })).decDeg, 90);
 });
 test('inclusive UTC dates include overlapping exposures and reject impossible dates', () => {
-  const search = validateSearch(valid({ startDate: '2025-05-05', endDate: '2025-05-05', detector: '3', release: 'qr2' }));
+  const search = validateSearch(valid({ startDate: '2025-05-05', endDate: '2025-05-05', detector: '3', release: 'dr1' }));
   assert.equal(search.endMjd - search.startMjd, 1);
   const query = buildQuery(search);
   assert.match(query, /CONTAINS\(POINT\('ICRS',133.795129,-7.245147\),p.poly\)/);
   assert.match(query, /p.time_bounds_upper>=/); assert.match(query, /p.time_bounds_lower</);
-  assert.match(query, /IN \('D3','SPHEREx-D3'\)/); assert.doesNotMatch(query, /spherex_qr3/);
+  assert.match(query, /IN \('D3','SPHEREx-D3'\)/); assert.match(query, /IN \('spherex_dr1','spherex_dr1_deep'\)/); assert.doesNotMatch(query, /spherex_qr3/);
+  // QR2 left the archive, so the default search no longer offers it.
+  assert.throws(() => buildQuery(validateSearch(valid({ release: 'qr2' }))), { status: 400 });
+  for (const release of ['DR1', 'dr0', 'xr1']) assert.throws(() => validateSearch(valid({ release })), { status: 400 });
   for (const extra of [{ startDate: '2025-02-30' }, { endDate: '2025-13-01' }, { startDate: '2025-06-01', endDate: '2025-05-01' }]) assert.throws(() => validateSearch(valid(extra)), { status: 400 });
 });
 test('Barnard’s Star uses distinct archive pointings on either side of a window boundary', () => {
@@ -72,11 +75,17 @@ test('duplicate release/deep memberships retain the preferred product without me
   assert.equal(deduplicate([older, rows[0], latest])[0].processingVersion, 'l2b-v21-2025-242');
   const qr3 = { ...older, obs_collection: 'spherex_qr3', uri: older.uri.replace('/qr2/', '/qr3/') };
   assert.equal(deduplicate([latest, qr3])[0].release, 'QR3');
+  // DR1 supersedes every quick release, even one with a newer processing version.
+  const dr1 = { ...older, obs_collection: 'spherex_dr1', uri: older.uri.replace('/qr2/', '/dr1/') };
+  const newestQr3 = { ...qr3, uri: qr3.uri.replaceAll('v9-2025-240', 'v99-2026-300') };
+  const [winner] = deduplicate([newestQr3, dr1]);
+  assert.equal(winner.release, 'DR1'); assert.match(winner.accessUrl, /\/spherex\/dr1\/level2\//);
   assert.equal(deduplicate(rows).length, 3);
   assert.throws(() => deduplicate([{ ...rows[0], energy_bandpassname: 'unknown' }]), { status: 502 });
 });
 test('science URLs reject unrelated hosts, traversal and non-science paths', () => {
-  for (const uri of ['https://evil.example/x.fits', 'https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/../x.fits', 'http://localhost/a', '/etc/passwd']) assert.equal(scienceUrl(uri), null);
+  for (const uri of ['https://evil.example/x.fits', 'https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/../x.fits', 'https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/../x.fits', 'https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1_cal/level2/x.fits', 'http://localhost/a', '/etc/passwd']) assert.equal(scienceUrl(uri), null);
+  assert.equal(scienceUrl('ibe/data/spherex/dr1/level2/2025W39_2A/l2b-v27-2026-239/1/level2_2025W39_2A_0373_1D1_spx_l2b-v27-2026-239.fits'), 'https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/2025W39_2A/l2b-v27-2026-239/1/level2_2025W39_2A_0373_1D1_spx_l2b-v27-2026-239.fits');
 });
 test('TAP XML errors and HTTP failures never turn into empty results', async () => {
   await assert.rejects(queryArchive('test', { fetchImpl: async () => new Response('<VOTABLE><INFO name="QUERY_STATUS" value="ERROR">bad query</INFO></VOTABLE>') }), { status: 502 });

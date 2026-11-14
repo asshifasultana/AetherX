@@ -78,8 +78,13 @@ test('overlapping update jobs cannot write the index simultaneously', async t =>
   release(); await first;
 });
 test('collection discovery excludes calibration datasets and accepts future releases', async () => {
-  const names = await discoverCollections({ knownCollections: ['spherex_qr2', 'spherex_qr3'], fetchImpl: async url => { assert.match(url, /COLLECTION=spherex_qr3/); return new Response('<OPTION value="spherex_qr2"/><OPTION value="spherex_qr4"/><OPTION value="spherex_qr4_deep"/><OPTION value="spherex_qr4_cal"/><OPTION value="unrelated"/>'); } });
-  assert.deepEqual(names, ['spherex_qr2', 'spherex_qr4', 'spherex_qr4_deep']);
+  const names = await discoverCollections({ fetchImpl: async (url, init) => {
+    assert.equal(String(url), 'https://irsa.ipac.caltech.edu/TAP/sync');
+    assert.match(init.body.get('QUERY'), /SELECT DISTINCT collection FROM spherex\.observation/);
+    return new Response('collection\r\nspherex_dr1\r\nspherex_dr1_cal\r\nspherex_dr1_deep\r\nspherex_qr3\r\nspherex_qr4_deep\r\nunrelated\r\n');
+  } });
+  assert.deepEqual(names, ['spherex_dr1', 'spherex_dr1_deep', 'spherex_qr3', 'spherex_qr4_deep']);
+  await assert.rejects(discoverCollections({ fetchImpl: async () => new Response('err', { status: 503 }) }), /discovery failed/);
   await assert.rejects(discoverCollections({ fetchImpl: async () => new Response('<html>error</html>') }), /No public/);
 });
 test('archive pagination is exhausted and repeated cursors reject incomplete updates', async () => {

@@ -9,7 +9,7 @@
 // shown re-marks the star, and the spot's dated track draws its path (first
 // place, every later place, an arrow on each hop) up to where it is now.
 
-import { locateTarget } from './lib/target-locate.js';
+import { locateTarget, nearestBrightStar } from './lib/target-locate.js';
 import { presetMotion } from './presets.js';
 import { describeTrack, trackUpTo } from './lib/track-arrow.js';
 
@@ -67,7 +67,11 @@ export async function markTarget({ origin = 'user', restart = false } = {}) {
   const located = locateTarget({ target, frameTime, gaiaSources: stars });
   if (!located) return { ok: false, error: 'The target position is not valid.' };
   const peak = await ask('sky:peak-requested', { raDeg: located.raDeg, decDeg: located.decDeg, radiusPx: SNAP_RADIUS_PX });
-  const found = peak && !peak.noSource && Number.isFinite(peak.raDeg);
+  // A window that only caught the wing of a brighter source outside it has no
+  // source of its own: its centroid creeps toward that neighbour and stops at
+  // the window edge, on neither the target nor the neighbour. Not a find.
+  const onWing = Boolean(peak?.edge);
+  const found = peak && !peak.noSource && !onWing && Number.isFinite(peak.raDeg);
   // A position from proper motion or a catalogue star is more precise than a
   // centroid on 6″ pixels. It is kept when the image agrees with it to about a
   // pixel; a source further away is a neighbour (a faint target such as WISE
@@ -76,6 +80,12 @@ export async function markTarget({ origin = 'user', restart = false } = {}) {
   const precise = located.method !== 'catalogue';
   const snapped = found && (!precise || peak.offsetArcsec <= SNAP_KEEP_ARCSEC);
   const position = found && !precise ? { raDeg: peak.raDeg, decDeg: peak.decDeg } : { raDeg: located.raDeg, decDeg: located.decDeg };
+  // A plain position with no star under it: name the bright star whose light
+  // is most likely what shows here, so the visitor (or the guide) can mark it.
+  const nearbyStar = located.method === 'catalogue' && !snapped ? nearestBrightStar({ position, frameTime, gaiaSources: stars }) : null;
+  const hint = nearbyStar
+    ? `${onWing ? 'The light here is the edge of a brighter source; the' : 'The'} nearest bright star is G ${nearbyStar.gMag.toFixed(1)}, ${Math.round(nearbyStar.separationArcsec)}″ ${nearbyStar.direction} (Gaia DR3 ${nearbyStar.sourceId}).`
+    : onWing ? 'The light here is the edge of a brighter source nearby.' : '';
   const existing = ((await ask('sky:spots-requested')) || []).find(spot => spot.label === name);
   // Dated, so marking again on another frame keeps both places on the spot's
   // track and the viewer draws the path between them. restart starts the
@@ -90,7 +100,7 @@ export async function markTarget({ origin = 'user', restart = false } = {}) {
   const past = trackUpTo(spot.track, date);
   const shift = past.length >= 2 ? describeTrack(past) : null;
   const message = located.method === 'catalogue' && !snapped
-    ? `No star found here; marked the catalogue position of ${name}.`
+    ? `No star right at ${name}; marked the position as given.${hint ? ` ${hint}` : ''}`
     : `Marked ${name} where it is on ${day}${moved && located.sinceYear ? ` (moved ${formatMove(located.movedArcmin)} since ${located.sinceYear})` : ''}${snapped ? '' : '; no clear source under it in this image'}.${shift && shift.arcsec > 0 ? ` The arrows show it moved ${shift.text} across the frames marked.` : ''}`;
   return {
     ok: true, spot: spot.n, name, date: new Date(frameTime).toISOString().slice(0, 10),
@@ -98,6 +108,9 @@ export async function markTarget({ origin = 'user', restart = false } = {}) {
     method: located.method, ...(located.sourceId ? { sourceId: located.sourceId } : {}),
     ...(moved && located.sinceYear ? { movedArcmin: located.movedArcmin, since: located.sinceYear } : {}),
     snapped: Boolean(snapped), ...(snapped ? { snapOffsetArcsec: peak.offsetArcsec, peakSigma: peak.peakSigma } : {}),
+    ...(onWing ? { onNeighbourWing: true } : {}),
+    ...(nearbyStar ? { nearbyStar: { ...nearbyStar, note: 'No star at the target position. To look at this star, mark it with mark_spot at raDeg/decDeg.' } } : {}),
+    ...(hint ? { hint } : {}),
     moved: Boolean(existing), frames: past.length || 1, ...(shift ? { trackText: shift.text } : {}),
     ...(shift && shift.arcsec > 0 ? { track: { arcsec: shift.arcsec, directionDeg: shift.directionDeg, from: shift.from, to: shift.to, ...(shift.days !== null ? { days: shift.days } : {}) } } : {}),
     message
@@ -133,6 +146,7 @@ function sync() {
 function progress(result) {
   if (!result?.ok) return result?.error || 'Could not find the star on this frame.';
   const frames = result.frames || 1;
+  if (!result.snapped && result.method === 'catalogue') return `Tracking ${result.name}: no star right at this position, so the mark stays where it was given.${result.hint ? ` ${result.hint}` : ''}`;
   return `Tracking ${result.name} · ${frames} frame${frames === 1 ? '' : 's'}${result.trackText ? ` · moved ${result.trackText}` : ''}. Play or step through the dates to follow it.`;
 }
 

@@ -8,6 +8,14 @@ const homeSteps = [
 
 const viewerStepCount = 3;
 
+const planetxSteps = [
+  { target: '#planetx-introduction', title: 'Meet Planet Nine', copy: 'This 30-second video explains the Planet Nine hypothesis with NASA observations. You can play it after the tour.' },
+  { target: '.px-map-wrap', title: 'Find a place to look', copy: 'Brighter tiles show where the model gives Planet Nine more relative probability. Select a tile to see its coordinates on the map.' },
+  { target: '.px-map-actions', title: 'Explore a coordinate', copy: 'After selecting a tile, use Jump to coordinate or Jump to case to inspect the sky in SPHEREx. Switch to Community evidence to see where others have flagged findings.' },
+  { target: '.px-case-drawer > summary', title: 'Open a case file', copy: 'Browse the patches highlighted by the model, open a case file, and vote on whether it’s worth following up.' },
+  { target: '#planetx-evidence > summary', title: 'Weigh the evidence', copy: 'Read why some astronomers propose a ninth planet and what observations challenge the idea.' }
+];
+
 function viewerSteps(moving) {
   return [
     { target: moving ? '#moving-target' : '.viewer-shell > .viewer', title: 'See your patch of sky', copy: 'This is Barnard’s Star. The large frame shows an infrared image for one observation date. Images can take a moment to arrive from the archive.' },
@@ -28,18 +36,19 @@ export function saveTourProgress(storage, progress) {
 
 export function mountOnboarding() {
   if (document.documentElement.classList.contains('is-embed')) return;
-  const home = document.body.classList.contains('home-page');
+  const planetx = document.body.classList.contains('planetx-page');
+  const home = !planetx && document.body.classList.contains('home-page');
   let storage;
   try { storage = window.localStorage; } catch { /* Storage may be blocked. */ }
   let progress = readTourProgress(storage);
   const moving = document.getElementById('workspace')?.dataset.entryMode === 'moving';
-  const steps = home ? homeSteps : viewerSteps(moving);
+  const steps = planetx ? planetxSteps : home ? homeSteps : viewerSteps(moving);
   const tourLength = homeSteps.length + viewerStepCount;
 
   // The tour is one continuous run: search controls on the home page, then the
   // real viewer controls on the viewer page. The ?tour=N parameter carries the
   // place across that navigation instead of embedding a second copy of the app.
-  const requested = Number(new URLSearchParams(location.search).get('tour'));
+  const requested = planetx ? 0 : Number(new URLSearchParams(location.search).get('tour'));
   const requestedStep = Number.isInteger(requested) ? requested : 0;
   let stepOffset = 0;
   let totalSteps = steps.length;
@@ -55,7 +64,7 @@ export function mountOnboarding() {
     continuation = true;
   }
 
-  let root, index = 0, previousFocus, inertElements = [];
+  let root, index = 0, previousFocus, previousScroll, inertElements = [];
   let resizeObserver;
   function forgetRequestedTour() {
     startIndex = 0;
@@ -69,7 +78,8 @@ export function mountOnboarding() {
   }
   function close() {
     if (!root) return;
-    progress = { ...progress, home: true, viewer: true };
+    const completed = planetx ? { planetx: true } : { home: true, viewer: true };
+    progress = { ...progress, ...readTourProgress(storage), ...completed };
     saveTourProgress(storage, progress);
     forgetRequestedTour();
     resizeObserver?.disconnect();
@@ -79,7 +89,10 @@ export function mountOnboarding() {
     for (const [element, inert] of inertElements) element.inert = inert;
     inertElements = [];
     root.remove(); root = null;
-    (previousFocus?.isConnected ? previousFocus : document.getElementById('tour-restart'))?.focus({ preventScroll: true });
+    if (planetx) window.scrollTo({ top: previousScroll, behavior: 'instant' });
+    const focusTarget = previousFocus?.isConnected && previousFocus !== document.body
+      ? previousFocus : document.getElementById('tour-restart');
+    focusTarget?.focus({ preventScroll: true });
   }
   function continueToViewer() {
     progress = { ...progress, home: true };
@@ -132,7 +145,7 @@ export function mountOnboarding() {
     const targetRect = target?.getBoundingClientRect();
     const outOfView = targetRect && (targetRect.bottom < 80 || targetRect.top > window.innerHeight - 80);
     if (outOfView && !target.closest('header')) {
-      target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+      target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     }
     position();
   }
@@ -148,6 +161,10 @@ export function mountOnboarding() {
     if (root) return;
     index = Math.max(0, Math.min(at, steps.length - 1));
     previousFocus = document.activeElement;
+    if (planetx) {
+      previousScroll = window.scrollY;
+      document.querySelector('#planetx-introduction video')?.pause();
+    }
     root = document.createElement('div'); root.className = 'guided-tour';
     root.innerHTML = `<svg class="tour-shade" width="100%" height="100%" aria-hidden="true"><defs><mask id="tour-mask"><rect width="100%" height="100%" fill="white"/><rect id="tour-hole" rx="6" fill="black"/></mask></defs><rect width="100%" height="100%" fill="#080d18" fill-opacity=".74" mask="url(#tour-mask)"/></svg>
       <section class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-copy">
@@ -179,7 +196,9 @@ export function mountOnboarding() {
   document.getElementById('tour-restart')?.addEventListener('click', () => open(0));
   // First visit runs the search half on the home page, then hands off to the
   // real viewer. Viewer help stays available from its own button afterwards.
-  if (home) {
+  if (planetx) {
+    if (!progress.planetx) open(0);
+  } else if (home) {
     if (requestedStep >= 1 && requestedStep <= homeSteps.length) open(startIndex);
     else if (!progress.home) open(0);
   } else if (continuation) open(startIndex);

@@ -37,6 +37,51 @@ const setProgress = value => {
 };
 const clearTimers = () => { for (const timer of [openTimer, exitTimer, closeTimer]) clearTimeout(timer); openTimer = exitTimer = closeTimer = null; };
 
+// "Did you know?" facts shown under the ring, one at a time, while the loader is open.
+// Sources: https://science.nasa.gov/universe/stars/
+// https://science.nasa.gov/blogs/spherex/2025/03/11/nasas-spherex-mission-2/
+// https://www.nasa.gov/missions/spherex/why-nasas-spherex-mission-will-make-most-colorful-cosmic-map-ever/
+// https://science.nasa.gov/solar-system/planet-x/
+const LOADING_FACTS = [
+  'The Milky Way alone contains more than 100 billion stars.',
+  'SPHEREx sees the sky in 102 infrared colors invisible to human eyes.',
+  'Some small stars can shine for trillions of years.',
+  'Planet Nine is a predicted world beyond Neptune that has yet to be discovered.',
+  'Stars are born inside enormous clouds of gas and dust.',
+  'SPHEREx is designed to map the entire sky four times in two years.',
+  'The most massive stars may live for only a few million years.',
+  'SPHEREx will survey more than 450 million galaxies and 100 million stars.',
+  'A baby star is called a protostar.',
+  'You can help search for distant worlds using infrared images from NASA’s WISE mission.',
+  'Stars shine by fusing hydrogen into helium in their cores.',
+  'SPHEREx searches for frozen water and other ingredients for life between stars.',
+  'Our Sun is roughly halfway through its main-sequence lifetime.',
+  'A white dwarf packs a star’s leftover core into roughly Earth’s size.',
+  'Massive stars forge elements such as oxygen, neon, and magnesium.',
+  'Material shed by dying stars helps build the next generation of stars.'
+];
+const FACT_INTERVAL_MS = 6000; // how long each fact stays up
+const FACT_FADE_MS = 400;      // matches .loader-fact-text's opacity transition
+let factIndex = -1, factTimer = null, factFadeTimer = null;
+
+function showFact(index) {
+  factIndex = index % LOADING_FACTS.length;
+  setText('loader-fact-text', LOADING_FACTS[factIndex]);
+  $('loader-fact-text')?.classList.remove('is-changing');
+}
+function stopFacts() { clearTimeout(factTimer); clearTimeout(factFadeTimer); factTimer = factFadeTimer = null; }
+function startFacts() {
+  stopFacts();
+  showFact(Math.floor(Math.random() * LOADING_FACTS.length));
+  const next = () => {
+    factTimer = setTimeout(() => {
+      $('loader-fact-text')?.classList.add('is-changing');
+      factFadeTimer = setTimeout(() => { showFact(factIndex + 1); next(); }, ms(FACT_FADE_MS));
+    }, FACT_INTERVAL_MS);
+  };
+  next();
+}
+
 function open({ instant = false } = {}) {
   if (!loader) return;
   clearTimers();
@@ -45,6 +90,7 @@ function open({ instant = false } = {}) {
   if (active && !leaving) return;
   active = true; leaving = false; failed = false; ready = false; targetShownAt = 0;
   resetCard();
+  startFacts();
   setProgress(0);
   announce('Loading SPHEREx observations');
   loader.classList.remove('is-leaving');
@@ -85,6 +131,7 @@ function finish() {
     loader.close?.();
     loader.hidden = true;
     loader.classList.remove('is-leaving', 'is-instant', 'is-shown');
+    stopFacts();
     resetCard();
   }, ms(EXIT_MS));
   clearTimeout(revealTimer);

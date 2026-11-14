@@ -12,6 +12,7 @@ import { decodeCrop } from './crop-codec.js';
 import { projectSkyToPixel } from './fits-engine.js';
 import { createWavelengthReader } from './wavelength.js';
 import { DEFAULT_MASK_BITS } from './pixel-quality.js';
+import { snapToPeak } from './peak.js';
 
 const sharedWavelengthReader = createWavelengthReader();
 const finite = value => value !== '' && value !== null && value !== undefined && Number.isFinite(Number(value));
@@ -96,5 +97,68 @@ export async function measureAt(observation, position, signal, { wavelength = tr
     observation, detector: Number(observation.detector), pixelsUsed: source.length,
     ...(aperture.area ? { radiusArcsec: Number(radiusArcsec), areaCoverage: coverage } : {}),
     raDeg: position.raDeg, decDeg: position.decDeg, flagsChecked: true
+  };
+}
+
+async function fetchCrop(observation, position, signal, { fovArcmin, flags, variance, fetchImpl }) {
+  const params = new URLSearchParams({
+    url: observation.accessUrl, raDeg: String(position.raDeg), decDeg: String(position.decDeg),
+    fovArcmin: String(fovArcmin), flags: flags ? '1' : '0', variance: variance ? '1' : '0',
+    revision: observation.productModifiedAt || observation.metadataModifiedAt || ''
+  });
+  const response = await fetchImpl(`/api/crop?${params}`, { signal });
+  if (!response.ok) {
+    let message = `Image request failed (${response.status}).`;
+    try { message = (await response.json()).error || message; } catch {}
+    throw new Error(message);
+  }
+  return decodeCrop(await response.arrayBuffer());
+}
+
+/**
+ * The wavelength SPHEREx saw at a sky position in one exposure (μm). No flag
+ * checks, so it also works on a saturated star; used to pair frames taken at
+ * matching wavelengths before subtracting them.
+ */
+export async function wavelengthAtSky(observation, position, signal, { wavelengthAt = sharedWavelengthReader, fetchImpl = (...args) => fetch(...args) } = {}) {
+  const image = await fetchCrop(observation, position, signal, { fovArcmin: 1, flags: false, variance: false, fetchImpl });
+  const pixel = projectSkyToPixel(image, position.raDeg, position.decDeg);
+  if (!pixel) throw new Error('The sky position is outside this image.');
+  const value = await wavelengthAt(observation.accessUrl, image.sourceX + pixel[0], image.sourceY + pixel[1]);
+  if (!finite(value) || value <= 0) throw new Error('Wavelength calibration is unavailable here.');
+  return Number(value);
+}
+
+/**
+ * Where the source near a sky position really is in one exposure: the
+ * flux-weighted centroid of unflagged pixels within searchPx, its local
+ * (MAD) signal-to-noise, and its sky position. The pixel offset is turned
+ * into arcseconds with a local Jacobian of the image's WCS.
+ */
+export async function centroidAt(observation, position, signal, { searchPx = 3, minSnr = 3, fetchImpl = (...args) => fetch(...args) } = {}) {
+  // With flags on, the crop service already blanks pixels its quality mask
+  // rejects. Masking the full photometry bit set again would also blank the
+  // bright ring of a saturated star, which is what centres it.
+  const image = await fetchCrop(observation, position, signal, { fovArcmin: 3, flags: true, variance: false, fetchImpl });
+  const values = image.values;
+  const project = (ra, dec) => projectSkyToPixel(image, ra, dec);
+  const base = project(position.raDeg, position.decDeg);
+  if (!base) throw new Error('The sky position is outside this image.');
+  const time = Date.parse(observation.observedStartUtc || '') || 0;
+  const peak = snapToPeak(values, image.width, base[0], base[1], searchPx, { minSigma: minSnr });
+  if (peak.noSource) return { detected: false, snr: peak.peakSigma, time, raDeg: position.raDeg, decDeg: position.decDeg };
+  // Local Jacobian: pixels per arcsecond east and north.
+  const step = 6, cos = Math.cos(position.decDeg * Math.PI / 180);
+  const east = project(position.raDeg + step / 3600 / cos, position.decDeg), north = project(position.raDeg, position.decDeg + step / 3600);
+  if (!east || !north) throw new Error('The image WCS could not be evaluated here.');
+  const a = (east[0] - base[0]) / step, b = (north[0] - base[0]) / step, c = (east[1] - base[1]) / step, d = (north[1] - base[1]) / step;
+  const det = a * d - b * c;
+  if (!(Math.abs(det) > 0)) throw new Error('The image WCS is degenerate here.');
+  const dx = peak.x - base[0], dy = peak.y - base[1];
+  const eastArcsec = (d * dx - b * dy) / det, northArcsec = (-c * dx + a * dy) / det;
+  return {
+    detected: true, snr: peak.peakSigma, time,
+    raDeg: ((position.raDeg + eastArcsec / 3600 / cos) % 360 + 360) % 360, decDeg: position.decDeg + northArcsec / 3600,
+    offsetArcsec: Number(Math.hypot(eastArcsec, northArcsec).toFixed(1))
   };
 }

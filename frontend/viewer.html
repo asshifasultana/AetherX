@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f5f6f2">
+  <meta name="theme-color" content="#080d18">
   <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
   <title>SPHEREx — A sky in motion</title>
   <!-- Sky colour clock shared across pages; see SKY_KEY in starfield.js. -->
@@ -33,7 +33,7 @@
     <aside id="workspace-sidebar" class="workspace-sidebar" aria-label="Observation settings">
       <button id="sidebar-rail-toggle" class="sidebar-rail-toggle" type="button" aria-label="Expand settings sidebar" aria-controls="sidebar-content" aria-expanded="true" hidden>☷</button>
       <div id="sidebar-content" class="sidebar-content">
-        <div class="sidebar-title"><span>OBSERVATION</span><button id="sidebar-collapse" type="button" aria-label="Close settings" aria-controls="sidebar-content" aria-expanded="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div>
+        <div class="sidebar-title"><span>OBSERVATION</span><div class="sidebar-title-actions"><button id="reset-button" class="reset-button" type="button" title="Reset every viewer setting to its default">Reset all ↺</button><button id="sidebar-collapse" type="button" aria-label="Close settings" aria-controls="sidebar-content" aria-expanded="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg></button></div></div>
         <section class="sidebar-target" aria-label="Selected target"><h1 id="object-name">Barnard’s Star</h1><span id="object-type" hidden>RED DWARF · OPHIUCHUS</span><p id="object-description" hidden></p>
           <dl id="target-coordinates" class="coordinate-display"><div><dt>RA</dt><dd id="display-ra">269.4521°</dd></div><div><dt>DEC</dt><dd id="display-dec">+4.6934°</dd></div></dl><p id="moving-position-note" hidden>Position varies by exposure</p>
         </section>
@@ -79,7 +79,6 @@
             <div class="setting-check" data-tooltip="Subtracts each exposure’s robust sky level so frames compare on a common zero. Turn off to see the calibrated values including the zodiacal pedestal."><label class="check-row"><input id="subtract-background" type="checkbox" checked><span>Subtract sky background</span></label><button class="setting-help" type="button" aria-label="About Subtract sky background" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
           </div></details>
         </div></details>
-        <button id="reset-button" class="reset-settings" type="button">Reset observation settings ↺</button>
         <section id="pixel-inspector" class="pixel-inspector" aria-live="polite" hidden><strong>Pixel inspection</strong><p id="pixel-inspector-result"></p></section>
       </div>
     </aside>
@@ -89,7 +88,7 @@
       <div class="viewer-stage">
       <div class="viewer-shell">
         <div class="viewer" role="region" aria-label="Aligned SPHEREx FITS cutout viewer"><canvas id="sky-canvas" tabindex="0" role="img" aria-label="North-up sky image, east to the left. Hover for coordinates and values; enable Inspect a pixel on click for full quality details."></canvas><canvas id="overlay-canvas" class="overlay-canvas" aria-hidden="true"></canvas><canvas id="gaia-canvas" aria-hidden="true"></canvas><div id="spot-layer" class="spot-layer" hidden></div></div>
-        <div class="viewer-toolbar"><span id="cutout-cache-state" hidden></span><span id="blink-badge" class="blink-badge" aria-live="off" hidden></span><div class="canvas-actions"><button id="survey-layers-button" class="canvas-button" type="button" aria-expanded="false" aria-controls="survey-layers">Layers</button><button id="export-sky-png" class="canvas-button icon-button" type="button" aria-label="Download PNG" title="Download PNG" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span>Download</span></button><button id="expand-button" class="canvas-button icon-button" type="button" aria-label="Fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg><span>Fullscreen</span></button></div></div>
+        <div class="viewer-toolbar"><span id="cutout-cache-state" hidden></span><span id="blink-badge" class="blink-badge" aria-live="off" hidden></span><div class="canvas-actions"><button id="mark-target-button" class="canvas-button icon-button" type="button" aria-label="Mark star" title="Mark the target star where it is on this date" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg><span>Mark star</span></button><button id="survey-layers-button" class="canvas-button" type="button" aria-expanded="false" aria-controls="survey-layers">Layers</button><button id="export-sky-png" class="canvas-button icon-button" type="button" aria-label="Download PNG" title="Download PNG" disabled><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg><span>Download</span></button><button id="expand-button" class="canvas-button icon-button" type="button" aria-label="Fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg><span>Fullscreen</span></button></div><span id="mark-target-status" class="mark-target-status" role="status" aria-live="polite" hidden></span></div>
         <div class="survey-legend" aria-label="Active survey layers">
           <span id="gaia-legend" hidden><span class="survey-symbol gaia-symbol" aria-hidden="true">○</span> Gaia</span>
           <span id="wise-legend" hidden><span class="survey-symbol wise-symbol" aria-hidden="true">◇</span> AllWISE</span>
@@ -146,7 +145,6 @@
         <div class="setting-check" data-tooltip="North and east arrows and a scale bar. The image is always north-up with east to the left, as on the sky."><label class="check-row"><input id="show-compass" type="checkbox" checked><span>Compass &amp; scale bar</span></label><button class="setting-help" type="button" aria-label="About Compass and scale bar" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
         <div class="setting-check" data-tooltip="Colours pixels by their pipeline quality flag, with a legend and counts. Rule out artefacts before trusting an apparent change. Available on single-exposure frames."><label class="check-row"><input id="quality-overlay" type="checkbox"><span>Quality-flag overlay</span></label><button class="setting-help" type="button" aria-label="About Quality-flag overlay" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
         <div class="setting-check" data-tooltip="Click the image (or use the arrow keys) to inspect one pixel: its value, every flag, and a same-observation transient check across exposures."><label class="check-row"><input id="inspect-pixels" type="checkbox"><span>Inspect a pixel on click</span></label><button class="setting-help" type="button" aria-label="About Inspect a pixel on click" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
-        <button id="reset-display" class="reset-settings" type="button">Reset display ↺</button>
       </aside>
       </div>
       <div class="timeline-panel" aria-labelledby="timeline-heading">
@@ -345,6 +343,7 @@
   <script type="module" src="sky-context.js"></script>
   <script type="module" src="star-details.js"></script>
   <script type="module" src="gaia-overlay.js"></script>
+  <script type="module" src="mark-target.js"></script>
   <script type="module" src="agent-ui.js"></script>
 </body>
 </html>

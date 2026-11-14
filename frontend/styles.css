@@ -312,7 +312,9 @@ footer p,footer>span{font-size:15px;color:#59695e}
 
 /* Marked candidate source, drawn over the reprojected sky image */
 .source-mark{position:absolute;z-index:3;pointer-events:none;transform:translate(-50%,-50%)}
-.source-mark-ring{display:block;width:22px;height:22px;border:2px solid #ffd479;border-radius:50%;box-shadow:0 0 0 1px #101b2099,0 0 12px #ffd47966}
+.source-mark-ring{position:relative;display:block;width:22px;height:22px;border-radius:50%;color:#ffd479;filter:drop-shadow(0 0 1px #101b20) drop-shadow(0 0 4px color-mix(in srgb,currentColor 55%,transparent))}
+/* The ring is four arcs with gaps at N, E, S and W, like a reticle, so the star in the middle stays visible. */
+.source-mark-ring::before{content:"";position:absolute;inset:0;border:2px solid currentColor;border-radius:50%;-webkit-mask:repeating-conic-gradient(from 10deg,#000 0 70deg,#0000 70deg 90deg);mask:repeating-conic-gradient(from 10deg,#000 0 70deg,#0000 70deg 90deg)}
 .source-mark-label{position:absolute;left:50%;top:-8px;transform:translate(-50%,-100%);white-space:nowrap;background:#101b20e0;color:#ffd479;border:1px solid #ffd47966;border-radius:4px;padding:2px 6px;font-size:11px;letter-spacing:.4px;font-variant-numeric:tabular-nums}
 .viewer.is-marking{cursor:crosshair}
 
@@ -345,7 +347,7 @@ footer p,footer>span{font-size:15px;color:#59695e}
 .comet-download{display:inline-block;margin-top:10px}
 .is-embed #comet-benchmark{display:none}
 @media(max-width:760px){.comet-benchmark{grid-template-columns:1fr;gap:18px}}
-.source-mark.is-offscreen .source-mark-ring{border-style:dashed;border-color:#e8a06a;box-shadow:0 0 0 1px #101b2099}
+.source-mark.is-offscreen .source-mark-ring{color:#e8a06a;}
 .source-mark.is-offscreen .source-mark-label{color:#f0b98d;border-color:#e8a06a66}
 .pixel-inspector{margin-top:16px;padding:13px 16px;border:1px solid #dfe4dc;border-left:4px solid #305e52;border-radius:7px;background:#f8faf6;font-size:14px;line-height:1.65;overflow-wrap:anywhere}.pixel-inspector strong{display:block;margin-bottom:3px}.pixel-inspector p{margin:0;color:#59675d}.viewer.is-inspecting #sky-canvas{cursor:crosshair}
 .quality-legend{position:absolute;z-index:4;top:18px;left:18px;display:grid;gap:5px;padding:9px 11px;border:1px solid #ffffff30;border-radius:6px;background:#101b20e8;color:#e7eddf;font-size:11px;line-height:1.25;pointer-events:none}.quality-legend span{display:flex;align-items:center;gap:7px}.quality-legend i{width:9px;height:9px;border-radius:2px;background:var(--flag-colour);display:inline-block;flex:none}.quality-hover-readout{position:absolute;z-index:5;max-width:min(290px,calc(100% - 20px));padding:7px 9px;border:1px solid #ffffff3d;border-radius:5px;background:#101b20ee;color:#edf2e8;font-size:12px;line-height:1.4;pointer-events:none;overflow-wrap:anywhere}.viewer #sky-canvas{touch-action:none}.viewer.is-inspecting #sky-canvas,.viewer.is-quality-inspecting #sky-canvas{cursor:crosshair}
@@ -474,6 +476,11 @@ footer p,footer>span{font-size:15px;color:#59695e}
 .workspace-sidebar { position:sticky; top:88px; height:calc(100dvh - 88px); min-width:0; overflow-y:auto; scrollbar-width:thin; background:#20262b; border-right:1px solid var(--line); }
 .sidebar-content { padding:20px 18px 24px; }
 .sidebar-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; color:var(--muted); font-size:11px; font-weight:600; letter-spacing:1.6px; }
+.sidebar-title-actions { display:flex; align-items:center; gap:8px; }
+/* The one reset control: always at the top of the settings drawer and always red. */
+.reset-button { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; min-height:30px; padding:6px 10px; border:1px solid #b3261e; border-radius:5px; background:#b3261e; color:#fff; font-size:11px; font-weight:600; letter-spacing:.4px; line-height:1; white-space:nowrap; }
+.reset-button:hover { background:#c9362c; border-color:#c9362c; }
+.reset-button:focus-visible { outline:2px solid #ffb4ab; outline-offset:2px; }
 .viewer-page :is(#sidebar-collapse,.sidebar-rail-toggle,.sidebar-mobile-toggle,.setting-help) { border:1px solid var(--line); background:transparent; border-radius:5px; color:var(--ink); }
 #sidebar-collapse { width:30px; height:30px; font-size:25px; line-height:1; }
 .sidebar-rail-toggle { width:34px; height:38px; margin:12px 6px; font-size:22px; }
@@ -627,6 +634,22 @@ footer p,footer>span{font-size:15px;color:#59695e}
 .home-page .home-viewer-link { color:var(--teal); }
 .home-page :is(.brand-sub,.eyebrow,.coordinate-help,.search-field-label) { color:var(--muted); }
 @media(prefers-reduced-motion:reduce) { .home-page::before,.home-page::after,.preview-loading::before,.preview-loading::after { animation:none; will-change:auto; filter:blur(40px) hue-rotate(calc(var(--sky-start,0) * 8deg)); } }
+
+/* Homepage chrome leaves over the shared starfield; the viewer loader takes
+   over on the next document's first paint, so nothing between them flashes. */
+.home-page .site-header,
+.home-page .home-main { transition:opacity 170ms cubic-bezier(.23,1,.32,1); }
+.home-page.is-leaving .site-header,
+.home-page.is-leaving .home-main { opacity:0; will-change:opacity; }
+
+/* The opening search paints the loader before its scripts run. The starfield
+   seed is shared with the homepage, so the sky stays visually continuous. */
+html.is-initial-search { background:#080d18; overflow:hidden; }
+html.is-initial-search body { overflow:hidden; }
+html.is-initial-search #preview-loading[hidden] { display:flex!important; }
+@keyframes hud-enter { from { opacity:0; transform:translateY(10px) scale(.99); } to { opacity:1; transform:none; } }
+html.is-initial-search .preview-loading .hud-loading-content { animation:hud-enter 380ms cubic-bezier(.23,1,.32,1) both; }
+@media(prefers-reduced-motion:reduce) { html.is-initial-search .preview-loading .hud-loading-content { animation:none; } }
 
 /* Context overlays have their own canvas; image inspection and exports stay on the FITS canvas. */
 #gaia-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:3; }
@@ -833,6 +856,8 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .viewer-page .timeline-track { padding-top:16px; }
 .viewer-page .timeline-labels { font-size:10px; margin-top:2px; }
 .viewer-page .timeline-filmstrip { padding:6px 2px 0; margin-top:2px; gap:7px; }
+/* A deep stack is one combined image, so frame navigation and thumbnails go away. */
+.viewer-page .timeline-panel[data-view-mode="deep-stack"] :is(.playback-row,.timeline-filmstrip) { display:none; }
 .viewer-page .thumb { width:64px; padding:4px; gap:2px; }
 .viewer-page .thumb canvas { width:54px; height:54px; }
 .viewer-page .thumb small { font-size:10px; }
@@ -1056,6 +1081,11 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .viewer-page .ai-guide-new:hover { background:#1c2420; border-color:#80bfa8; }
 .viewer-page #ai-guide .ai-guide-log { max-height:none; }
 .viewer-page #ai-guide .ai-guide-form { margin-top:auto; padding-top:14px; }
+/* Chatting: the intro and suggestions step aside so the log owns the drawer. */
+.viewer-page #ai-guide.is-chatting { overflow:hidden; }
+.viewer-page #ai-guide.is-chatting :is(.ai-guide-intro,.ai-guide-suggestions) { display:none; }
+.viewer-page #ai-guide.is-chatting .ai-guide-log { flex:1 1 auto; min-height:0; overflow-y:auto; }
+.viewer-page #ai-guide.is-chatting .ai-guide-form { margin-top:0; }
 .is-embed .viewer-page :is(.workspace-sidebar,.sidebar-backdrop,#ai-guide,.header-icon-button) { display:none!important; }
 @media(max-width:600px) {
   .viewer-page .viewer-header { gap:8px; }
@@ -1099,8 +1129,8 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 /* ---- AI guide: numbered spots on the image ---- */
 .spot-layer { position:absolute; inset:0; z-index:3; pointer-events:none; }
 .spot-mark .source-mark-ring { width:20px; height:20px; }
-.spot-mark.is-agent .source-mark-ring { border-color:#8fd3ff; box-shadow:0 0 0 1px #101b2099,0 0 12px #8fd3ff66; }
-.spot-mark.is-predicted .source-mark-ring { border-style:dashed; border-color:#c9a7ff; box-shadow:0 0 0 1px #101b2099; }
+.spot-mark.is-agent .source-mark-ring { color:#8fd3ff; }
+.spot-mark.is-predicted .source-mark-ring { color:#c9a7ff; }
 /* Global button:hover/:active rules reset transform, which would drop the label's
    centering offset and make it jump out from under the cursor. Keep it fixed. */
 .source-mark-label:is(:hover,:active,:focus) { transform:translate(-50%,-100%); }
@@ -1163,6 +1193,8 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .case-verdict.is-likely { background:#33281a; color:#f0c58d; }
 .case-verdict.is-unexplained { background:#2f1f37; color:#e2b9ff; }
 .case-verdict.is-variable { background:#1e2b38; color:#a9d2ff; }
+.case-verdict.is-moved { background:#1d3326; color:#9fe0b0; }
+.case-verdict.is-no { background:#262b2e; color:#b9c4c9; }
 .case-suspects { list-style:none; margin:0; padding:0; display:grid; gap:3px; }
 .case-suspects li { display:grid; grid-template-columns:18px 1fr; column-gap:6px; }
 .case-suspects small { grid-column:2; color:#93a29b; font-size:11.5px; line-height:1.4; }
@@ -1211,15 +1243,12 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .spot-mark.is-large .source-mark-label { top:50%; transform:translate(-50%,-50%); }
 .spot-mark.is-large .source-mark-label:is(:hover,:active,:focus) { transform:translate(-50%,-50%); }
 .spot-mark.is-large .spot-remove { top:calc(50% - 28px); }
-.spot-mark.is-draft .source-mark-ring { border-style:dashed; }
 .spot-mark.is-draft .spot-label { pointer-events:none; }
 .spot-resize { position:absolute; left:calc(50% + 0.7071 * max(10px, calc(var(--spot-d, 0) * 0.5cqw))); top:calc(50% + 0.7071 * max(10px, calc(var(--spot-d, 0) * 0.5cqw))); transform:translate(-50%,-50%); pointer-events:auto; touch-action:none; cursor:nwse-resize; width:12px; height:12px; padding:0; border:2px solid #101b20; border-radius:50%; background:#ffd479; }
 .spot-mark.is-agent .spot-resize { background:#8fd3ff; }
 .spot-mark.is-predicted .spot-resize { background:#c9a7ff; }
 .spot-resize:focus-visible { outline:2px solid #e8efdf; outline-offset:2px; }
-.spot-mark.is-resizing .source-mark-ring { border-style:dashed; }
 @media (hover:none) { .spot-resize { width:16px; height:16px; } }
-.spot-mark.is-moving .source-mark-ring { border-style:dashed; }
 .sky-canvas-grab { cursor:move !important; }
 .case-verdict.is-area { background:#1f2d33; color:#a9dcef; }
 .case-suspects .is-finding .case-icon { color:#a9dcef; }
@@ -1227,18 +1256,29 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 /* Spot colours: yours blue, the AI guide's red, predicted purple (dashed),
    and green once the guide's checks identify a known object. The yellow
    .source-mark defaults above stay for the target marker. */
-.spot-mark.is-user .source-mark-ring { border-color:#5aa9ff; box-shadow:0 0 0 1px #101b2099,0 0 12px #5aa9ff66; }
+.spot-mark.is-user .source-mark-ring { color:#5aa9ff; }
 .spot-mark.is-user .spot-label { color:#5aa9ff; border-color:#5aa9ff66; }
 .spot-mark.is-user .spot-resize { background:#5aa9ff; }
 .spot-mark.is-area.is-user .source-mark-ring { background:#5aa9ff12; }
 .ai-guide-chip.is-user { border-color:#5aa9ff66; background:#14202f; color:#7dbcff; }
-.spot-mark.is-agent .source-mark-ring { border-color:#ff6b6b; box-shadow:0 0 0 1px #101b2099,0 0 12px #ff6b6b66; }
+.spot-mark.is-agent .source-mark-ring { color:#ff6b6b; }
 .spot-mark.is-agent .spot-label { color:#ff8a8a; border-color:#ff6b6b66; }
 .spot-mark.is-agent .spot-resize { background:#ff6b6b; }
 .spot-mark.is-area.is-agent .source-mark-ring { background:#ff6b6b12; }
 .ai-guide-chip.is-agent { border-color:#ff6b6b66; background:#2c1717; color:#ff8a8a; }
-.spot-mark.is-found .source-mark-ring { border-color:#7ee08a; box-shadow:0 0 0 1px #101b2099,0 0 12px #7ee08a66; }
+.spot-mark.is-found .source-mark-ring { color:#7ee08a; }
 .spot-mark.is-found .spot-label { color:#7ee08a; border-color:#7ee08a66; }
 .spot-mark.is-found .spot-resize { background:#7ee08a; }
 .spot-mark.is-area.is-found .source-mark-ring { background:#7ee08a12; }
 .ai-guide-chip.is-found { border-color:#7ee08a66; background:#16271a; color:#7ee08a; }
+
+/* Area spots: eight arcs so the gaps still read on a big circle. Predicted,
+   draft, off-screen and in-motion spots keep a fine dashed full ring. */
+.spot-mark.is-area .source-mark-ring::before { -webkit-mask:repeating-conic-gradient(from 4deg,#000 0 37deg,#0000 37deg 45deg); mask:repeating-conic-gradient(from 4deg,#000 0 37deg,#0000 37deg 45deg); }
+:is(.spot-mark.is-predicted,.spot-mark.is-draft,.spot-mark.is-resizing,.spot-mark.is-moving,.source-mark.is-offscreen) .source-mark-ring::before { border-style:dashed; -webkit-mask:none; mask:none; }
+.case-verdict.is-uncatalogued { background:#3a2414; color:#ffc38a; }
+/* Mark star: what the button did, under the toolbar. */
+.mark-target-status { flex:1 1 100%; order:3; text-align:right; color:#cfe7dc; font-size:12.5px; line-height:1.4; }
+.case-next { margin-top:8px; width:100%; text-align:left; padding:7px 10px; border-radius:8px; border:1px solid #3f6b5c; background:#16231f; color:#cfe7dc; font-size:12.5px; line-height:1.35; }
+.case-next:hover { background:#1d2e29; border-color:#5f9c86; }
+@media (max-width:600px) { .mark-target-status { text-align:left; } }

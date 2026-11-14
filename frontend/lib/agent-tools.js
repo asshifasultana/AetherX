@@ -106,6 +106,7 @@ export const AGENT_TOOLS = Object.freeze([
   tool('find_changes', 'List compact brighter/fainter patches in the difference view on screen (use compare_frames view=difference or pick_epochs first). Marks the strongest as agent spots and reports moved pairs.', {
     limit: int('1-6, default 3'), mark: bool('default true')
   }),
+  tool('mark_target', 'Mark the target star where it actually is on the frame date shown (moved for proper motion, then snapped onto the source). Use this instead of typing the target coordinates.'),
   tool('mark_spot', 'Mark a numbered agent spot at raDeg/decDeg: a point, or a circular area when radius_arcsec is given (e.g. a nebula, a galaxy or a region to watch).', {
     raDeg: { type: 'number' }, decDeg: { type: 'number' }, label: str(),
     radius_arcsec: { type: 'number', description: `area radius ${MIN_SPOT_RADIUS_ARCSEC}-${MAX_SPOT_RADIUS_ARCSEC}; omit for a point (1 pixel = 6.15)` }
@@ -122,7 +123,7 @@ export const AGENT_TOOLS = Object.freeze([
   tool('get_spectrum', 'Measure a spot across wavelengths (up to 24 frames) and return plain hints (methane dip near 3.3um, 4.4-5um rise). Uses SPHEREx colours.', {
     spot: int()
   }, ['spot']),
-  tool('crossmatch', 'Check a spot against Gaia stars and JPL known asteroids/comets at a frame date. Updates the case file.', {
+  tool('crossmatch', 'Check a spot against Gaia, CatWISE2020 and SIMBAD stars (moved to the frame date) and JPL known asteroids/comets. Updates the case file.', {
     spot: int(), date: str(null, 'YYYY-MM-DD, default frame on screen')
   }, ['spot']),
   tool('get_case', 'A spot case file: suspects ruled out/supported, evidence and the computed verdict. Never call something unexplained unless this verdict says so.', {
@@ -137,6 +138,9 @@ export const AGENT_TOOLS = Object.freeze([
   tool('precover', 'From the motion between two spots (from_spot then to_spot), predict positions in the other loaded frames and measure there to find the object again.', {
     from_spot: int(), to_spot: int()
   }, ['from_spot', 'to_spot']),
+  tool('confirm_motion', 'Multi-date motion check: predict the spot position on up to 12 dates, find the source there, and fit a straight-line motion. Confirms movers and rules out glitches. to_spot is the other half of a moved pair, if any.', {
+    spot: int(), to_spot: int()
+  }, ['spot']),
   tool('second_opinion', 'Ask a vision model whether the change at a spot looks real or like an artefact (supporting evidence only).', {
     spot: int()
   }, ['spot']),
@@ -218,7 +222,7 @@ export function validateToolCall(name, rawArgs) {
   const errors = [];
   const done = result => errors.length ? { ok: false, error: errors.join(' ') } : { ok: true, name, args: result };
   switch (name) {
-    case 'get_view_state': return done({});
+    case 'get_view_state': case 'mark_target': return done({});
     case 'set_display': {
       const changes = settingsFrom(args, Object.fromEntries(DISPLAY_FIELDS.map(field => [field, field])), errors);
       if (changes.look === 'custom') delete changes.look;
@@ -345,6 +349,14 @@ export function validateToolCall(name, rawArgs) {
       const result = { spot, distance_au: distance };
       if (args.date !== undefined && args.date !== null) { result.date = validDate(args.date); if (!result.date) errors.push('date must be YYYY-MM-DD.'); }
       return done(result);
+    }
+    case 'confirm_motion': {
+      const spot = spotNumber(args.spot);
+      if (!spot) errors.push(`spot must be 1-${MAX_SPOT}.`);
+      if (args.to_spot === undefined || args.to_spot === null) return done({ spot });
+      const to = spotNumber(args.to_spot);
+      if (!to || to === spot) errors.push('to_spot must be a different spot 1-9.');
+      return done({ spot, to_spot: to });
     }
     case 'precover': {
       const from = spotNumber(args.from_spot), to = spotNumber(args.to_spot);

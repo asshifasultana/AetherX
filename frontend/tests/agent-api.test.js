@@ -219,3 +219,24 @@ test('a rejected key is skipped for the next one', async () => {
   }
   assert.deepEqual(used, ['Bearer bad', 'Bearer good', 'Bearer good', 'Bearer good']);
 });
+
+test('fast: true switches to the configured fast model only, and capabilities report it', async () => {
+  let model;
+  const fetchImpl = async (url, options) => { model = JSON.parse(options.body).model; return openRouterReply({ role: 'assistant', content: 'ok' })(); };
+  const send = async (env, body, ip) => { const res = response(); await createAgentHandler({ fetchImpl, env })(request('POST', { messages: [{ role: 'user', content: 'hi' }], ...body }, { ip }), res); return res; };
+  const env = { OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'big', OPENROUTER_FAST_MODEL: 'quick' };
+
+  assert.equal((await send(env, { fast: true }, '10.6.0.1')).statusCode, 200);
+  assert.equal(model, 'quick');
+  await send(env, {}, '10.6.0.2');
+  assert.equal(model, 'big');
+  // Only a real boolean counts, and the browser can never name a model.
+  await send(env, { fast: 'true', model: 'other' }, '10.6.0.3');
+  assert.equal(model, 'big');
+  await send({ OPENROUTER_API_KEY: 'k', OPENROUTER_MODEL: 'big' }, { fast: true }, '10.6.0.4');
+  assert.equal(model, 'big');
+
+  const capabilities = async env => { const res = response(); await createAgentHandler({ env })(Object.assign(request('GET'), { url: '/api/agent?capabilities=1' }), res); return json(res); };
+  assert.equal((await capabilities(env)).fast, true);
+  assert.equal((await capabilities({ OPENROUTER_API_KEY: 'k' })).fast, false);
+});

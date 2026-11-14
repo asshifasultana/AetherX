@@ -77,3 +77,14 @@ Opening a link restores the position, the field of view, the detector band, the 
 **Embedding.** `?embed=1`, or simply being inside an iframe, switches to a compact layout that keeps the viewer and its timeline, hides the page chrome, settings and observation table, and adds `is-embed` on the document element before first paint to avoid a flash of the full page. The **Embed this view** button produces an `<iframe>` snippet for the current position, field of view, band, dates and marked source. The app sets no `X-Frame-Options` or `frame-ancestors` restriction, so the snippet works as-is.
 
 Both `frontend/server.mjs` and `scripts/build-vercel.mjs` keep an explicit list of public assets. `url-state.js`, `sky-projection.js`, `share.js` and `share-ui.js` are registered in both; add any new frontend module to both lists or it will 404 in production while working locally.
+
+## Documentation
+
+`docs/SPHEREx_Challenge_Documentation.docx` is generated, not hand-edited. Edit [`scripts/build-docs.py`](scripts/build-docs.py) and rebuild:
+
+```bash
+python scripts/build-docs.py            # writes SPHEREx_Challenge_Documentation.docx
+python scripts/build-docs.py out.docx   # or to an explicit path
+```
+
+The script writes to the repository root by default and needs `python-docx`. Screenshots are read from `docs/screenshots/`; if they are absent the build still succeeds and says which figures were skipped. Word documents are listed in `.gitignore`, so a rebuild never creates a stray commit — commit the script and the screenshots, regenerate the `.docx` only for submission.

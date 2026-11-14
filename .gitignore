@@ -4,3 +4,6 @@ node_modules/
 .local/
 frontend/data/.update.lock
 frontend/data/*.tmp
+
+# Generated documentation (build with scripts/build-docs.py)
+*.docx

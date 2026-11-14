@@ -15,6 +15,33 @@ export function observationKey(observation) {
     || `${observation?.observationId || ''}|${observation?.detector || ''}|${observation?.observedStartUtc || ''}`;
 }
 
+export function summarizeReleases(observations) {
+  const releases = [...new Set((observations || []).map(item => item.release || /^spherex_(qr\d+)/i.exec(item.collection || '')?.[1]?.toUpperCase()).filter(Boolean))]
+    .sort((a, b) => Number(b.replace(/^QR/i, '')) - Number(a.replace(/^QR/i, '')));
+  return { releases, mixed: releases.length > 1, label: releases.length > 1 ? `Mixed ${releases.join(' / ')}` : releases[0] || 'Release not reported' };
+}
+
+// Summarize only products present in the current result set. Callers should
+// label these counts as loaded when the archive has another page available.
+export function summarizeDetectorCoverage(observations, { searchedDetector = 'all' } = {}) {
+  return Array.from({ length: 6 }, (_, index) => {
+    const detector = index + 1;
+    const searched = searchedDetector === 'all' || Number(searchedDetector) === detector;
+    const products = searched ? (observations || []).filter(item => Number(item.detector) === detector) : [];
+    const dates = products.map(item => Date.parse(item.observedStartUtc || '')).filter(Number.isFinite).sort((a, b) => a - b);
+    const wavelengths = products.flatMap(item => [item.wavelengthMinUm, item.wavelengthMaxUm])
+      .filter(value => value !== null && value !== undefined && value !== '')
+      .map(Number).filter(Number.isFinite);
+    return {
+      detector, searched, count: products.length,
+      firstDate: dates.length ? new Date(dates[0]).toISOString() : null,
+      lastDate: dates.length ? new Date(dates.at(-1)).toISOString() : null,
+      wavelengthMinUm: wavelengths.length ? Math.min(...wavelengths) : null,
+      wavelengthMaxUm: wavelengths.length ? Math.max(...wavelengths) : null
+    };
+  });
+}
+
 // Build chronological frames for one detector band. Same-day exposures can be
 // collapsed to one frame so a day with several visits does not dominate playback.
 export function buildFrames(observations, { band = null, combineExposures = true } = {}) {
@@ -30,7 +57,9 @@ export function buildFrames(observations, { band = null, combineExposures = true
     return dated.map(({ observation, time }) => ({
       ...observation,
       frameTime: time,
-      exposureCount: 1
+      exposureCount: 1,
+      exposures: [observation],
+      ...summarizeReleases([observation])
     }));
   }
   const byDay = new Map();
@@ -42,7 +71,11 @@ export function buildFrames(observations, { band = null, combineExposures = true
   return [...byDay.values()].map(group => ({
     ...group[0].observation,
     frameTime: group[0].time,
-    exposureCount: group.length
+    observedEndUtc: group.at(-1).observation.observedEndUtc || group.at(-1).observation.observedStartUtc,
+    exposureCount: group.length,
+    exposureSeconds: group.reduce((sum, item) => sum + (Number(item.observation.exposureSeconds) || 0), 0),
+    exposures: group.map(item => item.observation),
+    ...summarizeReleases(group.map(item => item.observation))
   }));
 }
 

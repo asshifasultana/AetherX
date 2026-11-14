@@ -17,7 +17,7 @@ let position = {
   frame: 'icrs',
   ...(restoredTargetId ? { targetId: restoredTargetId } : {})
 };
-const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, combineExposures: true, hideBadPixels: true, consistentBrightness: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: true, labelAsteroids: false, asteroidMagnitude: 20 };
+const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, maxStackFrames: 80, combineExposures: true, hideBadPixels: true, rejectVisitGlitches: true, qualityOverlay: false, inspectPixels: false, consistentBrightness: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: true, labelAsteroids: false, asteroidMagnitude: 20 };
 let viewerSettings = { ...defaultSettings, band: initialViewState.band, fovArcmin: initialViewState.fovArcmin };
 const ranges = ['0.75 – 1.09', '1.10 – 1.62', '1.63 – 2.41', '2.42 – 3.82', '3.83 – 4.41', '4.42 – 5.00'];
 const signed = n => `${n < 0 ? '' : '+'}${n.toFixed(4)}`;
@@ -75,9 +75,9 @@ const modeDescriptions = {
   blink: 'Alternate between observations to spot changes at a glance.',
   difference: 'Compare observations by subtracting one image from another.',
   'motion-trail': 'Trace how sources move across successive observations.',
-  'deep-stack': 'Combine observations into a deeper view of faint sources.'
+  'deep-stack': 'Per-pixel median across up to the selected number of UTC-day frames. Masked, missing and uncovered pixels do not count as zeros.'
 };
-const checkboxes = { 'combine-exposures': 'combineExposures', 'hide-bad-pixels': 'hideBadPixels', 'consistent-brightness': 'consistentBrightness', invert: 'invert', 'crosshair-toggle': 'showTargetMarker', 'label-asteroids': 'labelAsteroids' };
+const checkboxes = { 'combine-exposures': 'combineExposures', 'hide-bad-pixels': 'hideBadPixels', 'reject-visit-glitches': 'rejectVisitGlitches', 'consistent-brightness': 'consistentBrightness', 'quality-overlay': 'qualityOverlay', 'inspect-pixels': 'inspectPixels', invert: 'invert', 'crosshair-toggle': 'showTargetMarker', 'label-asteroids': 'labelAsteroids' };
 const selects = { stretch: 'stretch', colours: 'colours', 'asteroid-magnitude': 'asteroidMagnitude' };
 function emitSettings(source) {
   window.dispatchEvent(new CustomEvent('sky:viewer-settings-changed', { detail: { ...viewerSettings, source } }));
@@ -85,6 +85,17 @@ function emitSettings(source) {
 window.addEventListener('sky:cutout-detector-selected', event => {
   if (!Number.isInteger(event.detail?.detector)) return;
   viewerSettings.band = event.detail.detector; renderSettings(); emitSettings('cutout');
+});
+window.addEventListener('sky:coverage-stack-requested', event => {
+  const detector = Number(event.detail?.detector);
+  if (!Number.isInteger(detector) || detector < 1 || detector > 6) return;
+  viewerSettings.band = detector;
+  viewerSettings.viewMode = 'time-lapse';
+  renderSettings();
+  emitSettings('coverage-band'); // timeline rebuilds for this detector first
+  viewerSettings.viewMode = 'deep-stack';
+  renderSettings();
+  emitSettings('coverage-stack'); // FITS viewer stacks the newly selected band
 });
 function updateButtons(attribute, value) {
   document.querySelectorAll('[data-' + attribute + ']').forEach(button => {
@@ -99,6 +110,8 @@ function renderSettings() {
   for (const [id, key] of Object.entries(checkboxes)) $(id).checked = viewerSettings[key];
   for (const [id, key] of Object.entries(selects)) $(id).value = String(viewerSettings[key]);
   $('contrast').value = viewerSettings.contrast; $('contrast-value').value = viewerSettings.contrast + '%';
+  $('max-stack-frames').value = viewerSettings.maxStackFrames;
+  $('max-stack-frames-value').value = `${viewerSettings.maxStackFrames} frames`;
 }
 for (const [attribute, key] of [['band','band'],['mode','viewMode'],['fov','fovArcmin']]) {
   document.querySelectorAll('[data-' + attribute + ']').forEach(button => button.addEventListener('click', () => {
@@ -109,6 +122,8 @@ for (const [attribute, key] of [['band','band'],['mode','viewMode'],['fov','fovA
 for (const [id, key] of Object.entries(checkboxes)) $(id).addEventListener('change', () => { viewerSettings[key] = $(id).checked; emitSettings(); });
 for (const [id, key] of Object.entries(selects)) $(id).addEventListener('change', () => { viewerSettings[key] = key === 'asteroidMagnitude' ? Number($(id).value) : $(id).value; emitSettings(); });
 $('contrast').addEventListener('input', () => { viewerSettings.contrast = Number($('contrast').value); $('contrast-value').value = viewerSettings.contrast + '%'; emitSettings(); });
+$('max-stack-frames').addEventListener('input', () => { $('max-stack-frames-value').value = `${$('max-stack-frames').value} frames`; });
+$('max-stack-frames').addEventListener('change', () => { viewerSettings.maxStackFrames = Number($('max-stack-frames').value); emitSettings(); });
 $('reset-button').addEventListener('click', () => {
   viewerSettings = { ...defaultSettings }; renderSettings(); emitSettings();
   $('announcement').textContent = 'All observation settings reset to their defaults.';

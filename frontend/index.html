@@ -47,15 +47,16 @@
 
     <section id="explorer" class="explorer" aria-label="Sky image viewer">
       <div class="viewer" role="region" aria-label="Aligned SPHEREx FITS cutout viewer">
-        <canvas id="sky-canvas" aria-label="North-up sky image reprojected to the selected target position"></canvas>
+        <canvas id="sky-canvas" tabindex="0" role="img" aria-label="North-up sky image. Enable Inspect pixel quality to read a pixel value and its flag reasons."></canvas>
         <p id="coverage-note" class="coverage-note" hidden></p>
+        <div id="quality-legend" class="quality-legend" aria-label="Quality flag legend" hidden><span><i style="--flag-colour:#f26e85"></i>Transient / outlier</span><span><i style="--flag-colour:#efaa4f"></i>Detector defect</span><span><i style="--flag-colour:#78b7d1"></i>Correction / persistence</span><span><i style="--flag-colour:#b48ae0"></i>Optical / electronic artifact</span><span><i style="--flag-colour:#a9c981"></i>Caution / informational</span><span><i style="--flag-colour:#f3d365"></i>Missing pixel data</span><span><i style="--flag-colour:#7866a7"></i>Outside detector</span></div>
+        <div id="quality-hover-readout" class="quality-hover-readout" role="status" aria-live="off" hidden></div>
         <div class="sky-grid" aria-hidden="true"></div><div id="target-marker" class="target-marker" hidden aria-hidden="true"></div>
-        <div class="canvas-top"><span id="cutout-cache-state" class="cutout-cache-state">No cutout loaded</span><button id="expand-button" class="canvas-button" aria-label="Expand sky viewer" title="Expand sky viewer">⛶</button></div>
+        <div class="canvas-top"><span id="cutout-cache-state" class="cutout-cache-state">No cutout loaded</span><div class="canvas-actions"><button id="export-sky-png" class="canvas-button export-png" type="button" disabled>PNG ↓</button><button id="expand-button" class="canvas-button" aria-label="Expand sky viewer" title="Expand sky viewer">⛶</button></div></div>
         <div class="canvas-bottom"><span id="cutout-caption">Choose an observation to view its cutout</span><span class="compass">N<span>↑</span></span></div>
         <p id="cutout-status" class="cutout-status" role="status" aria-live="polite">Scroll down past the timeline and settings to Find your observations. Choose Details + on a result, then View aligned cutout.</p>
         <div id="source-mark" class="source-mark" hidden><span class="source-mark-ring" aria-hidden="true"></span><span id="source-mark-label" class="source-mark-label"></span></div>
       </div>
-
       <aside class="observation-panel">
         <div class="panel-overline"><span class="step-number">02</span> YOUR OBSERVATION <span class="tiny-star">✦</span></div>
         <div class="object-title"><span id="object-type" class="object-type">RED DWARF · OPHIUCHUS</span><h2 id="object-name">Barnard’s Star</h2><p id="object-description">One of our closest stellar neighbors, tracing a remarkable path across the night sky.</p></div>
@@ -74,11 +75,13 @@
           <div class="band-legend"><span id="band-range">1.10 – 1.62 μm</span><span class="spectrum-line"></span><span>INFRARED</span></div>
         </div>
         <div class="demo-note"><span aria-hidden="true">ⓘ</span><p>Cutouts are centered on the selected sky position and rendered north up at the same scale, so comparing observations keeps the sky fixed.</p></div>
+        <section id="pixel-inspector" class="pixel-inspector" aria-live="polite" hidden><strong>Pixel inspection</strong><p id="pixel-inspector-result">Turn on Inspect pixel quality, then click a pixel in the image.</p></section>
       </aside>
 
       <div class="timeline-panel" aria-labelledby="timeline-heading">
         <div class="timeline-heading"><div><span class="step-number">03</span><h3 id="timeline-heading">A little time travel</h3><span class="demo-chip">ARCHIVE TIMELAPSE</span></div><span id="frame-count">NO IMAGES LOADED</span></div>
         <div class="timeline-now"><strong id="timeline-date">Waiting for observations</strong><span id="timeline-meta">Search for a target to build a dated timeline.</span></div>
+        <details id="frame-provenance" class="frame-provenance"><summary>Frame contribution record</summary><p id="frame-provenance-text">Search for observations to see which exposures contribute to a frame.</p><button id="export-frame-csv" class="reset-settings" type="button" disabled>Export frame contributions CSV ↓</button></details>
         <div class="playback-row">
           <div class="step-controls" role="group" aria-label="Frame stepping">
             <button id="step-back" class="step-button" type="button" aria-label="Previous observation" disabled><span aria-hidden="true">◀</span></button>
@@ -94,6 +97,7 @@
           <button id="speed-button" class="speed-button" type="button" aria-label="Playback speed, 1 times" disabled><strong id="speed-value">1×</strong> <span>speed</span></button>
         </div>
         <div id="timeline-filmstrip" class="timeline-filmstrip" role="group" aria-label="Observation thumbnails"></div>
+        <p id="release-calibration-note" class="timeline-status calibration-note" role="note" hidden></p>
         <p id="timeline-status" class="timeline-status" role="status" aria-live="polite">Search for a target to build a dated time-lapse. Timeline ticks are placed at the real observation dates, so long gaps appear as long spaces.</p>
         <div class="share-bar" aria-label="Share this view">
           <div class="share-actions">
@@ -121,20 +125,21 @@
             <fieldset class="settings-fieldset"><legend>Field of view <span class="unit-label">arcminutes</span></legend><div class="fov-buttons" role="group" aria-label="Field of view">
               <button data-fov="5" aria-pressed="false">5′</button><button data-fov="10" aria-pressed="false">10′</button><button data-fov="16" class="selected" aria-pressed="true">16′</button><button data-fov="25" aria-pressed="false">25′</button>
             </div></fieldset>
-            <div class="processing-options"><label class="check-row"><input id="combine-exposures" type="checkbox" checked><span>Combine exposures from the same day</span></label><label class="check-row"><input id="hide-bad-pixels" type="checkbox" checked><span>Hide bad pixels<small>Cosmic rays and hot pixels</small></span></label></div>
+            <label class="range-row" for="max-stack-frames">Maximum deep-stack frames <output id="max-stack-frames-value" for="max-stack-frames">80 frames</output></label><input id="max-stack-frames" class="range" type="range" min="4" max="400" step="4" value="80"><p class="settings-help">Deep median uses up to this many chronological UTC-day frames.</p>
+            <div class="processing-options"><label class="check-row"><input id="combine-exposures" type="checkbox" checked><span>Combine exposures from the same day<small>UTC calendar date, per detector. Quality-masked pixels are excluded; each output pixel uses the median of valid inputs. Different dates remain separate.</small></span></label><label class="check-row"><input id="hide-bad-pixels" type="checkbox" checked><span>Hide unreliable pixels<small>Excludes flagged samples before interpolation; bright-source overflow and streak flags stay visible</small></span></label><label class="check-row"><input id="reject-visit-glitches" type="checkbox" checked><span>Reject isolated same-observation glitches<small>Requires at least three usable exposures with the same OBSID; can be turned off</small></span></label></div>
           </section>
           <section class="settings-card" aria-labelledby="display-heading">
             <div class="control-heading"><h3 id="display-heading">Display & overlays</h3><span>02</span></div>
             <div class="select-row"><label for="stretch">Stretch</label><select id="stretch"><option value="asinh">Asinh</option><option value="linear">Linear</option><option value="log">Logarithmic</option><option value="sqrt">Square root</option></select></div>
             <div class="select-row"><label for="colours">Colours</label><select id="colours"><option value="grayscale">Grayscale</option><option value="inferno">Inferno</option><option value="viridis">Viridis</option><option value="magma">Magma</option></select></div>
             <label class="range-row" for="contrast">Contrast <output id="contrast-value" for="contrast">65%</output></label><input id="contrast" class="range" type="range" min="10" max="100" value="65">
-            <label class="check-row"><input id="consistent-brightness" type="checkbox" checked><span>Consistent brightness<small>Use one display scale across comparison frames</small></span></label>
-            <div class="overlay-options"><label class="check-row"><input id="invert" type="checkbox"><span>Invert image<small>Black stars on a white background</small></span></label><label class="check-row"><input id="crosshair-toggle" type="checkbox" checked><span>Show target marker</span></label><label class="check-row"><input id="label-asteroids" type="checkbox"><span>Label known asteroids</span></label></div>
+            <label class="check-row"><input id="consistent-brightness" type="checkbox" checked><span>Consistent brightness<small>Use one shared display scale across frames. The first displayed frame sets the limits.</small></span></label>
+            <div class="overlay-options"><label class="check-row"><input id="quality-overlay" type="checkbox"><span>Show quality flags<small>Colors identify transient, detector, correction, artifact, missing and uncovered pixels</small></span></label><label class="check-row"><input id="inspect-pixels" type="checkbox"><span>Inspect pixel quality<small>Click the image for flags and same-observation transient checks</small></span></label><label class="check-row"><input id="invert" type="checkbox"><span>Invert image<small>Black stars on a white background</small></span></label><label class="check-row"><input id="crosshair-toggle" type="checkbox" checked><span>Show target marker</span></label><label class="check-row"><input id="label-asteroids" type="checkbox"><span>Label known asteroids</span></label></div>
             <div class="select-row asteroid-row"><label for="asteroid-magnitude">Asteroids brighter than</label><select id="asteroid-magnitude" aria-describedby="magnitude-help"><option value="14">V 14</option><option value="16">V 16</option><option value="18">V 18</option><option value="20" selected>V 20</option><option value="22">V 22</option></select></div>
             <p id="magnitude-help" class="settings-help">Visual magnitude limit. Lower values show brighter objects.</p>
           </section>
         </div>
-        <p class="settings-notice">Cutouts use the selected field of view and display stretch. Larger fields take longer to retrieve.</p>
+        <p class="settings-notice">A robust, sigma-clipped median of valid pixels estimates and subtracts the sky level independently for each cutout. This display-only estimate can be biased by crowded fields, extended emission, or gradients. Mixed release frames are labelled, but release calibration offsets are not corrected.</p>
       </section>
     </section>
 

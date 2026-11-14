@@ -240,6 +240,7 @@ function updateCurrent({ keepSlider = false } = {}) {
     $('timeline').value = '0';
     $('timeline').style.setProperty('--progress', '0%');
     $('timeline').setAttribute('aria-valuetext', 'No observations loaded');
+    $('frame-provenance-text').textContent = 'Search for observations to see which exposures contribute to a frame.';
     updateStepButtons();
     return;
   }
@@ -247,12 +248,21 @@ function updateCurrent({ keepSlider = false } = {}) {
   const details = [`Frame ${state.index + 1} of ${state.frames.length}`, `D${frame.detector}`];
   const wave = wavelength(frame);
   if (wave) details.push(wave);
-  if (frame.exposureCount > 1) details.push(`${frame.exposureCount} exposures combined`);
+  details.push(frame.label || frame.release || 'Release not reported');
+  if (frame.mixed) details.push('same-day exposures span releases');
+  if (frame.exposureCount > 1) details.push(`${frame.exposureCount} exposures · per-pixel median stack`);
+  const record = frame.stackRecord;
+  if (record) details.push(`${Math.round(record.exposureSeconds)} s exposure time`, `${record.validPixelContributions.toLocaleString()} valid pixel contributions`);
   if (state.index > 0) {
     const gap = frameGaps(state.frames)[state.index - 1];
     if (gap) details.push(`${formatGap(gap.days)} after previous`);
   }
   $('timeline-meta').textContent = details.join(' · ');
+  const sources = frame.exposures || [frame];
+  const ids = sources.map(item => item.observationId || item.productId || 'ID not reported');
+  const failed = new Set(record?.failedObservationIds || []);
+  const pendingText = frame.exposureCount > 1 ? 'Stack record is created when this frame finishes loading. ' : 'Single-exposure frame; no stacking was performed. ';
+  $('frame-provenance-text').textContent = `${record ? `${record.method}. ` : pendingText}${record ? `${record.usedExposureCount} of ${record.requestedExposureCount} exposures loaded; ${record.validPixelContributions.toLocaleString()} valid input-pixel contributions covered ${record.coveredOutputPixels.toLocaleString()} output pixels; ${Math.round(record.exposureSeconds)} s total exposure time. ` : ''}UTC period: ${sources[0]?.observedStartUtc || 'unknown'} through ${sources.at(-1)?.observedEndUtc || sources.at(-1)?.observedStartUtc || 'unknown'}. Source observation IDs: ${ids.map(id => `${id}${failed.has(id) ? ' (failed)' : ''}`).join(', ')}.`;
   const fraction = state.frames.length > 1 ? state.fractions[state.index] : 0;
   if (!keepSlider) {
     $('timeline').value = String(Math.round(fraction * 1000));
@@ -279,6 +289,12 @@ function updateCurrent({ keepSlider = false } = {}) {
 
 function render() {
   const count = state.frames.length;
+  const releaseInfo = [...new Set(state.observations.map(frame => frame.release).filter(Boolean))];
+  const releaseNote = $('release-calibration-note');
+  releaseNote.hidden = releaseInfo.length < 2;
+  releaseNote.textContent = releaseInfo.length > 1
+    ? `Comparing ${releaseInfo.join(' and ')} products. Release and processing versions are shown per frame; cross-release calibration offsets are not corrected here.`
+    : '';
   $('frame-count').textContent = count
     ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
     : 'NO IMAGES LOADED';
@@ -292,6 +308,7 @@ function render() {
   $('timeline').disabled = count < 2;
   $('play-button').disabled = count < 2;
   $('speed-button').disabled = count < 2;
+  $('export-frame-csv').disabled = count === 0;
   renderTicks();
   renderFilmstrip();
   updatePlayButton();
@@ -320,6 +337,7 @@ function rebuild({ keepTime = false, announce = true } = {}) {
   state.fractions = frameFractions(state.frames);
   state.index = previous === null || !state.frames.length ? 0 : nearestFrameIndexByTime(state.frames, previous);
   state.thumbs.clear();
+  window.dispatchEvent(new CustomEvent('sky:timeline-frames-changed', { detail: { frames: state.frames } }));
   render();
   if (!state.frames.length) {
     setStatus(state.observations.length
@@ -346,13 +364,21 @@ async function selectFrame(index, { playback = false } = {}) {
   state.index = Math.max(0, Math.min(state.frames.length - 1, index));
   updateCurrent();
   const frame = state.frames[state.index];
+  window.dispatchEvent(new CustomEvent('sky:frame-exposure-group', { detail: { exposures: frame.exposures || [frame], frame } }));
+  const deepStackSelected = document.querySelector('[data-mode="deep-stack"]')?.classList.contains('selected');
+  if (deepStackSelected && document.getElementById('sky-canvas')?.dataset.deepStack === 'true') {
+    setStatus(`Deep median remains displayed · timeline selection ${state.index + 1} of ${state.frames.length} changed.`);
+    return;
+  }
   prefetch.paused++;
   prefetchNote = false;
   if (!playback) setStatus(`Loading ${frameDate(frame)} · D${frame.detector}…`);
   try {
     // Playback stays quiet: the previous frame remains on screen until the next
     // one is ready, so there is no "loading cutout" flash between frames.
-    await showCutout(frame, { quiet: playback, keepImage: playback });
+    const result = await showCutout(frame, { quiet: playback, keepImage: playback });
+    if (!result?.stackRecord?.deepStack) frame.stackRecord = result?.stackRecord || null;
+    updateCurrent({ keepSlider: true });
   } finally {
     prefetch.paused = Math.max(0, prefetch.paused - 1);
     if (state.frames[state.index] === frame) {
@@ -497,12 +523,29 @@ function paintThumbFrom(observation, source) {
 // Warm-up renders each frame off-screen, so the filmstrip fills in with real
 // images while the archive is still downloading the rest of the sequence.
 window.addEventListener('sky:cutout-warmed', event => {
-  paintThumbFrom(event.detail?.observation, event.detail?.canvas);
+  const observation = event.detail?.observation;
+  paintThumbFrom(observation, event.detail?.canvas);
+  if (observation && event.detail?.stackRecord) {
+    const frame = state.frames.find(item => observationKey(item) === observationKey(observation));
+    if (frame) frame.stackRecord = event.detail.stackRecord;
+  }
+});
+
+window.addEventListener('sky:deep-stack-built', event => {
+  const record = event.detail?.record;
+  if (!record) return;
+  $('timeline-status').textContent = record.failedObservationIds.length
+    ? `Deep stack ready; ${record.failedObservationIds.length} source exposures were skipped. See the frame contribution CSV for statuses.`
+    : `Deep stack ready from ${record.usedFrameCount} UTC-day frames. The median stack excludes masked, missing, and uncovered samples.`;
+  if (record.excludedByFrameLimit) $('timeline-status').textContent += ` ${record.excludedByFrameLimit} later frame${record.excludedByFrameLimit === 1 ? ' was' : 's were'} outside the configured limit.`;
+  $('timeline-meta').textContent = `Deep median · ${record.usedFrameCount}/${record.availableFrameCount} available UTC-day frames · ${record.usedExposureCount} exposures · ${record.validPixelContributions.toLocaleString()} valid frame-pixel contributions · ${Math.round(record.exposureSeconds)} s total`;
+  $('frame-provenance-text').textContent = `${record.method}. Source observation IDs: ${record.observationIds.join(', ')}. Skipped IDs: ${record.failedObservationIds.join(', ') || 'none'}. ${record.excludedByFrameLimit || 0} frames excluded by the configured limit. Full product IDs and exposure-level details are available in the contributor CSV.`;
 });
 
 window.addEventListener('sky:cutout-rendered', event => {
   const observation = event.detail?.observation;
   if (!observation) return;
+  if (event.detail?.stackRecord?.deepStack) return;
   const key = observationKey(observation);
   state.shownKey = key;
   prefetch.fetched.add(key);
@@ -527,3 +570,24 @@ window.addEventListener('sky:cutout-error', event => {
 $('speed-value').textContent = `${state.speed}×`;
 render();
 setStatus('Search for a target to build a dated time-lapse. Timeline ticks are placed at the real observation dates, so long gaps appear as long spaces.');
+
+$('export-frame-csv').addEventListener('click', () => {
+  if (!state.frames.length) return;
+  const headers = ['frame', 'periodUtcDate', 'periodStartUtc', 'periodEndUtc', 'detector', 'stackMethod', 'requestedExposures', 'usedExposures', 'totalExposureSeconds', 'validPixelContributions', 'coveredOutputPixels', 'observationId', 'productId', 'release', 'processingVersion', 'exposureStartUtc', 'exposureSeconds', 'validOutputPixels', 'contributionStatus'];
+  const cell = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
+  const rows = [headers.join(',')];
+  state.frames.forEach((frame, index) => {
+    const record = frame.stackRecord, contributors = new Map((record?.contributors || []).map(item => [item.observationId, item]));
+    const failed = new Set(record?.failedObservationIds || []), exposures = frame.exposures || [frame];
+    const periodStart = exposures.map(item => item.observedStartUtc).filter(Boolean).sort()[0] || '';
+    const periodEnd = exposures.map(item => item.observedEndUtc || item.observedStartUtc).filter(Boolean).sort().at(-1) || '';
+    for (const exposure of exposures) {
+      const id = exposure.observationId || '', used = contributors.get(id);
+      const status = !record ? 'not loaded' : used ? 'included in median stack' : failed.has(id) ? 'fetch failed' : 'not included';
+      const values = [index + 1, periodStart.slice(0, 10), periodStart, periodEnd, exposure.detector, record?.method || (exposures.length > 1 ? 'per-pixel median' : 'single exposure'), record?.requestedExposureCount ?? exposures.length, record?.usedExposureCount ?? '', record?.exposureSeconds ?? '', record?.validPixelContributions ?? '', record?.coveredOutputPixels ?? '', id, exposure.productId, exposure.release || exposure.collection, exposure.processingVersion, exposure.observedStartUtc, exposure.exposureSeconds, used?.validOutputPixels ?? '', status];
+      rows.push(values.map(cell).join(','));
+    }
+  });
+  const url = URL.createObjectURL(new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a'); link.href = url; link.download = 'spherex-frame-contributions.csv'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+});

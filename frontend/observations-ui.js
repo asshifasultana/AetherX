@@ -1,4 +1,5 @@
 import { preferredProducts } from './observation-products.js';
+import { observeCutout } from './fits-viewer.js';
 const $ = id => document.getElementById(id);
 const make = (tag, text, className) => { const element = document.createElement(tag); if (text !== undefined) element.textContent = text; if (className) element.className = className; return element; };
 const formatNumber = (value, digits = 3) => Number.isFinite(value) ? value.toFixed(digits).replace(/0+$/, '').replace(/\.$/, '') : 'Not reported';
@@ -119,6 +120,9 @@ function renderRows() {
     details.append(list, make('p', observation.quality.description, 'quality-description'));
     const actions = make('div', undefined, 'metadata-actions'), inspection = make('div', undefined, 'quality-inspection'); inspection.setAttribute('role', 'status');
     if (observation.accessUrl) {
+      const view = make('button', 'View aligned cutout ↗', 'primary-button'); view.type = 'button';
+      view.addEventListener('click', () => { observeCutout(observation); document.getElementById('explorer').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+      actions.append(view);
       const link = make('a', 'Open FITS product ↗', 'reset-settings'); link.href = observation.accessUrl; link.target = '_blank'; link.rel = 'noopener noreferrer'; actions.append(link);
       const inspect = make('button', 'Inspect quality header', 'reset-settings'); inspect.type = 'button';
       inspect.addEventListener('click', () => inspectQuality(observation, inspection, inspect)); actions.append(inspect);

@@ -3,7 +3,7 @@ import { presets } from './presets.js';
 const $ = id => document.getElementById(id);
 let selected = 'barnard';
 let position = { raDeg: presets.barnard.raDeg, decDeg: presets.barnard.decDeg, frame: 'icrs', targetId: 'barnard' };
-const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 5, combineExposures: true, hideBadPixels: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: true, labelAsteroids: false, asteroidMagnitude: 20 };
+const defaultSettings = { band: 2, viewMode: 'time-lapse', fovArcmin: 16, combineExposures: true, hideBadPixels: true, stretch: 'asinh', colours: 'grayscale', contrast: 65, invert: false, showTargetMarker: true, labelAsteroids: false, asteroidMagnitude: 20 };
 let viewerSettings = { ...defaultSettings };
 const ranges = ['0.75 – 1.09', '1.10 – 1.62', '1.63 – 2.41', '2.42 – 3.82', '3.83 – 4.41', '4.42 – 5.00'];
 const signed = n => `${n < 0 ? '' : '+'}${n.toFixed(4)}`;
@@ -20,7 +20,7 @@ function showPosition(data) {
   $('object-type').textContent = data.type; $('object-description').textContent = data.description;
   $('display-ra').innerHTML = `${position.raDeg.toFixed(4)}<span>°</span>`;
   $('display-dec').innerHTML = `${signed(position.decDeg)}<span>°</span>`;
-  $('announcement').textContent = `${data.name} selected. Sky position updated. Images are not connected yet.`;
+  $('announcement').textContent = `${data.name} selected. The observation search has been updated.`;
   window.dispatchEvent(new CustomEvent('sky:target-selected', { detail: { ...position } }));
 }
 document.querySelectorAll('[data-target]').forEach(button => button.addEventListener('click', () => {
@@ -44,7 +44,7 @@ $('coordinate-form').addEventListener('submit', event => {
   }
   if (firstInvalid) { firstInvalid.focus(); return; }
   position = { ...parsed, frame: 'icrs' }; selected = null; updateSelection();
-  showPosition({ name: 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Your destination is set. Infrared images will appear here once the NASA image service is connected.' });
+  showPosition({ name: 'Your sky position', type: 'CUSTOM COORDINATES · ICRS', description: 'Your destination is set. Scroll down to Find your observations and search this position.' });
 });
 const modeDescriptions = {
   'time-lapse': 'Play observations in date order to follow changes over time.',
@@ -58,6 +58,10 @@ const selects = { stretch: 'stretch', colours: 'colours', 'asteroid-magnitude': 
 function emitSettings() {
   window.dispatchEvent(new CustomEvent('sky:viewer-settings-changed', { detail: { ...viewerSettings } }));
 }
+window.addEventListener('sky:cutout-detector-selected', event => {
+  if (!Number.isInteger(event.detail?.detector)) return;
+  viewerSettings.band = event.detail.detector; renderSettings();
+});
 function updateButtons(attribute, value) {
   document.querySelectorAll('[data-' + attribute + ']').forEach(button => {
     const active = button.dataset[attribute] === String(value);
@@ -86,6 +90,8 @@ $('reset-button').addEventListener('click', () => {
   $('announcement').textContent = 'All observation settings reset to their defaults.';
 });
 renderSettings();
+// Publish the initial UI settings after the other page modules have attached their listeners.
+window.addEventListener('load', emitSettings, { once: true });
 $('expand-button').addEventListener('click', async () => {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();

@@ -7,6 +7,7 @@
   "functions": {
     "api/observations.js": { "maxDuration": 120, "includeFiles": "data/**" },
     "api/observation-quality.js": { "maxDuration": 30 },
+    "api/cutout.js": { "maxDuration": 120 },
     "api/index-status.js": { "maxDuration": 10, "includeFiles": "data/**" }
   }
 }

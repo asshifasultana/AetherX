@@ -1,0 +1,82 @@
+name: Update observation index
+
+on:
+  schedule:
+    # Daily at 04:27 UTC, approximately 10:27 AM in Bangladesh.
+    - cron: '27 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: observation-index-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      source_ref: ${{ steps.persist.outputs.source_ref }}
+      changed: ${{ steps.persist.outputs.changed }}
+      deploy_enabled: ${{ steps.credentials.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Run regression tests
+        run: node --test frontend/coordinates.test.js frontend/tests/*.test.js
+      - name: Check IRSA for new and revised observations
+        run: node scripts/update-observation-index.mjs
+      - name: Save the complete index
+        id: persist
+        env:
+          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- frontend/data
+          if git diff --cached --quiet; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Update preset observation index"
+            git push origin "HEAD:$TARGET_BRANCH"
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+          echo "source_ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Check deployment configuration
+        id: credentials
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [[ -n "$VERCEL_TOKEN" && -n "$VERCEL_ORG_ID" && -n "$VERCEL_PROJECT_ID" ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo '::warning::Index saved. Configure the existing Vercel deployment secrets to publish it automatically.'
+          fi
+      - name: Preserve failed-check diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: observation-index-status
+          path: frontend/data/index.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # A push using GITHUB_TOKEN does not trigger the push deployment workflow.
+  # Invoke the reusable deployment explicitly for the exact new index commit.
+  deploy:
+    needs: update
+    if: needs.update.outputs.changed == 'true' && needs.update.outputs.deploy_enabled == 'true'
+    uses: ./.github/workflows/deploy.yml
+    with:
+      source_ref: ${{ needs.update.outputs.source_ref }}
+    secrets: inherit

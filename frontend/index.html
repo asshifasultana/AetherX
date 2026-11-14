@@ -5,6 +5,7 @@
   <meta name="theme-color" content="#f5f6f2">
   <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
   <title>SPHEREx — A sky in motion</title>
+  <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:5173/');</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -36,8 +37,13 @@
     </section>
 
     <section id="explorer" class="explorer" aria-label="Sky image viewer">
-      <div class="viewer" role="region" aria-label="Blank placeholder for future infrared observations">
-        <div class="canvas-top"><button id="expand-button" class="canvas-button" aria-label="Expand image placeholder" title="Expand image placeholder">⛶</button></div>
+      <div class="viewer" role="region" aria-label="Aligned SPHEREx FITS cutout viewer">
+        <canvas id="sky-canvas" aria-label="North-up sky image reprojected to the selected target position"></canvas>
+        <p id="coverage-note" class="coverage-note" hidden></p>
+        <div class="sky-grid" aria-hidden="true"></div><div id="target-marker" class="target-marker" hidden aria-hidden="true"></div>
+        <div class="canvas-top"><span id="cutout-cache-state" class="cutout-cache-state">No cutout loaded</span><button id="expand-button" class="canvas-button" aria-label="Expand sky viewer" title="Expand sky viewer">⛶</button></div>
+        <div class="canvas-bottom"><span id="cutout-caption">Choose an observation to view its cutout</span><span class="compass">N<span>↑</span></span></div>
+        <p id="cutout-status" class="cutout-status" role="status" aria-live="polite">Scroll down past the timeline and settings to Find your observations. Choose Details + on a result, then View aligned cutout.</p>
       </div>
 
       <aside class="observation-panel">
@@ -57,7 +63,7 @@
           </div>
           <div class="band-legend"><span id="band-range">1.10 – 1.62 μm</span><span class="spectrum-line"></span><span>INFRARED</span></div>
         </div>
-        <div class="demo-note"><span aria-hidden="true">ⓘ</span><p>Choose your settings now. Infrared images will appear here once the NASA image service is connected.</p></div>
+        <div class="demo-note"><span aria-hidden="true">ⓘ</span><p>Cutouts are centered on the selected sky position and rendered north up at the same scale, so comparing observations keeps the sky fixed.</p></div>
       </aside>
 
       <div class="timeline-panel"><div class="timeline-heading"><div><span class="step-number">03</span><h3>A little time travel</h3><span class="demo-chip">COMING LATER</span></div><span id="frame-count">NO IMAGES LOADED</span></div><div class="playback-row"><button id="play-button" class="play-button" aria-label="Playback unavailable until images are connected" disabled>▶</button><div class="timeline-track"><input id="timeline" type="range" min="0" max="11" value="0" aria-label="Observation timeline unavailable until images are connected" disabled><div class="timeline-ticks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="timeline-labels"><span>FIRST FRAME</span><span>A SKY IN MOTION</span><span>LATEST FRAME</span></div></div><button id="speed-button" class="speed-button" aria-label="Playback speed" disabled>1× <span>speed</span></button></div></div>
@@ -70,7 +76,7 @@
               <button data-mode="time-lapse" class="selected" aria-pressed="true">Time-lapse</button><button data-mode="blink" aria-pressed="false">Blink</button><button data-mode="difference" aria-pressed="false">Difference</button><button data-mode="motion-trail" aria-pressed="false">Motion trail</button><button data-mode="deep-stack" aria-pressed="false">Deep stack</button>
             </div><p id="mode-description" class="settings-help" aria-live="polite">Play observations in date order to follow changes over time.</p></fieldset>
             <fieldset class="settings-fieldset"><legend>Field of view <span class="unit-label">arcminutes</span></legend><div class="fov-buttons" role="group" aria-label="Field of view">
-              <button data-fov="5" class="selected" aria-pressed="true">5′</button><button data-fov="10" aria-pressed="false">10′</button><button data-fov="16" aria-pressed="false">16′</button><button data-fov="25" aria-pressed="false">25′</button>
+              <button data-fov="5" aria-pressed="false">5′</button><button data-fov="10" aria-pressed="false">10′</button><button data-fov="16" class="selected" aria-pressed="true">16′</button><button data-fov="25" aria-pressed="false">25′</button>
             </div></fieldset>
             <div class="processing-options"><label class="check-row"><input id="combine-exposures" type="checkbox" checked><span>Combine exposures from the same day</span></label><label class="check-row"><input id="hide-bad-pixels" type="checkbox" checked><span>Hide bad pixels<small>Cosmic rays and hot pixels</small></span></label></div>
           </section>
@@ -84,7 +90,7 @@
             <p id="magnitude-help" class="settings-help">Visual magnitude limit. Lower values show brighter objects.</p>
           </section>
         </div>
-        <p class="settings-notice">Settings are ready for future observations. The viewer stays empty until image data is connected.</p>
+        <p class="settings-notice">Cutouts use the selected field of view and display stretch. Larger fields take longer to retrieve.</p>
       </section>
     </section>
 
@@ -119,5 +125,6 @@
   <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
   <script type="module" src="observations-ui.js"></script>
+  <script type="module" src="fits-viewer.js"></script>
 </body>
 </html>

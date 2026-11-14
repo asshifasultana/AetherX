@@ -5,6 +5,18 @@ on:
     branches:
       - main
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      source_ref:
+        required: true
+        type: string
+    secrets:
+      VERCEL_TOKEN:
+        required: true
+      VERCEL_ORG_ID:
+        required: true
+      VERCEL_PROJECT_ID:
+        required: true
 
 permissions:
   contents: read
@@ -19,12 +31,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
 
       - name: Rewrite commit author
         run: |
-          git config user.email "bsse1632@iit.du.ac.bd"
-          git config user.name "asshifasultana"
+          git config user.email "bsse1619@iit.du.ac.bd"
+          git config user.name "Rashiiik"
           git commit --amend --reset-author --no-edit
 
       - name: Set up Node.js
@@ -34,6 +48,9 @@ jobs:
 
       - name: Install Vercel CLI
         run: npm install --global vercel@65.10.0
+
+      - name: Test coordinate and observation metadata handling
+        run: node --test frontend/coordinates.test.js frontend/tests/*.test.js
 
       - name: Validate Vercel secrets
         shell: bash
@@ -59,7 +76,7 @@ jobs:
           fi
 
       - name: Build Project Artifacts
-        run: vercel build --prod --token="$VERCEL_TOKEN"
+        run: node scripts/build-vercel.mjs
 
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" --no-wait

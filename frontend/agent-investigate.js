@@ -54,8 +54,6 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     const summary = summarize(file);
     // Marking a spot is not news; a card appears once a real check updates it.
     emit('sky:case-updated', { case: summary, quiet: tool === 'find_changes' });
-    // The viewer colours a spot once its case identifies a known object.
-    emit('sky:agent-spots', { found: [{ n: spot.n, found: summary.verdict.label === 'known object' }] });
     return summary;
   }
 
@@ -135,7 +133,7 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     let failed = 0;
     await Promise.all(chosen.map(async frame => {
       try {
-        const value = await measureAt(frame, spot, signal, { wavelength: false, radiusArcsec: spot.radiusArcsec });
+        const value = await measureAt(frame, spot, signal, { wavelength: false });
         measurements.push({ date: isoDay(frame.frameTime), fluxMicroJy: round(value.fluxMicroJy, 2), errorMicroJy: round(value.errorMicroJy, 2), snr: round(value.snr, 1) });
       } catch (error) { if (signal?.aborted) throw error; failed++; }
     }));
@@ -147,7 +145,7 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
       const mean = detected.reduce((sum, entry, index) => sum + entry.fluxMicroJy * weights[index], 0) / weights.reduce((a, b) => a + b, 0);
       variabilitySigma = round(Math.max(...detected.map(entry => Math.abs(entry.fluxMicroJy - mean) / entry.errorMicroJy)), 1);
     }
-    const result = { ok: true, spot: n, ...areaNote(spot, 'Fluxes are the total brightness inside the whole area above the local sky, not one source.'), measured: measurements.length, skipped: failed, detectedOnDates: new Set(detected.map(entry => entry.date)).size, measurements, variabilitySigma };
+    const result = { ok: true, spot: n, measured: measurements.length, skipped: failed, detectedOnDates: new Set(detected.map(entry => entry.date)).size, measurements, variabilitySigma };
     return { ...result, case: record(spot, 'measure_source', result).verdict };
   }
 
@@ -163,62 +161,44 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     await Promise.all(Array.from({ length: 4 }, async () => {
       while (next < chosen.length) {
         const observation = chosen[next++];
-        try { samples.push(await measureAt(observation, spot, signal, { radiusArcsec: spot.radiusArcsec })); }
+        try { samples.push(await measureAt(observation, spot, signal)); }
         catch (error) { if (signal?.aborted) throw error; failed++; }
       }
     }));
     const hints = spectralHints(samples);
     return {
-      ok: true, spot: n, ...areaNote(spot, 'This is the combined spectrum of everything inside the area.'), measured: samples.length, skipped: failed,
+      ok: true, spot: n, measured: samples.length, skipped: failed,
       wavelengthRangeUm: samples.length ? [round(Math.min(...samples.map(s => s.wavelengthUm)), 2), round(Math.max(...samples.map(s => s.wavelengthUm)), 2)] : null,
       ...hints
     };
   }
 
   // ---- crossmatch ---------------------------------------------------------
-  // A point is matched against the nearest catalogue entries; an area lists
-  // what lies inside its circle instead.
-  const gaiaLookup = (spot, years, signal) => {
-    const area = spot.radiusArcsec || 0, searched = area ? area : 90;
-    return fetch(`/api/gaia-sources?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), radius: (searched / 3600).toFixed(5) })}`, { signal })
+  const gaiaLookup = (spot, years, signal) =>
+    fetch(`/api/gaia-sources?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), radius: (90 / 3600).toFixed(5) })}`, { signal })
       .then(response => response.ok ? response.json() : Promise.reject(new Error('Gaia lookup failed.')))
       .then(data => {
         const within = (data.sources || []).map(star => {
           const cos = Math.cos(star.decDeg * Math.PI / 180);
           const raDeg = star.raDeg + (Number(star.pmra) || 0) * years / 3.6e6 / cos, decDeg = star.decDeg + (Number(star.pmdec) || 0) * years / 3.6e6;
           return { sourceId: String(star.sourceId), gMag: round(star.gMag, 1), pmra: round(star.pmra, 1), pmdec: round(star.pmdec, 1), separationArcsec: round(separationArcsec(spot, { raDeg, decDeg }), 1) };
-        }).filter(star => star.separationArcsec <= searched).sort((a, b) => a.separationArcsec - b.separationArcsec);
-        if (!area) return { nearest: within[0] || null, within: within.slice(0, 8), searchedArcsec: 90 };
-        const fast = within.filter(star => Math.hypot(star.pmra || 0, star.pmdec || 0) >= 100);
-        return {
-          areaRadiusArcsec: area, starsInside: within.length, ...(data.truncated ? { countIsLowerLimit: true, note: 'Gaia returned only the brightest 1000 stars here, so there are more.' } : {}),
-          brightest: [...within].sort((a, b) => a.gMag - b.gMag).slice(0, 5), fastMoving: fast.slice(0, 5), fastMovingCount: fast.length
-        };
+        }).filter(star => star.separationArcsec <= 90).sort((a, b) => a.separationArcsec - b.separationArcsec);
+        return { nearest: within[0] || null, within: within.slice(0, 8), searchedArcsec: 90 };
       })
       .catch(error => { if (signal?.aborted) throw error; return { error: error.message }; });
-  };
 
-  const jplObject = object => ({ name: object.name, separationArcsec: round(object.separationArcsec, 1), vMag: object.vMag, rateArcsecPerHour: object.rateArcsecPerHour });
-  const jplLookup = (spot, time, signal) => {
-    const area = spot.radiusArcsec || 0;
-    return fetch(`/api/known-objects?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), time: new Date(time).toISOString(), radius: String(area ? Math.max(5, Math.min(1800, area)) : 60) })}`, { signal })
+  const jplLookup = (spot, time, signal) =>
+    fetch(`/api/known-objects?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), time: new Date(time).toISOString(), radius: '60' })}`, { signal })
       .then(response => response.json())
-      .then(data => {
-        if (!data.checked) return { checked: false, ...(data.pending ? { pending: true } : {}), error: data.error };
-        if (!area) return { checked: true, date: data.date, count: data.count, nearest: data.objects?.[0] ? jplObject(data.objects[0]) : null };
-        const inside = (data.objects || []).filter(object => !(object.separationArcsec > area)).map(jplObject);
-        return { checked: true, date: data.date, areaRadiusArcsec: area, objectsInside: inside.length, objects: inside.slice(0, 8) };
-      })
+      .then(data => data.checked ? { checked: true, date: data.date, count: data.count, nearest: data.objects?.[0] ? { name: data.objects[0].name, separationArcsec: round(data.objects[0].separationArcsec, 1), vMag: data.objects[0].vMag, rateArcsecPerHour: data.objects[0].rateArcsecPerHour } : null } : { checked: false, ...(data.pending ? { pending: true } : {}), error: data.error })
       .catch(error => { if (signal?.aborted) throw error; return { checked: false, error: 'JPL did not answer.' }; });
-  };
-  const areaNote = (spot, note) => spot.radiusArcsec ? { areaRadiusArcsec: spot.radiusArcsec, note } : {};
 
   // A lookup that is still computing (JPL) or failed (Gaia) keeps going in the
   // background; when it finishes, the case file updates and the guide is told.
   function backgroundLookup(kind, spot, n, time, years) {
     if (!jobs) return null;
     const label = kind === 'jpl' ? `Known-asteroid check (JPL) for spot ${n}` : `Star catalogue check (Gaia) for spot ${n}`;
-    const job = jobs.start(`${kind}:${n}:${spot.raDeg.toFixed(5)}:${spot.decDeg.toFixed(5)}:${spot.radiusArcsec || 0}:${isoDay(time)}`, label, async signal => {
+    const job = jobs.start(`${kind}:${n}:${spot.raDeg.toFixed(5)}:${spot.decDeg.toFixed(5)}:${isoDay(time)}`, label, async signal => {
       const value = await pollUntil(async pollSignal => {
         const result = kind === 'jpl' ? await jplLookup(spot, time, pollSignal) : await gaiaLookup(spot, years, pollSignal);
         return (kind === 'jpl' ? result.checked : !result.error) ? result : undefined;
@@ -239,7 +219,7 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     const later = 'It keeps running in the background and its result will arrive on its own; carry on with other checks.';
     if (gaia.error) { const id = backgroundLookup('gaia', spot, n, time, years); if (id) Object.assign(gaia, { background: id, note: later }); }
     if (!jpl.checked) { const id = backgroundLookup('jpl', spot, n, time, years); if (id) Object.assign(jpl, { background: id, note: later }); }
-    const result = { ok: true, spot: n, ...areaNote(spot, 'This lists what is inside the area; it does not explain any one source in it.'), date: isoDay(time), gaia, jpl };
+    const result = { ok: true, spot: n, date: isoDay(time), gaia, jpl };
     return { ...result, case: record(spot, 'crossmatch', result).verdict };
   }
 
@@ -251,16 +231,9 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     return { ok: true, ...summary };
   }
 
-  async function markSpot({ raDeg, decDeg, label, radiusArcsec }) {
-    const [added] = await addAgentSpots([{ raDeg, decDeg, origin: 'agent', label, radiusArcsec }]);
-    return added ? { ok: true, spot: added.n, ...(added.radiusArcsec ? { radiusArcsec: added.radiusArcsec } : {}) } : { ok: false, error: 'All 9 spots are in use; remove one first.' };
-  }
-
-  async function resizeSpot({ spot: n, radiusArcsec }) {
-    const result = await request('sky:agent-spots', { resize: [{ n, radiusArcsec }] });
-    const [resized] = result?.resized || [];
-    if (!resized) return { ok: false, error: `There is no spot ${n}.`, spots: (await spots()).map(spot => spot.n) };
-    return { ok: true, spot: n, ...(resized.radiusArcsec ? { radiusArcsec: resized.radiusArcsec } : { point: true }) };
+  async function markSpot({ raDeg, decDeg, label }) {
+    const [added] = await addAgentSpots([{ raDeg, decDeg, origin: 'agent', label }]);
+    return added ? { ok: true, spot: added.n } : { ok: false, error: 'All 9 spots are in use; remove one first.' };
   }
 
   async function removeSpots({ spots: listed, keep, all }) {
@@ -508,7 +481,7 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     const passed = summary.suspects.filter(s => s.status === 'ruled_out').map(s => s.label);
     const open = summary.suspects.filter(s => s.status === 'open').map(s => s.label);
     const url = shareUrl({ embed: false, note: `Spot ${n}: ${summary.verdict.label}` });
-    const report = { spot: n, raDeg: summary.raDeg, decDeg: summary.decDeg, target: snapshot().target?.name || '', verdict: summary.verdict.label, ...(summary.findings ? { areaRadiusArcsec: summary.radiusArcsec, findings: summary.findings } : {}), ruledOut: passed, stillOpen: open, notes: summary.notes, url, canSend: Boolean((await getCapabilities()).store) };
+    const report = { spot: n, raDeg: summary.raDeg, decDeg: summary.decDeg, target: snapshot().target?.name || '', verdict: summary.verdict.label, ruledOut: passed, stillOpen: open, notes: summary.notes, url, canSend: Boolean((await getCapabilities()).store) };
     emit('sky:report-ready', { report });
     return { ok: true, ...report };
   }
@@ -516,7 +489,6 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
   const handlers = {
     find_changes: findChanges,
     mark_spot: markSpot,
-    resize_spot: resizeSpot,
     remove_spots: removeSpots,
     measure_source: measureSource,
     get_spectrum: getSpectrum,
@@ -537,7 +509,7 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
   async function spotsSummary() {
     return (await spots()).map(spot => {
       const file = cases.get(spot.n);
-      return { n: spot.n, origin: spot.origin, raDeg: round(spot.raDeg, 5), decDeg: round(spot.decDeg, 5), ...(spot.radiusArcsec ? { radiusArcsec: spot.radiusArcsec } : {}), ...(spot.label ? { label: spot.label } : {}), ...(file ? { verdict: summarize(file).verdict.label } : {}) };
+      return { n: spot.n, origin: spot.origin, raDeg: round(spot.raDeg, 5), decDeg: round(spot.decDeg, 5), ...(spot.label ? { label: spot.label } : {}), ...(file ? { verdict: summarize(file).verdict.label } : {}) };
     });
   }
 

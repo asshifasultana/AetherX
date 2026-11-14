@@ -2,11 +2,6 @@
 // a 1.5-pixel aperture with a 4.5–8 pixel background annulus, quality-masked,
 // with variance-based errors. Shared by the spectrum explorer and the AI
 // guide's measure_source and get_spectrum tools.
-//
-// An area spot (radiusArcsec) is measured as one big aperture: the total flux
-// inside the circle above a local background ring 1.5–2× its radius. Masked or
-// off-image pixels inside it are filled with the mean of the usable ones, and
-// at least 60% of the area must be usable.
 
 import { decodeCrop } from './crop-codec.js';
 import { projectSkyToPixel } from './fits-engine.js';
@@ -22,28 +17,14 @@ const median = values => {
 };
 const pixelAreaSr = matrix => Math.abs(matrix.determinant) * (Math.PI / 180) ** 2;
 
-const PIXEL_ARCSEC = 6.15;
-const MAX_CROP_FOV_ARCMIN = 30;
-const MIN_AREA_COVERAGE = 0.6;
-
-/** Aperture and background ring in pixels, and the crop size that holds them. */
-export function apertureFor(radiusArcsec) {
-  const area = Number(radiusArcsec) > 0;
-  const radius = area ? Math.max(1.5, radiusArcsec / PIXEL_ARCSEC) : 1.5;
-  const inner = Math.max(4.5, radius * 1.5), outer = Math.max(8, radius * 2);
-  const fovArcmin = Math.min(MAX_CROP_FOV_ARCMIN, Math.max(3, Math.ceil(2 * (outer + 2) * PIXEL_ARCSEC / 60)));
-  return { area, radius, inner, outer, fovArcmin };
-}
-
 /**
  * Measure the flux at {raDeg, decDeg} in one observation.
  * @returns {Promise<{wavelengthUm:number|null, fluxMicroJy:number, errorMicroJy:number, snr:number, time:number, observation:object, detector:number, pixelsUsed:number, raDeg:number, decDeg:number, flagsChecked:true}>}
  */
-export async function measureAt(observation, position, signal, { wavelength = true, radiusArcsec = null, wavelengthAt = sharedWavelengthReader, fetchImpl = (...args) => fetch(...args) } = {}) {
-  const aperture = apertureFor(radiusArcsec);
+export async function measureAt(observation, position, signal, { wavelength = true, wavelengthAt = sharedWavelengthReader, fetchImpl = (...args) => fetch(...args) } = {}) {
   const params = new URLSearchParams({
     url: observation.accessUrl, raDeg: String(position.raDeg), decDeg: String(position.decDeg),
-    fovArcmin: String(aperture.fovArcmin), flags: '1', variance: '1',
+    fovArcmin: '3', flags: '1', variance: '1',
     revision: observation.productModifiedAt || observation.metadataModifiedAt || ''
   });
   const response = await fetchImpl(`/api/crop?${params}`, { signal });
@@ -58,31 +39,20 @@ export async function measureAt(observation, position, signal, { wavelength = tr
   const pixel = projectSkyToPixel(image, position.raDeg, position.decDeg);
   if (!pixel) throw new Error('The selected sky position is outside this image.');
   const x = Math.round(pixel[0]), y = Math.round(pixel[1]);
-  const source = [], background = [], beyond = [], variance = [];
-  const reach = Math.ceil(aperture.outer);
-  let inAperture = 0;
-  for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) {
-    const radius = Math.hypot(dx, dy);
-    if (radius > reach) continue;
-    if (radius <= aperture.radius) inAperture++;
+  const source = [], background = [], variance = [];
+  for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) {
     const px = x + dx, py = y + dy;
     if (px < 0 || py < 0 || px >= image.width || py >= image.height) continue;
     const index = py * image.width + px, value = image.values[index], v = image.variance[index];
     if (!Number.isFinite(value) || (image.flags[index] & DEFAULT_MASK_BITS) !== 0) continue;
-    if (radius <= aperture.radius) { if (Number.isFinite(v) && v >= 0) { source.push(value); variance.push(v); } }
-    else if (radius >= aperture.inner && radius <= aperture.outer) background.push(value);
-    else if (aperture.area && radius > aperture.radius + 2) beyond.push(value);
+    const radius = Math.hypot(dx, dy);
+    if (radius <= 1.5 && Number.isFinite(v) && v >= 0) { source.push(value); variance.push(v); }
+    else if (radius >= 4.5 && radius <= 8) background.push(value);
   }
-  // A large area's ring can run off the crop; then any sky clear of the area is used.
-  const sample = background.length >= 12 || !aperture.area ? background : beyond;
-  if (source.length < 5 || sample.length < 12) throw new Error('Too few unflagged pixels around the target for a stable quick-look measurement.');
-  const coverage = source.length / inAperture;
-  if (aperture.area && coverage < MIN_AREA_COVERAGE) throw new Error(`Only ${Math.round(coverage * 100)}% of the area has usable pixels in this exposure.`);
-  const fill = aperture.area ? inAperture / source.length : 1;
-  const sky = median(sample.slice()), scatter = 1.4826 * median(sample.map(value => Math.abs(value - sky)));
-  const area = pixelAreaSr(image.matrix), sourceSum = fill * source.reduce((sum, value) => sum + value - sky, 0);
-  const counted = aperture.area ? inAperture : source.length;
-  const varianceSum = fill ** 2 * variance.reduce((sum, value) => sum + value, 0) + counted ** 2 * (scatter ** 2 / sample.length);
+  if (source.length < 5 || background.length < 12) throw new Error('Too few unflagged pixels around the target for a stable quick-look measurement.');
+  const sky = median(background), scatter = 1.4826 * median(background.map(value => Math.abs(value - sky)));
+  const area = pixelAreaSr(image.matrix), sourceSum = source.reduce((sum, value) => sum + value - sky, 0);
+  const varianceSum = variance.reduce((sum, value) => sum + value, 0) + source.length ** 2 * (scatter ** 2 / background.length);
   const scale = 1e12 * area; // MJy/sr × pixel solid angle → μJy.
   let wavelengthUm = null;
   if (wavelength) {
@@ -94,7 +64,6 @@ export async function measureAt(observation, position, signal, { wavelength = tr
     wavelengthUm, fluxMicroJy, errorMicroJy, snr: errorMicroJy > 0 ? fluxMicroJy / errorMicroJy : 0,
     time: Date.parse(observation.observedStartUtc || '') || 0,
     observation, detector: Number(observation.detector), pixelsUsed: source.length,
-    ...(aperture.area ? { radiusArcsec: Number(radiusArcsec), areaCoverage: coverage } : {}),
     raDeg: position.raDeg, decDeg: position.decDeg, flagsChecked: true
   };
 }

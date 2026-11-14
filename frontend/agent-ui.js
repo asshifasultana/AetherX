@@ -47,8 +47,7 @@ const describe = {
   take_snapshot: () => 'Took a snapshot of the viewer',
   compare_side_by_side: args => 'Put ' + args.panels.length + ' views side by side',
   find_changes: () => 'Listed the changes in the difference image',
-  mark_spot: args => args.radiusArcsec ? 'Marked an area' : 'Marked a spot',
-  resize_spot: args => args.radiusArcsec ? `Resized spot ${args.spot}` : `Made spot ${args.spot} a point`,
+  mark_spot: () => 'Marked a spot',
   remove_spots: args => args.all ? 'Removed all spots' : args.keep ? `Kept only spot${args.keep.length > 1 ? 's' : ''} ${args.keep.join(', ')}` : `Removed spot${args.spots.length > 1 ? 's' : ''} ${args.spots.join(', ')}`,
   measure_source: args => `Measured spot ${args.spot} on each date`,
   get_spectrum: args => `Measured spot ${args.spot} across wavelengths`,
@@ -80,7 +79,6 @@ const ACTIVITY = {
   compare_side_by_side: 'Photographing each view…',
   find_changes: 'Squinting at pixels…',
   mark_spot: 'Placing a marker…',
-  resize_spot: 'Resizing the marker…',
   remove_spots: 'Tidying up the markers…',
   measure_source: 'Measuring brightness on each date…',
   get_spectrum: 'Splitting the light into colours…',
@@ -297,7 +295,7 @@ function renderCase(summary) {
   const heading = document.createElement('div');
   heading.className = 'case-head';
   const title = document.createElement('strong');
-  title.textContent = `${summary.radiusArcsec ? 'Area' : 'Spot'} ${summary.spot}`;
+  title.textContent = `Spot ${summary.spot} · case file`;
   const badge = document.createElement('span');
   badge.className = `case-verdict is-${summary.verdict.label.split(' ')[0].replace(/[^a-z]/g, '')}`;
   badge.textContent = summary.verdict.label;
@@ -312,14 +310,6 @@ function renderCase(summary) {
     const label = document.createElement('span'); label.textContent = suspect.label;
     row.append(icon, label);
     if (suspect.evidence) { const why = document.createElement('small'); why.textContent = suspect.evidence; row.append(why); }
-    list.append(row);
-  }
-  for (const finding of summary.findings || []) {
-    const row = document.createElement('li');
-    row.className = 'is-finding';
-    const icon = document.createElement('span'); icon.className = 'case-icon'; icon.textContent = '•'; icon.setAttribute('aria-hidden', 'true');
-    const label = document.createElement('span'); label.textContent = finding;
-    row.append(icon, label);
     list.append(row);
   }
   const detail = document.createElement('p');
@@ -392,7 +382,7 @@ function renderChips() {
   if (!row) return;
   const chips = knownSpots.filter(spot => attached.has(spot.n)).map(spot => {
     const chip = document.createElement('span');
-    chip.className = `ai-guide-chip is-${spot.origin}${spot.found ? ' is-found' : ''}`;
+    chip.className = `ai-guide-chip is-${spot.origin}`;
     const label = document.createElement('span');
     label.textContent = `↩ Spot ${spot.n} · ${formatSpot(spot)}`;
     const remove = document.createElement('button');
@@ -422,28 +412,14 @@ const wait = (ms, signal) => new Promise(resolve => {
   signal.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
 });
 
-// When the reply isn't the guide's own JSON, the host or a proxy answered instead.
-function unavailableReason(status) {
-  if (status === 404 || status === 405) return `The AI guide isn't available on this server (HTTP ${status}).`;
-  if (status === 504 || status === 408) return 'The guide took too long and the server cut it off. Please retry.';
-  if (status === 502 || status === 503) return `The server is restarting or overloaded (HTTP ${status}). Please retry in a moment.`;
-  return `The guide is unavailable right now (HTTP ${status}). Please retry.`;
-}
-
 async function ask(signal, { final = false } = {}) {
   for (let attempt = 0; ; attempt++) {
-    let response;
-    try {
-      response = await fetch('/api/agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: trimmedHistory(), ...(final ? { final: true } : {}) }),
-        signal
-      });
-    } catch (error) {
-      if (error?.name === 'AbortError') throw error;
-      throw Object.assign(new Error("Can't reach the server. Check your connection and try again."), { code: 'NETWORK' });
-    }
+    const response = await fetch('/api/agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: trimmedHistory(), ...(final ? { final: true } : {}) }),
+      signal
+    });
     const data = await response.json().catch(() => ({}));
     // Wait for the upstream rate limit before trying again.
     if (response.status === 429 && data.code === 'AGENT_BUSY' && attempt < 3) {
@@ -455,10 +431,7 @@ async function ask(signal, { final = false } = {}) {
       if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
       continue;
     }
-    if (!response.ok) {
-      if (!data.error) console.warn('AI guide: /api/agent answered HTTP %d without a JSON error', response.status);
-      throw Object.assign(new Error(data.error || unavailableReason(response.status)), { code: data.code || `HTTP_${response.status}` });
-    }
+    if (!response.ok) throw Object.assign(new Error(data.error || 'The guide is unavailable right now.'), { code: data.code });
     if (!data.message) throw new Error('The guide returned an empty answer.');
     return { message: data.message, flagged: data.flagged || [] };
   }
@@ -477,18 +450,6 @@ async function askSceptic(summary, signal) {
   } catch { return null; }
 }
 
-// Tool errors carry hints meant for the model ("Call compare_frames … first").
-// The log shows people only the plain part; the model still gets the full text.
-function forPeople(error) {
-  const text = String(error || 'Something went wrong');
-  const mentionsTool = s => /\b[a-z]+_[a-z_]+\b/.test(s);
-  const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
-  const kept = sentences.filter(s => !mentionsTool(s)).join('').trim();
-  if (kept) return kept;
-  const lead = text.split(':')[0].trim();
-  return mentionsTool(lead) ? 'Not possible right now.' : `${lead}.`;
-}
-
 async function runTool(call, signal, turnSources) {
   const checked = validateToolCall(call.function?.name, call.function?.arguments);
   if (!checked.ok) return { ok: false, error: checked.error };
@@ -497,7 +458,7 @@ async function runTool(call, signal, turnSources) {
   const line = addEntry('action', `↳ ${label}…`);
   const progress = text => { addEntry('progress', text); setActivity(text); };
   const result = await controller.execute(checked.name, checked.args, { signal, progress });
-  line.textContent = `↳ ${label}${result.ok === false ? ` — ${forPeople(result.error)}` : result.pending ? ' — still loading' : ''}`;
+  line.textContent = `↳ ${label}${result.ok === false ? ` — ${result.error}` : result.pending ? ' — still loading' : ''}`;
   line.classList.toggle('is-failed', result.ok === false);
   if (checked.name === 'make_share_link' && result.url) showShare(result.url, result.note);
   turnSources.push(JSON.stringify(result));
@@ -512,7 +473,7 @@ function drainInbox(turnSources) {
     const content = describeDone(job);
     history.push({ role: 'user', content });
     turnSources.push(content);
-    const line = addEntry('action', `↳ Background: ${job.label} ${job.ok ? 'finished' : `stopped — ${forPeople(job.error)}`}`);
+    const line = addEntry('action', `↳ Background: ${job.label} ${job.ok ? 'finished' : `stopped — ${job.error}`}`);
     line.classList.toggle('is-failed', !job.ok);
   }
   return done.length;
@@ -552,7 +513,7 @@ async function converse(text, chips) {
     // A background-only turn: no visitor bubble, just the results.
     history.push({ role: 'user', content: `[Guide check] ${BACKGROUND_TURN}` });
   } else {
-    const prefix = chips.map(spot => `[Spot ${spot.n}: ra=${spot.raDeg.toFixed(5)}, dec=${spot.decDeg.toFixed(5)}${spot.radiusArcsec ? `, area radius=${spot.radiusArcsec}arcsec` : ''}, origin=${spot.origin}]`).join('\n');
+    const prefix = chips.map(spot => `[Spot ${spot.n}: ra=${spot.raDeg.toFixed(5)}, dec=${spot.decDeg.toFixed(5)}, origin=${spot.origin}]`).join('\n');
     const content = prefix ? `${prefix}\n${text}` : text;
     history.push({ role: 'user', content });
     addEntry('user', text, { chips });

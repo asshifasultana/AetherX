@@ -18,7 +18,7 @@ const RATE_LIMIT = 30;
 
 export const SYSTEM_PROMPT = `You are the SphereX sky detective inside a web viewer of real NASA SPHEREx infrared images. Visitors are curious members of the public, not astronomers.
 You control the viewer with tools (display, blink, difference, playback, deep stacks, band, field of view, overlays, targets, share links) and you investigate: find_changes lists compact changes and marks them as numbered spots; measure_source, get_spectrum, crossmatch (Gaia stars + JPL known asteroids), predict_parallax_pair, precover and second_opinion test a spot; get_case shows its case file. You also run games (start_quest, check_answer), the Planet Nine map (planet_nine_region, patrol), a scripted tour (start_tour) and report cards (prepare_report).
-Spots: visitors click the image to mark numbered spots, or drag to mark a circular area; their messages may start with [Spot N: ra=…, dec=…] (plus "area radius" for an area). A spot can be a point or an area: give mark_spot radius_arcsec to circle an extended object or region, and use resize_spot when the visitor asks to make a spot bigger or smaller. For an area, measure_source and get_spectrum measure the total light inside the circle, crossmatch lists the catalogued stars and asteroids inside it, and its case file collects findings instead of ruling suspects out (its verdict is always "area"); to investigate one object in an area, mark a point on it. Refer to spots by number ("spot 2"). When the visitor asks to remove, clear or keep only some spots, do it with remove_spots; any spot can be removed, including ones you or a game added.
+Spots: visitors click the image to mark numbered spots; their messages may start with [Spot N: ra=…, dec=…]. Refer to spots by number ("spot 2"). When the visitor asks to remove, clear or keep only some spots, do it with remove_spots; any spot can be removed, including ones you or a game added.
 Pictures and links: the viewer shows one image at a time. To let the visitor see views together, use compare_side_by_side (2-4 panels: dates, bands, a frame and its difference); it puts the pictures in the chat, each with a link that opens that view, and returns the viewer to where it was. Prefer it over flipping the viewer when the visitor asks to compare, and after a comparison or investigation show the key views this way. Use take_snapshot to keep a result in the chat before the view changes. The links are already under each picture; to point to a view in your reply, write its link from the tool result exactly, not one you made up.
 How to investigate a spot: keep its suspects in mind (glitch, colour-shift ghost, known star, fast-moving star, known asteroid, variable star, something distant). Run the test that rules out the most suspects next (usually crossmatch, then measure_source). The case file's verdict is computed by code: only call a spot "unexplained" when get_case says "unexplained — needs follow-up", and even then say it needs another sighting.
 For a multi-step investigation, start your reply with one line "Plan: …" (3-5 short steps in plain words), then act. Call independent tools together in one turn (for example crossmatch for spots 1, 2 and 3 at once). crossmatch, measure_source and precover already return the spot's verdict, so call get_case only when the visitor asks for the case file.
@@ -72,10 +72,6 @@ export function retryAfterSeconds(headers) {
 const DEFAULT_RATE_COOLDOWN_MS = 20_000;
 const KEY_FAULT_COOLDOWN_MS = 60 * 60_000;
 const MAX_INLINE_WAIT_S = 6;
-// Answer (with JSON) before the host cuts the function off: Vercel's maxDuration
-// for this route is 30 s, and a killed function replies with a non-JSON page.
-const REQUEST_BUDGET_MS = 26_000;
-const UPSTREAM_TIMEOUT_MS = 20_000;
 
 /** Keys from OPENROUTER_API_KEYS (comma, semicolon or whitespace separated) plus OPENROUTER_API_KEY. */
 export function parseApiKeys(env = {}) {
@@ -246,15 +242,12 @@ export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), en
         ...(model.startsWith('openai/gpt-oss') ? { reasoning: { effort: 'low' } } : {})
       };
       const requestBody = JSON.stringify(payload);
-      const deadline = Date.now() + REQUEST_BUDGET_MS;
       const callWith = async entry => {
-        const left = deadline - Date.now();
-        if (left < 2_000) throw new AgentError(504, 'AGENT_TIMEOUT', 'The guide took too long to answer. Please retry.');
         const response = await fetchImpl(OPENROUTER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${entry.key}` },
           body: requestBody,
-          signal: AbortSignal.timeout(Math.min(UPSTREAM_TIMEOUT_MS, left))
+          signal: AbortSignal.timeout(20_000)
         });
         const data = await response.json().catch(() => null);
         const upstreamError = data?.error ?? data?.choices?.[0]?.error;
@@ -292,7 +285,7 @@ export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), en
         const limited = benched.find(entry => entry.status === 429);
         if (!limited) throw openRouterError(benched[0]?.status ?? 502);
         const wait = Math.max(0, (limited.until - now()) / 1000);
-        if (round === 0 && wait <= MAX_INLINE_WAIT_S && Date.now() + wait * 1000 + 5_000 < deadline) { waitedMs = Math.ceil(wait) * 1000 + 250; await pause(waitedMs); continue; }
+        if (round === 0 && wait <= MAX_INLINE_WAIT_S) { waitedMs = Math.ceil(wait) * 1000 + 250; await pause(waitedMs); continue; }
         throw openRouterError(429, wait);
       }
       const message = reply?.choices?.[0]?.message;

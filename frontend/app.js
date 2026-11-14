@@ -49,13 +49,7 @@ const objectLookup = mountObjectLookup(data => {
   position = { raDeg: data.raDeg, decDeg: data.decDeg, frame: data.frame };
   selected = null; updateSelection();
   showPosition({ name: data.resolvedName || data.submittedName, catalogName: data.resolvedName || data.submittedName, type: 'CATALOG POSITION · ICRS', description: `Resolved through ${data.source.name} / ${data.source.resolver}. Fixed catalog position; no proper-motion correction.` });
-}, { onNotFound: query => {
-  // Names without a fixed catalog match may be numbered or named asteroids.
-  // Try the moving-object resolver through the same visible search field.
-  targetSearch.setMode('moving');
-  $('lookup-name').value = query;
-  $('target-search-form').requestSubmit();
-} });
+});
 const targetSearch = mountTargetSearch({
   initialPosition: position,
   invalidate: objectLookup.invalidate,
@@ -82,7 +76,6 @@ window.addEventListener('sky:navigate-context',event=>{
 });
 function renderEntryMode(mode, query = $('lookup-name').value) {
   const moving = mode === 'moving';
-  $('workspace').dataset.entryMode = mode;
   $('moving-target').hidden = !moving;
   $('observations').hidden = moving;
   $('target-coordinates').hidden = moving; $('moving-position-note').hidden = !moving;

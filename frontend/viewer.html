@@ -6,20 +6,17 @@
   <meta name="description" content="A new perspective on a changing universe. Explore a SPHEREx-inspired interactive sky atlas.">
   <title>SPHEREx — A sky in motion</title>
   <script>if (location.protocol === 'file:') location.replace('http://127.0.0.1:5173/');
-    if (/[?&]tourPreview=1(&|#|$)/.test(location.search)) document.documentElement.classList.add('is-tour-preview');
-    if (!document.documentElement.classList.contains('is-tour-preview') && (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top)) document.documentElement.classList.add('is-embed');</script>
+    if (/[?&]embed=(1|true)(&|#|$)/.test(location.search) || window.self !== window.top) document.documentElement.classList.add('is-embed');</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="viewer-page">
   <header class="site-header viewer-header">
     <a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a>
-    <button id="sidebar-toggle" class="sidebar-mobile-toggle" type="button" aria-label="Open settings sidebar" aria-controls="sidebar-content" aria-expanded="false">Settings</button>
-    <a class="viewer-new-search" href="/">New search</a>
-    <button id="tour-restart" class="viewer-tour-button" type="button">How it works</button>
+    <button id="sidebar-toggle" class="sidebar-mobile-toggle" type="button" aria-label="Open settings sidebar" aria-controls="sidebar-content" aria-expanded="false">☷ Settings</button>
     <div id="target-picker" class="viewer-search" data-minimal="true" role="search" aria-label="Search the sky"></div>
   </header>
 
-  <main id="workspace" class="workspace" data-sidebar-open="false">
+  <main id="workspace" class="workspace" data-sidebar-open="true">
     <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Close settings sidebar" tabindex="-1" hidden></button>
     <aside id="workspace-sidebar" class="workspace-sidebar" aria-label="Observation settings">
       <button id="sidebar-rail-toggle" class="sidebar-rail-toggle" type="button" aria-label="Expand settings sidebar" aria-controls="sidebar-content" aria-expanded="true" hidden>☷</button>
@@ -199,7 +196,7 @@
         <div class="ai-guide-actions"><button id="ai-guide-stop" class="reset-settings" type="button" hidden>Stop</button><button id="ai-guide-send" class="primary-button" type="submit">Ask</button></div>
       </form>
       <p id="ai-guide-status" class="ai-guide-status" role="status" aria-live="polite"></p>
-      <p class="ai-guide-disclaimer">Answers come from an AI model (via Groq) and can be wrong; the images and numbers come from the SPHEREx archive.</p>
+      <p class="ai-guide-disclaimer">Answers come from an AI model via OpenRouter and can be wrong. The images and numbers come from the SPHEREx archive.</p>
     </section>
     <section id="observations" class="observations-section" aria-labelledby="observations-heading">
       <details id="observation-disclosure"><summary><span id="observations-heading">Observations</span><span id="observation-overview" role="status" aria-live="polite">Waiting for observations.</span></summary>
@@ -216,6 +213,20 @@
       <p id="search-error" class="search-error" role="alert" hidden></p>
       <div id="observation-results" hidden>
         <div class="results-toolbar"><p id="results-summary"></p><div><label for="result-sort">Sort<select id="result-sort"><option value="oldest">Oldest first</option><option value="newest">Newest first</option></select></label><button id="export-observations" class="reset-settings" type="button">Export CSV ↓</button></div></div>
+        <section class="spectral-map" aria-labelledby="spectral-map-heading">
+          <div class="spectral-map-heading"><div><h3 id="spectral-map-heading">102-channel wavelength map</h3><p>SPHEREx splits the infrared light across six detector arrays. The map shows which array observations cover; select a detector below to combine its images and bring out fainter detail.</p></div><span>0.75–5 μm</span></div>
+          <div id="spectral-lanes" class="spectral-lanes" role="img" aria-label="Wavelength coverage across the six SPHEREx detector arrays"></div>
+          <div class="spectral-axis" aria-hidden="true"><span>0.75 μm</span><span>2.9 μm</span><span>5 μm</span></div>
+          <p class="spectral-map-note">Detector ranges are approximate. Each bar summarizes loaded archive images; it does not draw individual channel response curves.</p>
+        </section>
+        <section id="quick-spectrum" class="quick-spectrum" aria-labelledby="quick-spectrum-heading">
+          <div class="quick-spectrum-heading"><div><h3 id="quick-spectrum-heading">Explore this source across wavelengths and time</h3><p>Measure the selected sky position in the loaded spectral images. Each point uses the wavelength at that exact position.</p></div><button id="build-spectrum" class="primary-button" type="button" disabled>Measure loaded images</button></div>
+          <div class="quick-spectrum-controls"><label for="spectrum-view">Show measurements by<select id="spectrum-view"><option value="wavelength">Wavelength</option><option value="time">Observation time</option></select></label><label for="wavelength-jump">Jump to wavelength<input id="wavelength-jump" type="number" min="0.75" max="5" step="0.001" placeholder="e.g. 2.2" disabled><span>μm</span></label><button id="jump-wavelength" class="reset-settings" type="button" disabled>Open nearest image ↗</button><button id="cancel-spectrum" class="text-button" type="button" hidden>Cancel</button></div>
+          <p id="spectrum-status" role="status" aria-live="polite">Quick-look extraction uses a small aperture, local background, image quality flags, and variance. Click a point to open its source image.</p>
+          <svg id="spectrum-chart" class="spectrum-chart" viewBox="0 0 760 300" role="img" aria-label="Quick-look source measurements" hidden></svg>
+          <p class="spectrum-caveat">Exploratory measurements only: this is not IRSA’s PSF-fit spectrophotometry or a calibrated 102-plane mosaic. Points may come from different observation times; use the time view and original images to check variability and artifacts.</p>
+          <p class="spectrum-official-link">For a mission-pipeline spectrum or a complete wavelength cube, use <a href="https://irsa.ipac.caltech.edu/applications/spherex/" target="_blank" rel="noopener noreferrer">IRSA’s SPHEREx Data Explorer ↗</a> and its Spectrophotometry or Mosaic Tool.</p>
+        </section>
         <div id="detector-summary" class="detector-summary" aria-label="Observations per detector"></div>
         <p id="results-provenance" class="results-provenance"></p>
         <div id="results-warnings" class="results-warnings" hidden></div>
@@ -260,12 +271,11 @@
   <footer><a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a></footer>
   <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
-  <script type="module" src="observations-ui.js"></script>
+  <script type="module" src="observations-ui.js?v=20261110"></script>
   <script type="module" src="fits-viewer.js"></script>
   <script type="module" src="timelapse.js"></script>
   <script type="module" src="share-ui.js"></script>
   <script type="module" src="workspace-ui.js"></script>
-  <script type="module" src="onboarding.js"></script>
   <script type="module" src="moving-target.js"></script>
   <script type="module" src="sky-context.js"></script>
   <script type="module" src="star-details.js"></script>

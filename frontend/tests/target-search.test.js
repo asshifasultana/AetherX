@@ -154,7 +154,6 @@ test('coordinate submission validates both axes and selects once in either forma
 
 test('moving searches validate dates and use the existing endpoint and parameter names', async () => {
   const ui = mount({ fetchImpl: async () => json({ exposures: [] }) }); ui.mode('moving');
-  ui.form.elements.startDate.value = ''; ui.form.elements.endDate.value = '';
   ui.form.elements.object.value = '4 Vesta'; ui.form.requestSubmit(); assert.equal(ui.requests.length, 0);
   ui.form.elements.startDate.value = '2025-08-15'; ui.form.elements.endDate.value = '2025-08-10'; ui.form.requestSubmit();
   assert.equal(ui.requests.length, 0); assert.match(ui.get('moving-status').textContent, /End date/);
@@ -296,39 +295,4 @@ test('sidebar dropdowns retain detector and view-mode behavior and moving target
   ui.get('lookup-name').value = '4 Vesta'; ui.get('lookup-name').dispatchEvent({ type: 'input' });
   assert.equal(ui.get('object-name').textContent, '4 Vesta');
   ui.mode('object'); assert.equal(ui.get('target-coordinates').hidden, false);
-});
-
-
-test('one name field recognizes comets and asteroids without a type dropdown', () => {
-  for (const query of ['3I/ATLAS', '4 Vesta', 'C/2025 A1', '2024 YR4', 'Bennu']) {
-    const ui = mount({ page: 'home' });
-    ui.get('lookup-name').value = query;
-    ui.get('lookup-name').dispatchEvent({ type: 'input' });
-    assert.equal(ui.get('target-type').value, 'moving', query);
-    assert.equal(ui.get('lookup-name').value, query);
-    assert.equal(ui.get('moving-fields').hidden, false);
-    ui.form.requestSubmit();
-    const url = new URL(ui.navigations[0], 'http://localhost');
-    assert.equal(url.searchParams.get('searchType'), 'moving');
-    assert.ok(url.searchParams.get('from')); assert.ok(url.searchParams.get('to'));
-  }
-});
-
-test('numbered stars stay in fixed-object search and coordinates have their own toggle', () => {
-  const ui = mount({ page: 'home' });
-  ui.get('lookup-name').value = '61 Cygni'; ui.get('lookup-name').dispatchEvent({ type: 'input' });
-  assert.equal(ui.get('target-type').value, 'object');
-  ui.get('coordinate-toggle').click(); assert.equal(ui.get('coordinate-fields').hidden, false);
-  ui.get('coordinate-toggle').click(); assert.equal(ui.get('lookup-name').value, '61 Cygni');
-});
-
-
-test('an unfamiliar asteroid name falls back to the moving resolver after a catalog miss', async () => {
-  const ui = mount({ fetchImpl: async url => url.startsWith('/api/resolve-object')
-    ? json({ error: 'Not found', code: 'NOT_FOUND' }, 404) : json({ exposures: [] }) });
-  ui.get('lookup-name').value = '1036 Ganymed'; ui.form.requestSubmit(); await flush();
-  assert.equal(ui.requests.length, 2);
-  assert.match(ui.requests[1].url, /^\/api\/moving-observations/);
-  assert.equal(ui.get('lookup-name').value, '1036 Ganymed');
-  assert.equal(ui.selections().length, 0);
 });

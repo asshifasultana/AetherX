@@ -36,7 +36,7 @@ function distance(a, b) {
 }
 export function suggestNames(input, names = objectNames) {
   const normalized = normalizeName(input);
-  if (normalized.length < 4) return [];
+  if (normalized.length < 3) return [];
   const threshold = normalized.length <= 7 ? 1 : 2;
   const seen = new Set();
   return names.map(object => ({ object, score: Math.min(...[object.name, object.query, ...object.aliases].map(alias => distance(normalized, normalizeName(alias)))) }))

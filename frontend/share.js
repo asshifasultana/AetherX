@@ -154,5 +154,4 @@ export function embedSnippet({ width = 720, height = 520 } = {}) {
 }
 
 /** True when the page was opened as an embed. */
-export const isEmbedded = initial.embed || (typeof window !== 'undefined' && window.parent !== window
-  && !(typeof document !== 'undefined' && document.documentElement?.classList.contains('is-tour-preview')));
+export const isEmbedded = initial.embed || (typeof window !== 'undefined' && window.parent !== window);

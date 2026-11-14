@@ -2,22 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#080d18">
+  <meta name="theme-color" content="#f5f6f2">
   <meta name="description" content="Search stars, moving objects, and sky coordinates in the SPHEREx sky atlas.">
   <title>SPHEREx — Explore the sky</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="home-page">
   <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
-  <header class="site-header"><a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx<span class="brand-divider"></span><span class="brand-sub">SKY ATLAS</span></a><button id="tour-restart" class="home-viewer-link" type="button">How it works</button></header>
+  <header class="site-header"><a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx<span class="brand-divider"></span><span class="brand-sub">SKY ATLAS</span></a><a class="home-viewer-link" href="/viewer.html">Open sky atlas <span aria-hidden="true">↗</span></a></header>
   <main class="home-main">
     <section class="home-search" aria-labelledby="home-title">
       <p class="eyebrow">AN INFRARED PERSPECTIVE</p>
       <h1 id="home-title">Where shall we look?</h1>
-      <p class="home-description">Find a patch of sky. See how it changes in infrared.</p>
       <div id="target-picker" role="search" aria-label="Search the sky"></div>
     </section>
-    <section id="comet-benchmark" class="observations-section comet-benchmark" hidden aria-labelledby="comet-heading">
+    <section id="comet-benchmark" class="observations-section comet-benchmark" aria-labelledby="comet-heading">
       <div class="comet-benchmark-copy">
         <p class="eyebrow">MOVING-TARGET BENCHMARK</p>
         <h2 id="comet-heading">Comet 3I/ATLAS</h2>
@@ -49,6 +48,6 @@
 
   </main>
   <script type="module" src="home.js"></script>
-  <script type="module" src="onboarding.js"></script>
+  <script type="module" src="comet-benchmark.js"></script>
 </body>
 </html>

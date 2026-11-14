@@ -44,14 +44,14 @@ function pump() {
   if (active || !queue.length) return;
   const job = queue.shift(); active = job;
   download(job).then(job.resolve, job.reject).finally(() => {
-    job.cleanup(); if (active === job) active = null; pump();
+    job.cleanup(); active = null; pump();
   });
 }
 export function loadCutout(url, { signal, priority = false } = {}) {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) { reject(signal.reason || abortError()); return; }
     const controller = new AbortController();
-    const job = { url, resolve, reject, controller, priority: Boolean(priority), cleanup: () => signal?.removeEventListener('abort', abort) };
+    const job = { url, resolve, reject, controller, cleanup: () => signal?.removeEventListener('abort', abort) };
     const abort = () => {
       controller.abort(signal.reason || abortError());
       const index = queue.indexOf(job);
@@ -59,13 +59,7 @@ export function loadCutout(url, { signal, priority = false } = {}) {
       // Keep the active slot occupied until fetch cancellation has settled.
     };
     signal?.addEventListener('abort', abort, { once: true });
-    if (priority) {
-      queue.unshift(job);
-      // Speculative downloads must never delay the frame being displayed: the
-      // server admits one transfer at a time, so stop the active non-priority
-      // job and let the priority request take the slot immediately.
-      if (active && !active.priority) active.controller.abort(abortError());
-    } else queue.push(job);
+    if (priority) queue.unshift(job); else queue.push(job);
     pump();
   });
 }

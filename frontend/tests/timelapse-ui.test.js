@@ -7,7 +7,7 @@ import * as core from '../timelapse-core.js';
 const source = (await readFile(new URL('../timelapse.js', import.meta.url), 'utf8')).replace(/^import[\s\S]*?;\s*/gm, '');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 const observations = [1, 2].map(n => ({ observationId: `obs-${n}`, detector: 2, observedStartUtc: `2026-01-0${n}T00:00:00Z`, accessUrl: `https://example.org/${n}.fits` }));
-function mount({ pending = null, show, warm, ready = true, tutorial = false } = {}) {
+function mount({ pending = null, show, warm, ready = true } = {}) {
   const elements = new Map(), listeners = new Map(), timers = new Map(), requests = [];
   let timerId = 0;
   const element = () => ({ children: [], dataset: {}, style: { setProperty() {} }, classList: { toggle() {}, add() {}, contains() { return false; } }, listeners: {},
@@ -18,7 +18,7 @@ function mount({ pending = null, show, warm, ready = true, tutorial = false } = 
   });
   const get = id => { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); };
   const emit = (type, detail = {}) => { for (const fn of listeners.get(type) || []) fn({ type, detail }); };
-  const context = { ...core, document: { documentElement: { classList: { contains: name => tutorial && name === 'is-tour-preview' } }, getElementById: get, createElement: element, querySelector() { return null; }, addEventListener() {} },
+  const context = { ...core, document: { getElementById: get, createElement: element, querySelector() { return null; }, addEventListener() {} },
     window: { addEventListener(type, fn) { listeners.set(type, [...(listeners.get(type) || []), fn]); }, dispatchEvent(event) { emit(event.type, event.detail); } },
     CustomEvent: class { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } }, AbortController,
     setTimeout(fn, delay) { const id = ++timerId; timers.set(id, { fn, delay }); return id; }, clearTimeout(id) { timers.delete(id); },
@@ -30,15 +30,12 @@ function mount({ pending = null, show, warm, ready = true, tutorial = false } = 
   return { get, emit, timers, requests, state: context.playbackState, load(items = observations) { emit('sky:observations-loaded', { observations: items }); } };
 }
 
-test('default time-lapse loads the first frame and waits for Play', async () => {
+test('default time-lapse loads the first frame and starts without a click', async () => {
   const ui = mount(); ui.load(); await flush();
   assert.equal(ui.requests[0].observationId, 'obs-1');
-  assert.equal(ui.state.playing, false);
-  assert.equal(ui.get('play-button').textContent, '▶');
-  assert.ok(![...ui.timers.values()].some(timer => timer.delay === core.frameDelayMs(1)));
-  ui.get('play-button').listeners.click(); await flush();
   assert.equal(ui.state.playing, true);
   assert.equal(ui.get('play-button').textContent, '❚❚');
+  assert.ok([...ui.timers.values()].some(timer => timer.delay === core.frameDelayMs(1)));
 });
 
 test('single-frame and empty results never start playback', async () => {
@@ -47,13 +44,11 @@ test('single-frame and empty results never start playback', async () => {
   ui.load([]); await flush(); assert.equal(ui.state.playing, false); assert.equal(ui.state.frames.length, 0);
 });
 
-test('manual playback pauses on refreshed results and new targets stay paused', async () => {
-  const ui = mount(); ui.load(); await flush(); ui.get('play-button').listeners.click(); await flush();
-  assert.equal(ui.state.playing, true);
-  ui.get('play-button').listeners.click();
+test('manual pause survives refreshed results and a new target resets it', async () => {
+  const ui = mount(); ui.load(); await flush(); ui.get('play-button').listeners.click();
   assert.equal(ui.state.userPaused, true);
   ui.load(); await flush(); assert.equal(ui.state.playing, false);
-  ui.emit('sky:target-selected'); ui.load(); await flush(); assert.equal(ui.state.playing, false);
+  ui.emit('sky:target-selected'); ui.load(); await flush(); assert.equal(ui.state.playing, true);
 });
 
 test('a late initial frame cannot restart playback after a target change', async () => {
@@ -64,10 +59,9 @@ test('a late initial frame cannot restart playback after a target change', async
   assert.ok(![...ui.timers.values()].some(timer => timer.delay === core.frameDelayMs(1)));
 });
 
-test('shared dates select the restored frame while playback and other modes remain stopped', async () => {
+test('shared dates select the restored frame before autoplay; other modes remain stopped', async () => {
   const ui = mount({ pending: '2026-01-02' }); ui.load(); await flush();
   assert.equal(ui.requests[0].observationId, 'obs-2');
-  assert.equal(ui.state.playing, false);
   ui.emit('sky:viewer-settings-changed', { viewMode: 'deep-stack' });
   ui.load(); await flush(); assert.equal(ui.state.playing, false);
 });
@@ -82,21 +76,8 @@ test('an initial frame failure stays paused and preserves its error message', as
 test('buffering failures pause playback without replacing the current frame', async () => {
   const ui = mount({ ready: false, warm: async () => { throw new Error('Download failed'); } });
   ui.load(); await flush();
-  ui.get('play-button').listeners.click(); await flush();
-  const displayed = ui.requests.length;
   const timer = [...ui.timers.values()].find(item => item.delay === core.frameDelayMs(1));
   await timer.fn();
-  assert.equal(ui.state.playing, false); assert.equal(ui.requests.length, displayed);
+  assert.equal(ui.state.playing, false); assert.equal(ui.requests.length, 1);
   assert.match(ui.get('timeline-status').textContent, /Download failed/);
-});
-
-
-test('live tutorial previews show the selected frame without autoplay or background downloads', async () => {
-  let downloads = 0;
-  const ui = mount({ tutorial: true, warm: async () => { downloads++; } });
-  ui.load(); await flush();
-  assert.equal(ui.requests.length, 1);
-  assert.equal(ui.state.playing, false);
-  assert.equal(downloads, 0);
-  assert.equal(ui.timers.size, 0);
 });

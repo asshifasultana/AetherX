@@ -139,15 +139,15 @@ Opening a link restores the position, the field of view, the detector band, the 
 
 Both `frontend/server.mjs` and `scripts/build-vercel.mjs` keep an explicit list of public assets. `url-state.js`, `sky-projection.js`, `share.js` and `share-ui.js` are registered in both; add any new frontend module to both lists or it will 404 in production while working locally.
 
-## AI guide (Groq)
+## AI guide (OpenRouter)
 
 The **AI guide** section under the viewer lets visitors ask in plain words ("is anything moving here?", "compare the first and latest frame", "make the faint stars brighter", "show me WISE 0855"). The guide works the real viewer through tools and answers from what the viewer reports (difference σ and brighter/fainter pixel counts, deep-stack records, frame dates), and it can make a share link that reopens its view with a short note.
 
-- `frontend/api/agent.js` is a stateless proxy to Groq's OpenAI-compatible chat completions API. It holds the key, the system prompt and the tool schemas, sanitises the history, and rate-limits each client (30 requests a minute).
+- `frontend/api/agent.js` is a stateless proxy to OpenRouter's chat completions API. It holds the key, the system prompt and the tool schemas, sanitises the history, and rate-limits each client (30 requests a minute).
 - `frontend/lib/agent-tools.js` defines the tools (`get_view_state`, `set_display`, `set_view_mode`, `compare_frames`, `playback`, `set_band`, `set_field_of_view`, `set_overlays`, `go_to_target`, `make_share_link`) and validates their arguments against the viewer-settings rules. The server and the browser share it.
 - `frontend/agent-ui.js` runs the tool-calling loop in the browser; `frontend/agent-controller.js` carries out each call through the same window events the controls use, then waits for the viewer to report what it rendered.
 
-Set `GROQ_API_KEY` in `.env` for local development (`npm run dev` loads it), and in the Vercel and Railway environments. `GROQ_MODEL` optionally overrides the default model (`openai/gpt-oss-120b`); use a Groq model that supports tool calling. Without a key, the section explains that the guide is not set up.
+Set `OPENROUTER_API_KEY` in `.env` for local development (`npm run dev` loads it) and in the Vercel and Railway environments. The default model is NVIDIA Nemotron 3 Ultra (`nvidia/nemotron-3-ultra-550b-a55b`), which uses OpenRouter credits. If `OPENROUTER_MODEL` is already set, remove it to use the default or update it to the desired OpenRouter model ID with tool calling support. Without a key, the guide reports that setup is required.
 
 ## Documentation
 

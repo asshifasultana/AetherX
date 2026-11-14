@@ -3,6 +3,7 @@ import { observeCutout } from './fits-viewer.js';
 import { initialViewState } from './share.js';
 import { summarizeDetectorCoverage } from './timelapse-core.js';
 import { presetMotion } from './presets.js';
+import './spectrum-explorer.js?v=20261110';
 const $ = id => document.getElementById(id);
 const make = (tag, text, className) => { const element = document.createElement(tag); if (text !== undefined) element.textContent = text; if (className) element.className = className; return element; };
 const formatNumber = (value, digits = 3) => Number.isFinite(value) ? value.toFixed(digits).replace(/0+$/, '').replace(/\.$/, '') : 'Not reported';
@@ -37,6 +38,7 @@ async function saveSearch(url, data) {
   } catch { /* Storage may be full or blocked; searching still works. */ }
 }
 const emit = (type, detail) => {
+  if (type === 'sky:observations-loaded') window.spherexObservationState = detail;
   if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') window.dispatchEvent(new CustomEvent(type, { detail }));
 };
 
@@ -153,7 +155,30 @@ function renderResults() {
   $('results-provenance').textContent = `Source: ${result.source.name} · ${indexed ? 'Preset index checked' : 'Retrieved'} ${formatTime(result.source.retrievedAt)}${result.browserCached ? ' · Saved in this browser (up to 6 hours)' : result.source.stale ? ' · Saved copy shown while IRSA is unavailable' : result.source.sharedCache ? ' · Shared cache, refreshed daily' : !indexed && result.cached ? ' · Cached (up to 5 minutes)' : ''} · ${result.duplicatesRemoved} duplicate / older products removed.`;
   $('detector-summary').replaceChildren();
   const searchedDetector = submittedParams?.get('detector') || 'all';
-  for (const band of summarizeDetectorCoverage(result.observations, { searchedDetector })) {
+  const coverage = summarizeDetectorCoverage(result.observations, { searchedDetector });
+  const detectorLimits = [[0.75, 1.09], [1.10, 1.62], [1.63, 2.41], [2.42, 3.82], [3.83, 4.41], [4.42, 5.00]];
+  const lanes = $('spectral-lanes'); lanes.replaceChildren();
+  for (const band of coverage) {
+    const [low, high] = detectorLimits[band.detector - 1];
+    const lane = make('div', undefined, `spectral-lane${band.count ? ' has-coverage' : ''}`);
+    lane.append(make('strong', `D${band.detector}`));
+    const track = make('span', undefined, 'spectral-track');
+    const detectorBar = make('span', undefined, 'spectral-detector-range');
+    detectorBar.setAttribute('style', `left:${100 * (low - 0.75) / 4.25}%;width:${100 * (high - low) / 4.25}%`);
+    track.append(detectorBar);
+    if (band.count && Number.isFinite(band.wavelengthMinUm) && Number.isFinite(band.wavelengthMaxUm)) {
+      const start = Math.max(low, band.wavelengthMinUm), end = Math.min(high, band.wavelengthMaxUm);
+      if (end > start) {
+        const covered = make('span', undefined, 'spectral-observed-range');
+        covered.setAttribute('style', `left:${100 * (start - 0.75) / 4.25}%;width:${100 * (end - start) / 4.25}%`);
+        track.append(covered);
+      }
+    }
+    lane.append(track, make('span', band.count ? `${band.count} images` : band.searched ? '0 images' : 'not searched', 'spectral-lane-count'));
+    lane.title = `Detector ${band.detector}: approximately ${low.toFixed(2)}–${high.toFixed(2)} micrometers; ${band.count} loaded images.`;
+    lanes.append(lane);
+  }
+  for (const band of coverage) {
     const card = make('article', undefined, `detector-coverage-card${band.count ? '' : ' empty-count'}`);
     const heading = make('div', undefined, 'detector-coverage-heading');
     heading.append(make('strong', `D${band.detector}`), make('span', band.searched ? `${band.count} loaded` : 'Not searched'));

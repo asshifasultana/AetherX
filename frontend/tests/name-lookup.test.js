@@ -131,7 +131,8 @@ test('upstream timeout returns 504 and can be retried', async () => {
   assert.equal((await resolve(params('Sirius'))).raDeg, data.raDeg);
 });
 test('suggestions normalize punctuation, rank closest first and deduplicate', () => {
-  assert.equal(objectNames.length, 20);
+  assert.equal(objectNames.length, 21);
+  assert.equal(objectNames.find(item => item.name === 'Milky Way')?.positionLabel, 'Milky Way center');
   assert.equal(suggestNames('Siriu')[0].name, 'Sirius');
   assert.equal(suggestNames('Siruis')[0].name, 'Sirius');
   assert.equal(suggestNames('BARNARD’S STAr')[0].name, 'Barnard’s Star');

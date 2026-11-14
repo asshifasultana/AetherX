@@ -20,6 +20,51 @@ export const FACT_NUMBERS = Object.freeze([
 
 const NUMBER = /(?<![\w.])[-−]?\d+(?:[.,]\d+)?(?![\w])/g;
 
+// Visitors should never see the guide's internal tool names. Each maps to the
+// plain words used when a leaked name has to be replaced mechanically.
+const TOOL_PHRASES = Object.freeze({
+  get_view_state: 'a look at the screen', set_display: 'a display change', set_view_mode: 'a view change',
+  compare_frames: 'a frame comparison', playback: 'the time-lapse', set_view: 'a view change',
+  go_to_target: 'a move to the target', make_share_link: 'a share link', find_changes: 'a search for changes',
+  mark_spot: 'a new spot', measure_source: 'a brightness measurement on every date',
+  get_spectrum: 'a colour (spectrum) measurement', crossmatch: 'a check against star and asteroid catalogues',
+  get_case: 'the case file', pick_epochs: 'a comparison of dates six months apart',
+  predict_parallax_pair: 'a parallax prediction', precover: 'a search of older photos',
+  second_opinion: 'a second opinion', start_quest: 'a game', check_answer: 'an answer check',
+  planet_nine_region: 'the Planet Nine map', patrol: 'a patrol', start_tour: 'the tour',
+  prepare_report: 'a report card'
+});
+// snake_case names are never plain English; single words only count when
+// written as code (`crossmatch`) or as a call (crossmatch(…)).
+const TOOL_MENTION = new RegExp(
+  '`\\s*(' + Object.keys(TOOL_PHRASES).join('|') + ')\\b[^`\\n]*`' +
+  '|\\b(' + Object.keys(TOOL_PHRASES).filter(name => name.includes('_')).join('|') + ')\\b(?:\\s*\\([^)\\n]*\\)|(?:\\s+(?:spot\\s*)?\\d+)?)' +
+  '|\\b(' + Object.keys(TOOL_PHRASES).filter(name => !name.includes('_')).join('|') + ')\\s*\\([^)\\n]*\\)',
+  'gi'
+);
+
+/** Internal tool names written in a reply, e.g. "`get_case 3`" → ["get_case"]. */
+export function leakedToolNames(text) {
+  return [...new Set([...String(text).matchAll(TOOL_MENTION)].map(match => (match[1] || match[2] || match[3]).toLowerCase()))];
+}
+
+/** Replace leaked tool names with plain words (fallback when a rewrite also leaks). */
+export function plainToolNames(text) {
+  return String(text).replace(TOOL_MENTION, (whole, a, b, c) => {
+    const name = (a || b || c).toLowerCase();
+    const spot = whole.match(/(?:spot\s*|\s)(\d+)\b/i)?.[1];
+    return TOOL_PHRASES[name] + (spot ? ` for spot ${spot}` : '');
+  });
+}
+
+// A reply that hands the next step back to the visitor instead of doing it.
+const ASKS_PERMISSION = /\b(?:want me to|would you like me to|do you want me to|should i|shall i|(?:pick|choose) one|which would you prefer|next steps?\s*(?:\(|:))/i;
+
+/** True when the reply stops to ask permission for more investigation. */
+export function asksPermission(text) {
+  return ASKS_PERMISSION.test(String(text));
+}
+
 export function forbiddenClaims(text) {
   return FORBIDDEN.map(pattern => String(text).match(pattern)?.[0]).filter(Boolean);
 }
@@ -45,7 +90,8 @@ export function checkReply(reply, sources = []) {
   const pool = [...FACT_NUMBERS, ...sources.flatMap(numbersIn).map(Number).filter(Number.isFinite)];
   const ungrounded = [...new Set(numbersIn(reply).filter(token => !grounded(token, pool)))];
   const forbidden = forbiddenClaims(reply);
-  return { ok: !ungrounded.length && !forbidden.length, ungrounded, forbidden };
+  const leaked = leakedToolNames(reply);
+  return { ok: !ungrounded.length && !forbidden.length && !leaked.length, ungrounded, forbidden, leaked };
 }
 
 /** Remove the sentences that contain a problem; used when a rewrite also fails. */
@@ -54,13 +100,16 @@ export function stripProblems(reply, { ungrounded = [], forbidden = [] }) {
   const bad = sentence => forbidden.some(phrase => sentence.includes(phrase)) ||
     numbersIn(sentence).some(token => ungrounded.includes(token));
   const kept = sentences.filter(sentence => !bad(sentence));
-  return kept.join(' ').trim();
+  return plainToolNames(kept.join(' ').trim());
 }
 
-export function correctionPrompt({ ungrounded, forbidden }) {
-  const parts = ['Your last reply broke the guide rules.'];
+export function correctionPrompt({ ungrounded = [], forbidden = [], leaked = [] }, { askedPermission = false } = {}) {
+  const broke = ungrounded.length || forbidden.length || leaked.length;
+  const parts = [broke ? 'Your last reply broke the guide rules.' : 'Before you reply:'];
   if (ungrounded.length) parts.push(`These numbers do not appear in any tool result: ${ungrounded.join(', ')}. Use only measured numbers, or call a tool to measure first.`);
   if (forbidden.length) parts.push(`Never claim a discovery or that something is Planet X/Planet Nine (you wrote: "${forbidden.join('", "')}"). Say "unexplained" and what would confirm it.`);
-  parts.push('Rewrite the reply now, briefly.');
+  if (leaked.length) parts.push(`Visitors must never see tool names (you wrote: ${leaked.join(', ')}). Describe what you did or could do in plain words, e.g. "I checked spot 2 against star catalogues".`);
+  if (askedPermission) parts.push('Do not ask the visitor for permission to continue the investigation they asked for. If useful checks are still open, run them now. Only ask when the choice truly belongs to the visitor (going somewhere else, starting a game, sharing).');
+  parts.push(askedPermission ? 'Then reply briefly.' : 'Rewrite the reply now, briefly.');
   return parts.join(' ');
 }

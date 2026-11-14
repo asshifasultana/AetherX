@@ -12,13 +12,14 @@ import { spectralHints } from './lib/spectral-hints.js';
 import { QUESTS, NORTH_ECLIPTIC_POLE, barnardTrack, checkQuestAnswer } from './lib/quests.js';
 import { TOURS } from './lib/tours.js';
 import { shareUrl } from './share.js';
+import { pollUntil } from './lib/background-jobs.js';
 
 const DAY_MS = 86_400_000;
 const mjdOf = ms => ms / DAY_MS + 40587;
 const isoDay = ms => new Date(ms).toISOString().slice(0, 10);
 const round = (value, digits = 1) => Number.isFinite(value) ? Number(value.toFixed(digits)) : null;
 
-export function createInvestigator({ base, latest, emit, settle, needFrames, snapshot }) {
+export function createInvestigator({ base, latest, emit, settle, needFrames, snapshot, jobs }) {
   const cases = createCaseBook();
   const spotMeta = new Map(); // spot number → { date, role }
   let quest = null;
@@ -173,29 +174,51 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
   }
 
   // ---- crossmatch ---------------------------------------------------------
+  const gaiaLookup = (spot, years, signal) =>
+    fetch(`/api/gaia-sources?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), radius: (90 / 3600).toFixed(5) })}`, { signal })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error('Gaia lookup failed.')))
+      .then(data => {
+        const within = (data.sources || []).map(star => {
+          const cos = Math.cos(star.decDeg * Math.PI / 180);
+          const raDeg = star.raDeg + (Number(star.pmra) || 0) * years / 3.6e6 / cos, decDeg = star.decDeg + (Number(star.pmdec) || 0) * years / 3.6e6;
+          return { sourceId: String(star.sourceId), gMag: round(star.gMag, 1), pmra: round(star.pmra, 1), pmdec: round(star.pmdec, 1), separationArcsec: round(separationArcsec(spot, { raDeg, decDeg }), 1) };
+        }).filter(star => star.separationArcsec <= 90).sort((a, b) => a.separationArcsec - b.separationArcsec);
+        return { nearest: within[0] || null, within: within.slice(0, 8), searchedArcsec: 90 };
+      })
+      .catch(error => { if (signal?.aborted) throw error; return { error: error.message }; });
+
+  const jplLookup = (spot, time, signal) =>
+    fetch(`/api/known-objects?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), time: new Date(time).toISOString(), radius: '60' })}`, { signal })
+      .then(response => response.json())
+      .then(data => data.checked ? { checked: true, date: data.date, count: data.count, nearest: data.objects?.[0] ? { name: data.objects[0].name, separationArcsec: round(data.objects[0].separationArcsec, 1), vMag: data.objects[0].vMag, rateArcsecPerHour: data.objects[0].rateArcsecPerHour } : null } : { checked: false, ...(data.pending ? { pending: true } : {}), error: data.error })
+      .catch(error => { if (signal?.aborted) throw error; return { checked: false, error: 'JPL did not answer.' }; });
+
+  // A lookup that is still computing (JPL) or failed (Gaia) keeps going in the
+  // background; when it finishes, the case file updates and the guide is told.
+  function backgroundLookup(kind, spot, n, time, years) {
+    if (!jobs) return null;
+    const label = kind === 'jpl' ? `Known-asteroid check (JPL) for spot ${n}` : `Star catalogue check (Gaia) for spot ${n}`;
+    const job = jobs.start(`${kind}:${n}:${spot.raDeg.toFixed(5)}:${spot.decDeg.toFixed(5)}:${isoDay(time)}`, label, async signal => {
+      const value = await pollUntil(async pollSignal => {
+        const result = kind === 'jpl' ? await jplLookup(spot, time, pollSignal) : await gaiaLookup(spot, years, pollSignal);
+        return (kind === 'jpl' ? result.checked : !result.error) ? result : undefined;
+      }, { intervalMs: kind === 'jpl' ? 4000 : 8000, timeoutMs: kind === 'jpl' ? 180_000 : 60_000, signal });
+      const result = { ok: true, spot: n, date: isoDay(time), [kind]: value };
+      return { ...result, case: record(spot, 'crossmatch', result).verdict };
+    }, { spot: n });
+    return job.id;
+  }
+
   async function crossmatch({ spot: n, date }, { signal }) {
     const spot = await spotOrError(n);
     if (!spot) return { ok: false, error: `There is no spot ${n}.` };
     const meta = spotMeta.get(n);
     const time = date ? Date.parse(date + 'T12:00:00Z') : Date.parse(meta?.date || '') || currentFrameTime();
     const years = (time - Date.UTC(2016, 0, 1)) / (365.25 * DAY_MS);
-    const [gaia, jpl] = await Promise.all([
-      fetch(`/api/gaia-sources?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), radius: (90 / 3600).toFixed(5) })}`, { signal })
-        .then(response => response.ok ? response.json() : Promise.reject(new Error('Gaia lookup failed.')))
-        .then(data => {
-          const within = (data.sources || []).map(star => {
-            const cos = Math.cos(star.decDeg * Math.PI / 180);
-            const raDeg = star.raDeg + (Number(star.pmra) || 0) * years / 3.6e6 / cos, decDeg = star.decDeg + (Number(star.pmdec) || 0) * years / 3.6e6;
-            return { sourceId: String(star.sourceId), gMag: round(star.gMag, 1), pmra: round(star.pmra, 1), pmdec: round(star.pmdec, 1), separationArcsec: round(separationArcsec(spot, { raDeg, decDeg }), 1) };
-          }).filter(star => star.separationArcsec <= 90).sort((a, b) => a.separationArcsec - b.separationArcsec);
-          return { nearest: within[0] || null, within: within.slice(0, 8), searchedArcsec: 90 };
-        })
-        .catch(error => ({ error: error.message })),
-      fetch(`/api/known-objects?${new URLSearchParams({ ra: spot.raDeg.toFixed(6), dec: spot.decDeg.toFixed(6), time: new Date(time).toISOString(), radius: '60' })}`, { signal })
-        .then(response => response.json())
-        .then(data => data.checked ? { checked: true, date: data.date, count: data.count, nearest: data.objects?.[0] ? { name: data.objects[0].name, separationArcsec: round(data.objects[0].separationArcsec, 1), vMag: data.objects[0].vMag, rateArcsecPerHour: data.objects[0].rateArcsecPerHour } : null } : { checked: false, ...(data.pending ? { pending: true } : {}), error: data.error })
-        .catch(() => ({ checked: false, error: 'JPL did not answer.' }))
-    ]);
+    const [gaia, jpl] = await Promise.all([gaiaLookup(spot, years, signal), jplLookup(spot, time, signal)]);
+    const later = 'It keeps running in the background and its result will arrive on its own; carry on with other checks.';
+    if (gaia.error) { const id = backgroundLookup('gaia', spot, n, time, years); if (id) Object.assign(gaia, { background: id, note: later }); }
+    if (!jpl.checked) { const id = backgroundLookup('jpl', spot, n, time, years); if (id) Object.assign(jpl, { background: id, note: later }); }
     const result = { ok: true, spot: n, date: isoDay(time), gaia, jpl };
     return { ...result, case: record(spot, 'crossmatch', result).verdict };
   }

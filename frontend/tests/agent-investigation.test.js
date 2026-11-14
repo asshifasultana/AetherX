@@ -5,7 +5,7 @@ import { createSpotList, MAX_SPOTS } from '../lib/spots.js';
 import { findBlobs, pairBlobs } from '../lib/blobs.js';
 import { parallaxShift, equatorialToEcliptic, eclipticToEquatorial, solarElongationDeg, separationArcsec } from '../lib/ecliptic.js';
 import { createCase, applyEvidence, verdict, summarize, createCaseBook } from '../lib/case-file.js';
-import { checkReply, stripProblems, forbiddenClaims, correctionPrompt } from '../lib/agent-guard.js';
+import { checkReply, stripProblems, forbiddenClaims, correctionPrompt, leakedToolNames, plainToolNames, asksPermission } from '../lib/agent-guard.js';
 import { spectralHints } from '../lib/spectral-hints.js';
 import { QUESTS, checkQuestAnswer, barnardTrack, distanceToTrackArcsec } from '../lib/quests.js';
 import { TOURS } from '../lib/tours.js';
@@ -111,6 +111,20 @@ test('the guard blocks discovery claims and unmeasured numbers but allows histor
   assert.ok(forbiddenClaims('This could be Planet Nine.').length);
   assert.equal(forbiddenClaims('These are the Planet Nine region cells.').length, 0);
   assert.match(correctionPrompt(bad), /47\.3/);
+});
+
+test('the guard catches tool names and permission questions in replies', () => {
+  assert.deepEqual(leakedToolNames('• `get_case 3` — see the full file. Or run second_opinion on spot 2.'), ['get_case', 'second_opinion']);
+  assert.deepEqual(leakedToolNames('I will crossmatch all three against Gaia and precover older photos.'), [], 'plain-English verbs are fine');
+  assert.deepEqual(leakedToolNames('Next: `crossmatch` spot 1, then precover(spot=2).'), ['crossmatch', 'precover']);
+  assert.equal(checkReply('Run `get_case 3` next.', []).ok, false);
+  assert.equal(plainToolNames('Open `get_case 3` or measure_source spot 2.'), 'Open the case file for spot 3 or a brightness measurement on every date for spot 2.');
+  assert.match(stripProblems('See `get_case 3`.', { ungrounded: [], forbidden: [] }), /the case file for spot 3/);
+  assert.ok(asksPermission('Want me to run a brightness check on spots 1 and 2?'));
+  assert.ok(asksPermission('Next steps (pick one):'));
+  assert.ok(!asksPermission('Spot 2 changes brightness at a fixed position. I can also look at its colours.'));
+  assert.match(correctionPrompt({}, { askedPermission: true }), /permission/);
+  assert.match(correctionPrompt({ leaked: ['get_case'] }), /tool names/);
 });
 
 test('spectral hints need enough points and flag a methane-like dip', () => {
@@ -303,6 +317,17 @@ test('the Planet Nine map keeps only synthetic planets no survey would have seen
 
 test('every guide module is published and exists', async () => {
   for (const file of AGENT_PUBLIC_FILES) await access(new URL(`../${file}`, import.meta.url));
+  // Every module a guide file imports must be published too, or the guide 404s.
+  const server = await readFile(new URL('../server.mjs', import.meta.url), 'utf8');
+  const { CONTEXT_PUBLIC_FILES } = await import('../context-assets.js');
+  const served = new Set([...server.matchAll(/'([\w./-]+\.js)'/g)].map(match => match[1]).concat(AGENT_PUBLIC_FILES, CONTEXT_PUBLIC_FILES));
+  for (const file of AGENT_PUBLIC_FILES.filter(name => name.endsWith('.js'))) {
+    const source = await readFile(new URL(`../${file}`, import.meta.url), 'utf8');
+    for (const [, spec] of source.matchAll(/^import[^'"]*['"](\.{1,2}\/[^'"]+)['"]/gm)) {
+      const resolved = new URL(spec, new URL(`http://x/${file}`)).pathname.slice(1);
+      assert.ok(served.has(resolved), `${file} imports ${resolved}, which the server does not publish`);
+    }
+  }
   const html = await readFile(new URL('../viewer.html', import.meta.url), 'utf8');
   for (const id of ['spot-layer', 'agent-notice', 'ai-guide-activity', 'ai-guide-spots', 'ai-guide-more']) assert.match(html, new RegExp(`id="${id}"`));
 });

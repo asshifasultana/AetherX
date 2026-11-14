@@ -6,6 +6,7 @@
 import { shareUrl } from './share.js';
 import { presets } from './presets.js';
 import { createInvestigator } from './agent-investigate.js';
+import { createJobs } from './lib/background-jobs.js';
 
 const BANDS = ['0.75–1.09 μm', '1.10–1.62 μm', '1.63–2.41 μm', '2.42–3.82 μm', '3.83–4.41 μm', '4.42–5.00 μm'];
 const DISPLAY_KEYS = ['look', 'brightness', 'contrast', 'stretch', 'scaleMode', 'colours', 'invert', 'smoothing'];
@@ -19,7 +20,9 @@ export function createViewerController() {
   window.addEventListener('sky:viewer-settings-changed', event => { latest.settings = { ...latest.settings, ...event.detail }; });
   window.addEventListener('sky:playback-state', event => { latest.playback = event.detail; });
   window.addEventListener('sky:view-summary', event => { latest.summary = event.detail; latest.summarySeq++; });
-  window.addEventListener('sky:target-selected', event => { latest.target = { ...event.detail }; latest.summary = null; latest.deepStack = null; });
+  // Slow lookups keep running after a tool returns; finished ones go to the chat.
+  const jobs = createJobs({ onDone: done => emit('sky:agent-job-done', done) });
+  window.addEventListener('sky:target-selected', event => { latest.target = { ...event.detail }; latest.summary = null; latest.deepStack = null; jobs.cancelAll(); });
   window.addEventListener('sky:observations-loading', () => { latest.observations = { loading: true, count: 0, failed: false }; });
   window.addEventListener('sky:observations-loaded', event => {
     latest.observations = { loading: false, count: Array.isArray(event.detail?.observations) ? event.detail.observations.length : 0, failed: Boolean(event.detail?.failed) };
@@ -141,7 +144,7 @@ export function createViewerController() {
   }
 
   const handlers = {
-    async get_view_state() { return { ...snapshot(), spots: await investigator.spotsSummary(), ...(investigator.quest() ? { quest: investigator.quest().id } : {}) }; },
+    async get_view_state() { return { ...snapshot(), spots: await investigator.spotsSummary(), ...(investigator.quest() ? { quest: investigator.quest().id } : {}), ...(jobs.running().length ? { backgroundJobs: jobs.running() } : {}) }; },
 
     async set_display({ changes }, { signal }) {
       const rendered = await applySettings(changes, { signal, timeout: 10000 });
@@ -154,7 +157,14 @@ export function createViewerController() {
         const built = waitFor('sky:deep-stack-built', { timeout: 60000, signal });
         emit('sky:agent-settings-requested', { changes });
         const record = await built;
-        if (!record) return { ok: true, pending: 'The deep stack is still building (it downloads many days of data). Check again with get_view_state shortly.', ...current() };
+        if (!record) {
+          const job = jobs.start('deep-stack', 'Deep stack', async jobSignal => {
+            if (!latest.deepStack && !(await waitFor('sky:deep-stack-built', { timeout: 240000, signal: jobSignal }))) throw new Error('the deep stack did not finish within 4 minutes');
+            await settle({ timeout: 5000, signal: jobSignal });
+            return current();
+          });
+          return { ok: true, background: job.id, note: 'The deep stack is still downloading. It keeps building in the background and its result will arrive on its own; carry on with other checks.', ...current() };
+        }
         await settle({ timeout: 3000, signal });
         return { ok: true, ...current() };
       }
@@ -215,7 +225,16 @@ export function createViewerController() {
         return { ok: false, error: reason || 'That target could not be found. Try a preset, another name, or coordinates.' };
       }
       const loaded = await waitFor('sky:observations-loaded', { timeout: 60000, signal });
-      if (!loaded) return { ok: true, pending: 'Moved to the target; the archive search is still running.', target: snapshot().target };
+      if (!loaded) {
+        const job = jobs.start('target-load', `Loading ${snapshot().target?.name || 'the target'}`, async jobSignal => {
+          const done = latest.observations.loading ? await waitFor('sky:observations-loaded', { timeout: 180000, signal: jobSignal }) : latest.observations;
+          if (!done) throw new Error('the archive search did not finish within 3 minutes');
+          if (done.failed) throw new Error('the archive search failed');
+          await settle({ timeout: 30000, signal: jobSignal });
+          return snapshot();
+        });
+        return { ok: true, background: job.id, note: 'Moved to the target; the archive search continues in the background and its result will arrive on its own.', target: snapshot().target };
+      }
       if (loaded.failed) return { ok: false, error: 'Moved to the target, but the archive search failed.', target: snapshot().target };
       const rendered = await settle({ timeout: 30000, signal });
       return { ok: true, ...snapshot(), ...(rendered ? {} : { pending: 'Moved to the target; the image is still loading.' }) };
@@ -230,7 +249,7 @@ export function createViewerController() {
     }
   };
 
-  const investigator = createInvestigator({ base: handlers, latest, emit, settle, needFrames, snapshot });
+  const investigator = createInvestigator({ base: handlers, latest, emit, settle, needFrames, snapshot, jobs });
   Object.assign(handlers, investigator.handlers);
 
   async function execute(name, args, { signal, progress } = {}) {
@@ -240,5 +259,5 @@ export function createViewerController() {
     catch (error) { return { ok: false, error: error?.message || 'The viewer could not do that.' }; }
   }
 
-  return { execute, snapshot, investigator };
+  return { execute, snapshot, investigator, jobs };
 }

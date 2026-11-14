@@ -5,8 +5,9 @@
 // every reply (lib/agent-guard.js) before the visitor sees it.
 
 import { validateToolCall } from './lib/agent-tools.js';
-import { checkReply, stripProblems, correctionPrompt } from './lib/agent-guard.js';
+import { checkReply, stripProblems, correctionPrompt, asksPermission, plainToolNames } from './lib/agent-guard.js';
 import { summarize } from './lib/case-file.js';
+import { describeDone } from './lib/background-jobs.js';
 import { createViewerController } from './agent-controller.js';
 import { copyText } from './share-ui.js';
 import { isEmbedded } from './share.js';
@@ -25,6 +26,8 @@ let attached = new Set();   // spot numbers attached to the next message
 let knownSpots = [];
 let started = false;
 const sceptical = new Set(); // spots the sceptic already reviewed
+let inbox = [];              // finished background jobs the guide has not read yet
+let inboxTimer = null;
 
 const formatSpot = spot => `${spot.raDeg.toFixed(3)}°, ${spot.decDeg >= 0 ? '+' : ''}${spot.decDeg.toFixed(3)}°`;
 
@@ -272,7 +275,9 @@ function renderChips() {
 function trimmedHistory() {
   let start = Math.max(0, history.length - MAX_HISTORY);
   while (start < history.length && history[start].role !== 'user') start++;
-  const lastUser = history.findLastIndex(message => message.role === 'user');
+  // Background results and guide checks arrive as user turns; only a real
+  // visitor message starts a new question.
+  const lastUser = history.findLastIndex(message => message.role === 'user' && !/^\[(Background result|Guide check|Sceptic)/.test(message.content));
   return history.slice(start).map((message, offset) => message.role === 'tool' && start + offset < lastUser && message.content.length > OLD_RESULT_CHARS
     ? { ...message, content: message.content.slice(0, OLD_RESULT_CHARS) + '…' } : message);
 }
@@ -335,19 +340,70 @@ async function runTool(call, signal, turnSources) {
   return result;
 }
 
+// Finished background jobs become messages the guide reads before its next step.
+function drainInbox(turnSources) {
+  const done = inbox;
+  inbox = [];
+  for (const job of done) {
+    const content = describeDone(job);
+    history.push({ role: 'user', content });
+    turnSources.push(content);
+    const line = addEntry('action', `↳ Background: ${job.label} ${job.ok ? 'finished' : `stopped — ${job.error}`}`);
+    line.classList.toggle('is-failed', !job.ok);
+  }
+  return done.length;
+}
+
+// Resolve when a background job reports back, or after `ms`.
+function waitForInbox(ms, signal) {
+  return new Promise(resolve => {
+    const finish = () => { clearTimeout(timer); window.removeEventListener('sky:agent-job-done', finish); resolve(); };
+    const timer = setTimeout(finish, ms);
+    window.addEventListener('sky:agent-job-done', finish);
+    signal.addEventListener('abort', finish, { once: true });
+  });
+}
+
+const BACKGROUND_TURN = 'The visitor did not type anything: the background results above arrived on their own. In 1-2 sentences, tell the visitor what they changed. Run a follow-up check only if one clearly helps. Do not ask questions.';
+
+// When the guide is idle and a background job finishes, pick it back up on its own.
+function scheduleBackgroundTurn() {
+  clearTimeout(inboxTimer);
+  // A short pause lets several jobs that finish together share one turn.
+  inboxTimer = setTimeout(() => {
+    if (!inbox.length || running) return;
+    setStarted(true);
+    void converse(null, []);
+  }, 400);
+}
+
 async function converse(text, chips) {
   const abort = new AbortController();
   running = abort;
   $('ai-guide-send').disabled = true;
   $('ai-guide-stop').hidden = false;
-  const prefix = chips.map(spot => `[Spot ${spot.n}: ra=${spot.raDeg.toFixed(5)}, dec=${spot.decDeg.toFixed(5)}, origin=${spot.origin}]`).join('\n');
-  const content = prefix ? `${prefix}\n${text}` : text;
-  history.push({ role: 'user', content });
-  addEntry('user', text, { chips });
-  const turnSources = [content];
+  const turnSources = [];
+  drainInbox(turnSources);
+  if (text === null) {
+    // A background-only turn: no visitor bubble, just the results.
+    history.push({ role: 'user', content: `[Guide check] ${BACKGROUND_TURN}` });
+  } else {
+    const prefix = chips.map(spot => `[Spot ${spot.n}: ra=${spot.raDeg.toFixed(5)}, dec=${spot.decDeg.toFixed(5)}, origin=${spot.origin}]`).join('\n');
+    const content = prefix ? `${prefix}\n${text}` : text;
+    history.push({ role: 'user', content });
+    addEntry('user', text, { chips });
+    turnSources.push(content);
+  }
   let corrected = false;
+  let nudged = false;
+  let redraft = false;
   try {
     for (let round = 0; round < MAX_ROUNDS; round++) {
+      drainInbox(turnSources);
+      if (redraft) {
+        redraft = false;
+        history.push({ role: 'user', content: `[Guide check] Your draft was not shown because new results arrived. Write the complete answer for the visitor now: everything found ${text === null ? 'in these results' : 'for their request'}, updated with the new results.` });
+      }
       setActivity(round ? 'Reading the results…' : THINKING[0], { thinking: true });
       const final = round === MAX_ROUNDS - 1;
       if (final) history.push({ role: 'user', content: '[Guide check] Step budget reached: stop calling tools and summarise briefly what was measured, what was ruled out and what is still open.' });
@@ -358,19 +414,27 @@ async function converse(text, chips) {
         const reply = message.content || 'Done.';
         const check = checkReply(reply, turnSources);
         if (flagged.length) check.forbidden.push(...flagged.filter(phrase => !check.forbidden.includes(phrase)));
-        check.ok = !check.ungrounded.length && !check.forbidden.length;
-        if (!check.ok && !corrected) {
-          // One rewrite round; the visitor never sees the rejected draft.
-          corrected = true;
-          history.push({ role: 'user', content: `[Guide check] ${correctionPrompt(check)}` });
+        check.ok = !check.ungrounded.length && !check.forbidden.length && !check.leaked.length;
+        // A background result landed while the guide was writing: let it read
+        // that first rather than send an answer that is already out of date.
+        if (inbox.length && !final) { redraft = true; continue; }
+        // Once per turn, send the guide back to work instead of handing the
+        // next step to the visitor.
+        const askedPermission = !nudged && !final && text !== null && asksPermission(reply);
+        const rewrite = !check.ok && !corrected && !final;
+        if (rewrite || askedPermission) {
+          // The visitor never sees the rejected draft.
+          if (rewrite) corrected = true;
+          if (askedPermission) nudged = true;
+          history.push({ role: 'user', content: `[Guide check] ${correctionPrompt(rewrite ? check : {}, { askedPermission })}` });
           continue;
         }
         const shown = check.ok ? reply : stripProblems(reply, check) || 'I could not phrase that from the measurements alone. Ask me to measure it first.';
         addEntry(plan ? 'plan' : 'guide', shown);
-        if (!check.ok) addEntry('note', 'Some statements were removed because no measurement backed them.');
+        if (check.ungrounded.length || check.forbidden.length) addEntry('note', 'Some statements were removed because no measurement backed them.');
         return;
       }
-      if (message.content) addEntry(plan ? 'plan' : 'guide', message.content);
+      if (message.content) addEntry(plan ? 'plan' : 'guide', plainToolNames(message.content));
       let objection = null;
       for (const call of message.tool_calls) {
         if (abort.signal.aborted) return;
@@ -381,6 +445,12 @@ async function converse(text, chips) {
           const file = controller.investigator.cases.get(result.spot ?? result.toSpot);
           if (file) objection = { spot: file.spot, text: await askSceptic(summarize(file), abort.signal) };
         }
+      }
+      // Only re-checking the screen while a background job runs is polling:
+      // sleep until a job reports back instead of spending a step on it.
+      if (!inbox.length && controller.jobs.running().length && message.tool_calls.every(call => call.function?.name === 'get_view_state')) {
+        setActivity(`Waiting for ${controller.jobs.running()[0].label.toLowerCase()}…`);
+        await waitForInbox(45_000, abort.signal);
       }
       if (objection?.text) {
         addEntry('sceptic', objection.text);
@@ -400,6 +470,7 @@ async function converse(text, chips) {
     setActivity('');
     $('ai-guide-send').disabled = false;
     $('ai-guide-stop').hidden = true;
+    if (inbox.length && !abort.signal.aborted) scheduleBackgroundTurn();
   }
 }
 
@@ -422,6 +493,7 @@ async function playTour() {
     setActivity('');
     $('ai-guide-send').disabled = false;
     $('ai-guide-stop').hidden = true;
+    if (inbox.length) scheduleBackgroundTurn();
   }
 }
 
@@ -471,6 +543,9 @@ function mount() {
   });
   $('ai-guide-reset').addEventListener('click', () => {
     running?.abort();
+    controller.jobs.cancelAll();
+    inbox = [];
+    clearTimeout(inboxTimer);
     history = [];
     caseCards.clear();
     sceptical.clear();
@@ -513,6 +588,13 @@ function mount() {
     if (summary && (!event.detail.quiet || caseCards.get(summary.spot)?.isConnected)) renderCase(summary);
   });
   window.addEventListener('sky:report-ready', event => { if (event.detail?.report) renderReport(event.detail.report); });
+  window.addEventListener('sky:agent-job-done', event => {
+    const done = event.detail;
+    if (!done || !started) return;
+    inbox.push(done);
+    if (!guideOpen()) notify(`${done.label} finished`);
+    if (!running) scheduleBackgroundTurn();
+  });
   window.addEventListener('sky:agent-notice', event => { if (event.detail?.text) notify(event.detail.text); });
 
   // Contextual nudges: a quest for this preset, or a difference with many changes.

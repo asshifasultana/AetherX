@@ -22,6 +22,8 @@ Masked, missing, and uncovered pixels are represented as invalid samples and omi
 
 Choose **Deep stack** to build a second median across chronological UTC-day frames. Each day's quality-aware stack is aligned to the target's fixed sky position before the per-pixel median is calculated. **Maximum deep-stack frames** defaults to 80 and can be set from 4 to 400. When there are more available frames than the selected limit, the stack uses the earliest frames and reports how many later frames were excluded. Failed daily frames and failed source exposures are reported separately.
 
+Exposures load through a shared four-job pool using S3 byte ranges, with serialized IRSA cutout fallback. The first completed daily frame appears immediately. Subsequent deep-stack previews include complete daily frames only and refresh at most once per second between batches. Preview progress reports days, loaded exposures, and failed exposures; PNG exports become available after the final median. Completion order does not change contributor ordering. No additional exposure cap is applied. Memory preflight may require a smaller field or a lower explicit frame limit before downloading.
+
 This is a fixed-sky stack. SphereX does not yet propagate a moving target's ephemeris or re-center each date on an object's predicted position, so the current deep stack does not make a moving object accumulate while background stars disappear.
 
 ## Contribution record and exports

@@ -47,11 +47,15 @@ For stars with substantial proper motion, such as Barnard’s Star and WISE 0855
 
 ## FITS cutouts and aligned display
 
-Open an observation's **Details** row in the search results and choose **View aligned cutout**. The backend asks IRSA's IBE for a target-centered SPHEREx MEF cutout, validates its initial FITS signature, and streams it to the browser with backpressure. Cutouts are limited to 24 MiB; choose a smaller field of view if a request exceeds that limit. Transfers interrupted after streaming begins appear as failed downloads and can be retried. Original-file links download directly from IRSA and are not subject to the cutout limit, including approximately 70 MB original observations.
+Open an observation's **Details** row in the search results and choose **View aligned cutout**. The normal loader reads bounded FITS headers and the needed IMAGE/FLAGS rows directly from the public SPHEREx S3 mirror. A shared queue runs up to four exposure jobs; FITS decoding, exact WCS projection, background estimation, and median computation run in a module Web Worker. All selected exposures remain eligible; loading does not introduce a four-exposure sampling cap. Completed daily frames appear while the deep stack builds, with previews labelled and exports enabled only after completion.
 
-The browser reads the science image HDU and reprojects each observation from its FITS celestial WCS onto a common north-up, east-left grid centered on the selected target. The selected square field of view is therefore consistent when switching observations. Rendering uses the image data and display stretch controls; the delivered cutout retains the other FITS HDUs for later processing.
+If cloud access fails or a FITS layout is unsupported, the backend asks IRSA's IBE for a padded target-centered cutout, validates its initial FITS signature, and streams it to the browser with backpressure. Fallback cutouts are limited to 24 MiB and remain serialized; server-busy responses receive bounded retries. An unavailable worker retains a main-thread fallback. Original-file links still download directly from IRSA and are not subject to the cutout limit.
+
+The browser reprojects each observation from its FITS celestial WCS onto a common north-up, east-left grid centered on the selected target. Both loading paths crop to the same detector footprint, including interpolation and inspection neighbours, before background estimation. The padded fallback fixes edge clipping in the previous unpadded cutout path, so some boundary pixels can now have data. The shared decoded/rendered cache has a 128 MiB byte budget, and a conservative preflight refuses stacks estimated to exceed the 256 MiB working budget without dropping exposures. These estimates do not limit total browser process memory.
 
 Run the app locally with `npm run dev` from this repository. Cutouts are never saved on the server or buffered there as complete files. Successful responses permit private browser caching for one hour. Client disconnects cancel archive transfers. The first cutout request removes only the app's legacy `spherex-cutouts-v1` temporary cache before beginning retrieval.
+
+See [image loading and performance verification](docs/image-loading-performance.md) for worker integration, rollback, and the opt-in live benchmark.
 
 ## Shareable links and the embeddable viewer
 

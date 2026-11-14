@@ -1,10 +1,9 @@
-import { loadCutout } from './cutout-loader.js';
 import { canvasToSky, skyToCanvas } from './sky-projection.js';
 import { initialViewState } from './share.js';
 import { FLAG_CATEGORIES, MASKED_FLAG_BITS, QUALITY_FLAGS } from './lib/pixel-quality.js';
-import { decodeRice32 } from './lib/rice.js';
-import { estimateBackground } from './lib/background.js';
-import { medianStack } from './lib/stack.js';
+import { matrixFor, projectSkyToPixel, projectionKey } from './lib/fits-engine.js';
+import { imagePipeline } from './image-pipeline.js';
+import { ByteCache, assertStackBudget } from './lib/image-resources.js';
 import { observationKey } from './timelapse-core.js';
 
 const canvas = document.getElementById('sky-canvas');
@@ -22,6 +21,9 @@ let pixelInspectionSequence = 0;
 let activeFrameExposures = [];
 let timelineFrames = [];
 let activeTimelineFrame = null;
+let dataGeneration = 0;
+let repaintSequence = 0;
+let deepStackScheduled = false;
 let comparisonScale = null;
 // A marked candidate source is an absolute sky position, so it survives frame
 // changes, band changes and a new search. Only the field of view can move it
@@ -30,31 +32,43 @@ let markedSource = null;
 const PIXEL_ARCSEC = 6.15;
 // Decoded frames and their rendered canvases live in memory so playback can swap
 // frames with a single draw instead of re-fetching and re-parsing FITS.
-const decodedFrames = new Map();
-const renderedFrames = new Map();
-const MAX_CACHED_FRAMES = 160;
+const decodedFrames = new ByteCache();
+const renderedFrames = new ByteCache();
+
 // The backend publishes this mask policy and applies the same policy to pixel inspection.
 const BAD_PIXEL_MASK = MASKED_FLAG_BITS.reduce((mask, bit) => mask | (1 << bit), 0) >>> 0;
 const FLAGS_BY_BIT = new Map(QUALITY_FLAGS.map(flag => [flag.bit, flag]));
 
 const cards = text => { status.textContent = text; };
-window.addEventListener('sky:target-selected', event => { target = { ...event.detail }; comparisonScale = null; activeObservation = null; activeTimelineFrame = null; activeFrameExposures = []; timelineFrames = []; activeSequence++; cutoutController?.abort(); resetViewer('This target is selected. Scroll down past the timeline and settings to Find your observations. Open Details + on a result, then choose View aligned cutout.'); });
+window.addEventListener('sky:target-selected', event => { dataGeneration++; target = { ...event.detail }; comparisonScale = null; activeObservation = null; activeTimelineFrame = null; activeFrameExposures = []; timelineFrames = []; activeSequence++; cutoutController?.abort(); resetViewer('This target is selected. Scroll down past the timeline and settings to Find your observations. Open Details + on a result, then choose View aligned cutout.'); });
 window.addEventListener('sky:frame-exposure-group', event => { activeFrameExposures = Array.isArray(event.detail?.exposures) ? event.detail.exposures : []; activeTimelineFrame = event.detail?.frame || activeTimelineFrame; });
-window.addEventListener('sky:timeline-frames-changed', event => { timelineFrames = Array.isArray(event.detail?.frames) ? event.detail.frames : []; });
+window.addEventListener('sky:timeline-frames-changed', event => {
+  timelineFrames = Array.isArray(event.detail?.frames) ? event.detail.frames : [];
+  if (settings.viewMode === 'deep-stack') scheduleDeepStack();
+});
+function scheduleDeepStack() {
+  if (deepStackScheduled) return;
+  deepStackScheduled = true;
+  queueMicrotask(() => { deepStackScheduled = false; if (settings.viewMode === 'deep-stack') void showDeepStack(); });
+}
 window.addEventListener('sky:viewer-settings-changed', event => {
   const previousFov = settings.fovArcmin, previousDisplay = displaySignature();
   const previousBand = settings.band, previousConsistent = settings.consistentBrightness;
   const previousMode = settings.viewMode, previousStackLimit = settings.maxStackFrames;
   const previousGlitchRejection = settings.rejectVisitGlitches;
   settings = { ...settings, ...event.detail };
+  const changed = previousDisplay !== displaySignature() || previousBand !== settings.band;
+  if (changed) { dataGeneration++; activeSequence++; cutoutController?.abort(); }
   if (pixelInspector) pixelInspector.hidden = !settings.inspectPixels;
   document.querySelector('.viewer')?.classList.toggle('is-inspecting', Boolean(settings.inspectPixels));
   document.querySelector('.viewer')?.classList.toggle('is-quality-inspecting', Boolean(settings.inspectPixels || settings.qualityOverlay));
   if (previousGlitchRejection && settings.rejectVisitGlitches === false) {
-    for (const image of decodedFrames.values()) image.derivedTransientPixels?.clear();
+    for (const image of decodedFrames.values()) { image.derivedTransientPixels?.clear(); image.projectionKey = ''; }
     renderedFrames.clear();
   }
   if (settings.fovArcmin !== previousFov || settings.band !== previousBand || settings.consistentBrightness !== previousConsistent) comparisonScale = null;
+  if (settings.viewMode === 'deep-stack' && changed) { scheduleDeepStack(); return; }
+  if (changed && activeObservation && !activeObservation.image) { void showCutout(activeTimelineFrame || activeObservation); return; }
   if (activeObservation?.image && activeObservation.detector !== settings.band) {
     status.hidden = false; status.classList.remove('is-error');
     cards(`The loaded image is D${activeObservation.detector}. Choose a D${settings.band} observation in the archive results to view this wavelength band.`);
@@ -65,10 +79,12 @@ window.addEventListener('sky:viewer-settings-changed', event => {
     void showDeepStack();
   } else if (previousMode === 'deep-stack' && settings.viewMode !== 'deep-stack' && activeTimelineFrame) {
     void showCutout(activeTimelineFrame, { quiet: true, keepImage: true });
+  } else if (activeObservation?.image?.stackRecord && changed) {
+    void showCutout(activeTimelineFrame || activeObservation);
   } else if (activeObservation?.image && displaySignature() !== previousDisplay) {
     // Only an actual display change (stretch, colours, contrast, mask) needs a
     // repaint. A detector-band sync must not re-render the frame that just drew.
-    status.hidden = true; drawImage(activeObservation.image);
+    status.hidden = true; void drawImage(activeObservation.image).catch(error => { cards(error.message); status.hidden = false; });
   }
 });
 
@@ -87,113 +103,10 @@ function resetViewer(message) {
   cards(message);
 }
 
-function parseHeader(bytes, offset) {
-  const values = {};
-  let cursor = offset, ended = false;
-  while (cursor + 80 <= bytes.length && !ended) {
-    const endBlock = Math.min(cursor + 2880, bytes.length);
-    for (let start = cursor; start + 80 <= endBlock; start += 80) {
-      const card = new TextDecoder('ascii').decode(bytes.subarray(start, start + 80));
-      const key = card.slice(0, 8).trim();
-      if (key === 'END') { cursor = start + 80; ended = true; break; }
-      if (card[8] !== '=') continue;
-      const raw = card.slice(10).split('/')[0].trim();
-      if (raw.startsWith("'")) values[key] = raw.slice(1, raw.lastIndexOf("'")).trim();
-      else if (raw) values[key] = Number(raw.replace(/D/g, 'E'));
-    }
-    if (!ended) cursor = endBlock;
-  }
-  return { header: values, dataOffset: Math.ceil(cursor / 2880) * 2880 };
-}
-
-function readFits(buffer) {
-  const bytes = new Uint8Array(buffer), view = new DataView(buffer);
-  if (new TextDecoder('ascii').decode(bytes.subarray(0, 8)) !== 'SIMPLE  ') throw new Error('This file is not a FITS image.');
-  let offset = 0, selected = null, flags = null;
-  while (offset + 2880 <= bytes.length) {
-    const { header, dataOffset } = parseHeader(bytes, offset);
-    const count = Math.max(0, Number(header.NAXIS) || 0);
-    const axes = Array.from({ length: count }, (_, i) => Number(header[`NAXIS${i + 1}`]) || 0);
-    const bitpix = Number(header.BITPIX) || 0;
-    const elements = axes.reduce((a, b) => a * b, 1);
-    const bytesPerPixel = Math.abs(bitpix) / 8;
-    const tableLength = Number(header.NAXIS1 || 0) * Number(header.NAXIS2 || 0);
-    const dataLength = header.XTENSION === 'BINTABLE' || header.XTENSION === 'TABLE'
-      ? tableLength + (Number(header.PCOUNT) || 0)
-      : elements * bytesPerPixel;
-    if (selected && header.EXTNAME === 'FLAGS' && header.ZCMPTYPE === 'RICE_1' && dataOffset + dataLength <= bytes.length) {
-      const width = Number(header.ZNAXIS1), height = Number(header.ZNAXIS2), tileHeight = Number(header.ZTILE2);
-      if (Number(header.ZBITPIX) !== 32 || tileHeight !== 1 || width !== selected.axes[0] || height !== selected.axes[1]) throw new Error('The compressed FLAGS image has an unsupported tile layout.');
-      const heapStart = dataOffset + (Number(header.THEAP) || tableLength);
-      const viewRows = new DataView(buffer, dataOffset, tableLength);
-      flags = new Uint32Array(width * height);
-      for (let row = 0; row < height; row++) {
-        const rowOffset = row * Number(header.NAXIS1);
-        const compressedLength = viewRows.getInt32(rowOffset, false), heapOffset = viewRows.getInt32(rowOffset + 4, false);
-        const start = heapStart + heapOffset, end = start + compressedLength;
-        if (compressedLength < 5 || start < dataOffset + tableLength || end > dataOffset + dataLength) throw new Error('A compressed FLAGS row is outside its FITS heap.');
-        const decoded = decodeRice32(bytes.subarray(start, end), new Int32Array(width), 32);
-        for (let x = 0; x < width; x++) flags[row * width + x] = decoded[x] >>> 0;
-      }
-    }
-    if (count >= 2 && axes[0] > 1 && axes[1] > 1 && [-64, -32, 8, 16, 32, 64].includes(bitpix) && dataOffset + dataLength <= bytes.length) {
-      if (header.EXTNAME === 'FLAGS' && bitpix === 32 && selected && axes[0] === selected.axes[0] && axes[1] === selected.axes[1]) {
-        flags = new Uint32Array(axes[0] * axes[1]);
-        for (let i = 0; i < flags.length; i++) flags[i] = view.getInt32(dataOffset + i * 4, false) >>> 0;
-      } else if (!selected && header.EXTNAME !== 'FLAGS' && bitpix < 0) selected = { header, axes, bitpix, offset: dataOffset, count: axes[0] * axes[1] };
-    }
-    if (!dataLength) { if (dataOffset <= offset) break; offset = dataOffset; continue; }
-    offset = dataOffset + Math.ceil(dataLength / 2880) * 2880;
-  }
-  if (!selected) throw new Error('No science image was found in the FITS cutout.');
-  const { header, axes, bitpix, offset: dataOffset, count } = selected;
-  const values = new Float32Array(count), scale = Number(header.BSCALE ?? 1), zero = Number(header.BZERO ?? 0), blank = header.BLANK;
-  for (let i = 0; i < count; i++) {
-    const p = dataOffset + i * (Math.abs(bitpix) / 8); let value;
-    if (bitpix === -32) value = view.getFloat32(p, false);
-    else if (bitpix === -64) value = view.getFloat64(p, false);
-    else if (bitpix === 8) value = view.getUint8(p);
-    else if (bitpix === 16) value = view.getInt16(p, false);
-    else if (bitpix === 32) value = view.getInt32(p, false);
-    else value = Number.NaN;
-    values[i] = value === blank ? Number.NaN : value * scale + zero;
-  }
-  return { values, width: axes[0], height: axes[1], header, flags };
-}
-
-function matrixFor(header) {
-  const firstAxis = String(header.CTYPE1 || '');
-  const secondAxis = String(header.CTYPE2 || '');
-  if (!/^RA---TAN(?:-SIP)?$/.test(firstAxis) || !/^DEC--TAN(?:-SIP)?$/.test(secondAxis)) throw new Error('This image uses an unsupported sky projection; its pixels cannot be aligned safely.');
-  let a = Number(header.CD1_1), b = Number(header.CD1_2), c = Number(header.CD2_1), d = Number(header.CD2_2);
-  if (![a, b, c, d].every(Number.isFinite)) {
-    const sx = Number(header.CDELT1), sy = Number(header.CDELT2);
-    const p11 = Number(header.PC1_1 ?? 1), p12 = Number(header.PC1_2 ?? 0), p21 = Number(header.PC2_1 ?? 0), p22 = Number(header.PC2_2 ?? 1);
-    a = sx * p11; b = sx * p12; c = sy * p21; d = sy * p22;
-  }
-  const determinant = a * d - b * c;
-  if (![a, b, c, d].every(Number.isFinite) || !Number.isFinite(determinant) || Math.abs(determinant) < 1e-18) throw new Error('The FITS image has no usable sky-coordinate grid.');
-  return { a, b, c, d, determinant };
-}
-
 function percentile(values, fraction) {
   const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
   if (!sorted.length) return 0;
   return sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * fraction))];
-}
-
-function bilinear(image, x, y) {
-  const x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0;
-  let sum = 0, weight = 0;
-  for (let dy = 0; dy <= 1; dy++) for (let dx = 0; dx <= 1; dx++) {
-    const px = x0 + dx, py = y0 + dy;
-    if (px < 0 || py < 0 || px >= image.width || py >= image.height) continue;
-    const w = (dx ? fx : 1 - fx) * (dy ? fy : 1 - fy), value = image.values[py * image.width + px];
-    const index = py * image.width + px;
-    const flagged = (settings.hideBadPixels && image.flags && (image.flags[index] & BAD_PIXEL_MASK) !== 0) || image.derivedTransientPixels?.has(index);
-    if (Number.isFinite(value) && !flagged) { sum += w * value; weight += w; }
-  }
-  return weight > 0 ? sum / weight : Number.NaN;
 }
 
 function colorize(value, low, high) {
@@ -210,105 +123,41 @@ function colorize(value, low, high) {
 
 function hexRgb(hex) { return [1, 3, 5].map(start => Number.parseInt(hex.slice(start, start + 2), 16)); }
 
-function projectSkyToPixel(image, ra, dec) {
-  const h = image.header, matrix = image.matrix;
-  const deg = Math.PI / 180, ra0 = Number(h.CRVAL1) * deg, dec0 = Number(h.CRVAL2) * deg;
-  const dra = ((ra * deg - ra0 + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
-  const decRad = dec * deg, denom = Math.sin(dec0) * Math.sin(decRad) + Math.cos(dec0) * Math.cos(decRad) * Math.cos(dra);
-  if (denom <= 0) return null;
-  const xi = Math.cos(decRad) * Math.sin(dra) / denom / deg;
-  const eta = (Math.cos(dec0) * Math.sin(decRad) - Math.sin(dec0) * Math.cos(decRad) * Math.cos(dra)) / denom / deg;
-  const dx = (matrix.d * xi - matrix.b * eta) / matrix.determinant;
-  const dy = (-matrix.c * xi + matrix.a * eta) / matrix.determinant;
-  let x = dx, y = dy;
-  const sip = (prefix, order, u, v) => {
-    let value = 0;
-    for (let i = 0; i <= order; i++) for (let j = 0; j <= order - i; j++) value += Number(h[`${prefix}_${i}_${j}`] || 0) * u ** i * v ** j;
-    return value;
-  };
-  if (String(h.CTYPE1).endsWith('-SIP')) {
-    for (let i = 0; i < 3; i++) { x = dx - sip('A', Number(h.A_ORDER) || 0, x, y); y = dy - sip('B', Number(h.B_ORDER) || 0, x, y); }
-  }
-  return [Number(h.CRPIX1) - 1 + x, Number(h.CRPIX2) - 1 + y];
-}
-
 function paintCanvas(element, image) {
-  const paintContext = element.getContext('2d', { alpha: false });
-  const valid = [];
-  for (let i = 0; i < image.values.length; i++) {
-    const flagged = (settings.hideBadPixels && image.flags && (image.flags[i] & BAD_PIXEL_MASK) !== 0) || image.derivedTransientPixels?.has(i);
-    if (Number.isFinite(image.values[i]) && !flagged) valid.push(image.values[i]);
-  }
-  if (!valid.length) throw new Error('No valid pixels remain after applying the quality mask.');
-  // Estimate and remove each cutout's robust sky pedestal for display only.
-  // The original science values remain intact for inspection and export.
-  const sky = estimateBackground(valid).level;
-  const residuals = valid.map(value => value - sky);
-  const automaticScale = { low: percentile(residuals, .02), high: percentile(residuals, .995) };
+  const projected = image.stackRecord
+    ? { values: image.values, flags: new Uint32Array(image.values.length), coverage: image.values.reduce((n, v) => n + Number.isFinite(v), 0) / image.values.length, width: image.width }
+    : image.projection;
+  if (!projected) throw new Error('This image has not been projected.');
+  const allValues = Array.from(projected.values).filter(Number.isFinite);
+  if (!allValues.length) throw new Error('No valid pixels remain after applying the quality mask.');
+  const automaticScale = { low: percentile(allValues, .02), high: percentile(allValues, .995) };
   if (settings.consistentBrightness && !comparisonScale) comparisonScale = automaticScale;
-  const { low, high } = settings.consistentBrightness ? comparisonScale : automaticScale;
-  if (!(high > low)) throw new Error('The cutout has no usable image contrast.');
-  const matrix = image.matrix || (image.matrix = matrixFor(image.header));
-  const canvasWidth = Math.max(1, Math.round(settings.fovArcmin * 60 / PIXEL_ARCSEC));
-  const canvasHeight = canvasWidth;
-  element.width = canvasWidth; element.height = canvasHeight;
-  const pixels = paintContext.createImageData(canvasWidth, canvasHeight), deg = Math.PI / 180;
-  const projectedValues = new Float32Array(canvasWidth * canvasHeight);
-  projectedValues.fill(Number.NaN);
-  const qualityBits = new Uint32Array(canvasWidth * canvasHeight);
-  let coveredPixels = 0;
-  const square = canvasWidth, left = 0, top = 0;
-  const scaleDeg = PIXEL_ARCSEC / 3600;
-  const ra0 = target.raDeg * deg, dec0 = target.decDeg * deg;
-  for (let y = 0; y < canvasHeight; y++) for (let x = 0; x < canvasWidth; x++) {
-    // One shared north-up, east-left tangent-plane grid for every observation.
-    const xi = (square - 1) / 2 - (x - left), northPixels = (square - 1) / 2 - (y - top);
-    const xiRad = xi * scaleDeg * deg, eta = northPixels * scaleDeg * deg;
-    const denom = Math.cos(dec0) - eta * Math.sin(dec0);
-    const ra = ra0 + Math.atan2(xiRad, denom), dec = Math.atan2(Math.sin(dec0) + eta * Math.cos(dec0), Math.hypot(denom, xiRad));
-    const point = projectSkyToPixel({ ...image, matrix }, ra / deg, dec / deg);
-    let value = Number.NaN;
-    if (point) {
-      if (point[0] >= 0 && point[1] >= 0 && point[0] < image.width && point[1] < image.height) coveredPixels++;
-      value = bilinear(image, point[0], point[1]);
-      if (Number.isFinite(value)) value -= sky;
-    }
-    const at = (y * canvasWidth + x) * 4;
-    const gridIndex = y * canvasWidth + x;
-    if (Number.isFinite(value)) projectedValues[gridIndex] = value;
-    qualityBits[gridIndex] = flag >>> 0;
-    let rgb = Number.isFinite(value) ? colorize(value, low, high) : [15, 12, 22];
-    let flag = 0, pixelValue = Number.NaN, inBounds = false;
-    if (point) {
-      const px = Math.round(point[0]), py = Math.round(point[1]);
-      if (px >= 0 && py >= 0 && px < image.width && py < image.height) {
-        inBounds = true;
-        const index = py * image.width + px;
-        if (image.flags) flag = image.flags[index] >>> 0;
-        pixelValue = image.values[index];
-      }
-    }
-    const derivedTransient = inBounds && image.derivedTransientPixels?.has(Math.round(point[1]) * image.width + Math.round(point[0]));
-    if (derivedTransient) rgb = hexRgb(FLAG_CATEGORIES.transient.colour);
-    else if (settings.qualityOverlay) {
-      if (!inBounds) rgb = hexRgb(FLAG_CATEGORIES.uncovered.colour);
-      else if ((flag & (1 << 9)) || !Number.isFinite(pixelValue)) rgb = hexRgb(FLAG_CATEGORIES.missing.colour);
+  const limits = settings.consistentBrightness ? comparisonScale : automaticScale;
+  if (!(limits.high > limits.low)) throw new Error('The cutout has no usable image contrast.');
+  element.width = projected.width; element.height = projected.width;
+  const paintContext = element.getContext('2d', { alpha: false });
+  const pixels = paintContext.createImageData(element.width, element.height);
+  for (let i = 0; i < projected.values.length; i++) {
+    const value = projected.values[i], flag = projected.flags[i];
+    let rgb = Number.isFinite(value) ? colorize(value, limits.low, limits.high) : [15, 12, 22];
+    if (settings.qualityOverlay && !image.stackRecord) {
+      if (!projected.covered[i]) rgb = hexRgb(FLAG_CATEGORIES.uncovered.colour);
+      else if ((flag & (1 << 9)) || !Number.isFinite(value)) rgb = hexRgb(FLAG_CATEGORIES.missing.colour);
       else if (flag) {
-        const priority = ['transient', 'detector', 'correction', 'artifact', 'caution'];
-        const category = priority.find(name => QUALITY_FLAGS.some(item => item.category === name && (flag & (2 ** item.bit)) !== 0));
+        const category = ['transient', 'detector', 'correction', 'artifact', 'caution'].find(name => QUALITY_FLAGS.some(item => item.category === name && (flag & (2 ** item.bit)) !== 0));
         rgb = hexRgb(FLAG_CATEGORIES[category || 'caution'].colour);
       }
     }
-    pixels.data[at] = rgb[0]; pixels.data[at + 1] = rgb[1]; pixels.data[at + 2] = rgb[2]; pixels.data[at + 3] = 255;
+    pixels.data.set([...rgb, 255], i * 4);
   }
   paintContext.putImageData(pixels, 0, 0);
-  element.spherexGrid = { values: projectedValues, flags: qualityBits };
-  return coveredPixels / (canvasWidth * canvasHeight);
+  element.spherexGrid = { values: projected.values, flags: projected.flags };
+  return projected.coverage;
 }
 
-function paintStackCanvas(element, entries, observations) {
+async function paintStackCanvas(element, entries, observations, signal) {
   if (!entries.length) throw new Error('No daily exposures were retrieved for this frame.');
-  const grid = medianStack(entries.map(entry => entry.canvas.spherexGrid.values));
+  const grid = await imagePipeline.median(entries.map(entry => entry.canvas.spherexGrid.values), signal);
   const allValues = Array.from(grid.values).filter(Number.isFinite);
   if (!allValues.length) throw new Error('No valid pixels remain in the daily exposure stack.');
   const automaticScale = { low: percentile(allValues, .02), high: percentile(allValues, .995) };
@@ -322,7 +171,6 @@ function paintStackCanvas(element, entries, observations) {
     let rgb;
     if (!Number.isFinite(grid.values[i])) rgb = [15, 12, 22];
     else rgb = colorize(grid.values[i], limits.low, limits.high);
-    if (settings.invert && Number.isFinite(grid.values[i])) rgb = [255 - rgb[0], 255 - rgb[1], 255 - rgb[2]];
     const at = i * 4;
     output.data[at] = rgb[0]; output.data[at + 1] = rgb[1]; output.data[at + 2] = rgb[2]; output.data[at + 3] = 255;
   }
@@ -366,7 +214,14 @@ function applyChrome(coverage) {
   document.getElementById('quality-legend').hidden = !settings.qualityOverlay && !activeObservation?.image?.derivedTransientPixels?.size;
 }
 
-function drawImage(image) {
+async function drawImage(image) {
+  const sequence = activeSequence, repaint = ++repaintSequence;
+  const requestedTarget = { ...target }, requestedSettings = { ...settings };
+  if (!image.stackRecord && image.projectionKey !== projectionKey(target, settings)) {
+    image.projection = await imagePipeline.project(image, requestedTarget, requestedSettings);
+    image.projectionKey = projectionKey(requestedTarget, requestedSettings);
+  }
+  if (sequence !== activeSequence || repaint !== repaintSequence) return;
   const coverage = paintCanvas(canvas, image);
   applyChrome(coverage);
   positionMark();
@@ -448,13 +303,13 @@ canvas.addEventListener('pointerleave', () => { document.getElementById('quality
 function formatHoveredPixel(image, sky) {
   const point = sky && projectSkyToPixel(image, sky.raDeg, sky.decDeg);
   if (!point || point[0] < 0 || point[1] < 0 || point[0] >= image.width || point[1] >= image.height) return `Outside detector coverage · RA ${sky?.raDeg.toFixed(5)}°, Dec ${sky?.decDeg.toFixed(5)}°`;
-  const x = Math.round(point[0]), y = Math.round(point[1]), index = y * image.width + x;
+  const x = Math.min(image.width - 1, Math.round(point[0])), y = Math.min(image.height - 1, Math.round(point[1])), index = y * image.width + x;
   const value = image.values[index], flags = image.flags?.[index] >>> 0;
   const names = image.flags ? [...FLAGS_BY_BIT.values()].filter(flag => (flags & (2 ** flag.bit)) !== 0).map(flag => flag.name) : [];
-  if (image.derivedTransientPixels?.has(index)) return `Possible one-exposure transient rejected · FITS pixel ${x + 1}, ${y + 1}`;
-  if ((flags & (1 << 9)) || !Number.isFinite(value)) return `Missing pixel data · FITS pixel ${x + 1}, ${y + 1} · not a fading measurement`;
-  if (names.length) return `${names.join(' + ')} · FITS pixel ${x + 1}, ${y + 1} · ${Number.isFinite(value) ? value.toPrecision(4) : 'no value'} ${image.header.BUNIT || ''}`;
-  return `${image.flags ? 'Valid' : 'Quality flags unavailable'} pixel ${x + 1}, ${y + 1} · ${value.toPrecision(4)} ${image.header.BUNIT || ''}`;
+  if (image.derivedTransientPixels?.has(index)) return `Possible one-exposure transient rejected · FITS pixel ${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)}`;
+  if ((flags & (1 << 9)) || !Number.isFinite(value)) return `Missing pixel data · FITS pixel ${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)} · not a fading measurement`;
+  if (names.length) return `${names.join(' + ')} · FITS pixel ${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)} · ${Number.isFinite(value) ? value.toPrecision(4) : 'no value'} ${image.header.BUNIT || ''}`;
+  return `${image.flags ? 'Valid' : 'Quality flags unavailable'} pixel ${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)} · ${value.toPrecision(4)} ${image.header.BUNIT || ''}`;
 }
 
 canvas.addEventListener('keydown', event => {
@@ -477,7 +332,7 @@ async function inspectPixel(image, sky) {
   const point = projectSkyToPixel(image, sky.raDeg, sky.decDeg);
   const position = `RA ${sky.raDeg.toFixed(6)}°, Dec ${sky.decDeg >= 0 ? '+' : ''}${sky.decDeg.toFixed(6)}°`;
   const covered = Boolean(point && point[0] >= 0 && point[1] >= 0 && point[0] < image.width && point[1] < image.height);
-  const x = covered ? Math.round(point[0]) : -1, y = covered ? Math.round(point[1]) : -1;
+  const x = covered ? Math.min(image.width - 1, Math.round(point[0])) : -1, y = covered ? Math.min(image.height - 1, Math.round(point[1])) : -1;
   const index = covered ? y * image.width + x : -1;
   const value = covered ? image.values[index] : null;
   const flags = covered && image.flags ? image.flags[index] >>> 0 : 0;
@@ -489,7 +344,7 @@ async function inspectPixel(image, sky) {
     const exposureData = getAvailableExposureSamples(sky, image);
     const samples = exposureData.items;
     const inspectedSample = image.stackRecord ? samples[exposureData.currentIndex] : null;
-    pixelInspectorResult.textContent = `Assessing FITS pixel ${covered ? `${x + 1}, ${y + 1}` : 'outside the detector'}…`;
+    pixelInspectorResult.textContent = `Assessing FITS pixel ${covered ? `${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)}` : 'outside the detector'}…`;
     const response = await fetch('/api/pixel-quality', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ covered: inspectedSample ? inspectedSample.covered : covered, value: inspectedSample ? inspectedSample.value : (Number.isFinite(value) ? value : null), flags: inspectedSample?.flags ?? flags, flagsAvailable: inspectedSample?.flagsAvailable ?? Boolean(image.flags), maskEnabled: Boolean(settings.hideBadPixels), detectGlitches: Boolean(settings.rejectVisitGlitches), samples, activeSampleIndex: exposureData.currentIndex })
@@ -502,10 +357,16 @@ async function inspectPixel(image, sky) {
       if (!entry) continue;
       entry.image.derivedTransientPixels ||= new Set();
       entry.image.derivedTransientPixels.add(entry.pixel);
+      entry.image.projectionKey = '';
+      for (const record of renderedFrames.values()) if (record.image === entry.image) record.image.projectionKey = '';
       const sourceUrl = entry.url;
       for (const key of renderedFrames.keys()) if (key.startsWith(sourceUrl + '|')) renderedFrames.delete(key);
     }
-    if (assessment.glitchIndices?.length && activeObservation?.image) drawImage(activeObservation.image);
+    if (assessment.glitchIndices?.length && activeObservation?.image) {
+      renderedFrames.clear();
+      if (activeObservation.image.stackRecord) await showCutout(activeTimelineFrame || activeObservation);
+      else await drawImage(activeObservation.image);
+    }
     const state = assessment.state === 'missing_data'
       ? `${assessment.label} — this is not evidence that the source faded.`
       : assessment.state === 'outside_coverage'
@@ -527,7 +388,7 @@ async function inspectPixel(image, sky) {
       ? ` · ${counts.valid} valid contributions from ${counts.examined} downloaded cutouts (${counts.masked} masked, ${counts.missing} missing, ${counts.uncovered} outside, ${counts.unassessed} unassessed, ${counts.glitches} single-exposure transients rejected)`
       : '';
     const stackContext = image.stackRecord ? ` · constituent ${inspectedSample?.observationId || 'exposure'} quality; ${image.stackContributionCounts?.[index] || 0} exposures contributed to this stack pixel` : '';
-    pixelInspectorResult.textContent = `${state} ${measurement} · ${covered ? `FITS pixel ${x + 1}, ${y + 1} · ` : ''}${flagText}${stackContext}${contribution} · ${position}`;
+    pixelInspectorResult.textContent = `${state} ${measurement} · ${covered ? `FITS pixel ${x + 1 + (image.sourceX || 0)}, ${y + 1 + (image.sourceY || 0)} · ` : ''}${flagText}${stackContext}${contribution} · ${position}`;
   } catch (error) {
     if (sequence !== pixelInspectionSequence) return;
     pixelInspectorResult.textContent = `Could not assess this pixel: ${error.message} · ${position}`;
@@ -535,7 +396,7 @@ async function inspectPixel(image, sky) {
 }
 
 async function warmSelectedExposureGroup(sequence) {
-  if (!settings.rejectVisitGlitches) return;
+  if (!settings.rejectVisitGlitches && !activeObservation?.image?.stackRecord) return;
   const visitId = String(activeObservation?.image?.header.OBSID || '');
   const sameVisit = visitId ? activeFrameExposures.filter(observation => String(observation.observationId || '') === visitId) : [];
   const exposures = (sameVisit.length >= 3 ? sameVisit : activeFrameExposures).slice(0, 12);
@@ -572,21 +433,22 @@ function getAvailableExposureSamples(sky, activeImage) {
     if (Number(params.get('raDeg')) !== target.raDeg || Number(params.get('decDeg')) !== target.decDeg || Number(params.get('fovArcmin')) !== settings.fovArcmin || Number(image.header.DETECTOR) !== Number(settings.band)) continue;
     const point = projectSkyToPixel(image, sky.raDeg, sky.decDeg);
     const covered = Boolean(point && point[0] >= 0 && point[1] >= 0 && point[0] < image.width && point[1] < image.height);
-    const x = covered ? Math.round(point[0]) : -1, y = covered ? Math.round(point[1]) : -1;
+    const x = covered ? Math.min(image.width - 1, Math.round(point[0])) : -1, y = covered ? Math.min(image.height - 1, Math.round(point[1])) : -1;
     const pixel = covered ? y * image.width + x : -1;
     const value = covered ? image.values[pixel] : null;
     const local = covered && Number.isFinite(value) ? localSignalAndNoise(image, x, y) : { signal: null, noise: null };
-    if (image === activeImage || activeImage.stackSourceImages?.includes(image)) {
+    if (image === activeImage || activeImage.stackSourceUrls?.includes(url)) {
       if (currentIndex < 0) currentIndex = items.length;
     }
     items.push({ covered, value: Number.isFinite(value) ? value : null, flags: covered && image.flags ? image.flags[pixel] >>> 0 : 0, flagsAvailable: Boolean(image.flags), visitId: String(image.header.OBSID || ''), observationId: String(image.header.OBSID || ''), ...local });
     entries.push({ image, pixel, url });
   }
   if (currentIndex < 0) {
-    const sourceImage = activeImage.stackSourceImages?.[0] || activeImage;
+    if (activeImage.stackRecord) throw new Error('Constituent exposure data is unavailable. Retry pixel inspection to reload it.');
+    const sourceImage = decodedFrames.get(activeImage.stackSourceUrls?.[0]) || activeImage;
     const point = projectSkyToPixel(sourceImage, sky.raDeg, sky.decDeg);
     const covered = Boolean(point && point[0] >= 0 && point[1] >= 0 && point[0] < sourceImage.width && point[1] < sourceImage.height);
-    const x = covered ? Math.round(point[0]) : -1, y = covered ? Math.round(point[1]) : -1, pixel = covered ? y * sourceImage.width + x : -1;
+    const x = covered ? Math.min(sourceImage.width - 1, Math.round(point[0])) : -1, y = covered ? Math.min(sourceImage.height - 1, Math.round(point[1])) : -1, pixel = covered ? y * sourceImage.width + x : -1;
     const value = covered ? sourceImage.values[pixel] : null;
     const local = covered && Number.isFinite(value) ? localSignalAndNoise(sourceImage, x, y) : { signal: null, noise: null };
     currentIndex = items.length;
@@ -606,6 +468,7 @@ export function cutoutRequestUrl(observation) {
     raDeg: target.raDeg,
     decDeg: target.decDeg,
     fovArcmin: settings.fovArcmin,
+    aligned: '1',
     revision: observation.productModifiedAt || observation.metadataModifiedAt || ''
   });
   return '/api/cutout?' + params.toString();
@@ -630,33 +493,36 @@ function renderKey(observation) {
 
 function remember(map, key, value) {
   map.set(key, value);
-  if (map.size > MAX_CACHED_FRAMES) map.delete(map.keys().next().value);
 }
 
 // Download, decode and render one frame off-screen. This is what warm-up does:
 // by the time a frame is shown, there is no network request, FITS parse or
 // reprojection left to do — only a canvas blit.
-async function warmSingleCutout(observation, signal) {
+async function warmSingleCutout(observation, signal, priority = 1) {
   const url = cutoutRequestUrl(observation);
   const key = url + '|' + displaySignature();
   const rendered = renderedFrames.get(key);
-  if (rendered) return rendered;
+  if (rendered && rendered.image.projectionKey === projectionKey(target, settings)) return rendered;
+  const requestedTarget = { ...target }, requestedSettings = { ...settings };
+  const expected = projectionKey(requestedTarget, requestedSettings);
   let image = decodedFrames.get(url);
-  if (!image) {
-    const bytes = await loadCutout(url, { signal, priority: false });
-    if (signal?.aborted) throw new DOMException('The cutout request was cancelled.', 'AbortError');
-    image = readFits(bytes); image.matrix = matrixFor(image.header);
-    remember(decodedFrames, url, image);
+  if (!image) image = await imagePipeline.load(url, observation.accessUrl, requestedTarget, requestedSettings, { signal, priority });
+  else if (image.projectionKey !== expected) {
+    image.projection = await imagePipeline.project(image, requestedTarget, requestedSettings, signal);
+    image.projectionKey = expected;
   }
+  signal?.throwIfAborted();
+  if (expected !== projectionKey(target, settings)) throw new DOMException('Viewer settings changed.', 'AbortError');
+  remember(decodedFrames, url, image);
   const element = document.createElement('canvas');
   const coverage = paintCanvas(element, image);
   const entry = { canvas: element, image, coverage };
-  remember(renderedFrames, key, entry);
+  remember(renderedFrames, renderKey(observation), entry);
   window.dispatchEvent(new CustomEvent('sky:cutout-warmed', { detail: { observation, canvas: element } }));
   return entry;
 }
 
-function stackedImage(values, counts, reference, record, sourceImages, sourceUrls) {
+function stackedImage(values, counts, reference, record, sourceUrls) {
   const width = Math.max(1, Math.round(settings.fovArcmin * 60 / PIXEL_ARCSEC));
   const scale = PIXEL_ARCSEC / 3600;
   const header = {
@@ -666,36 +532,40 @@ function stackedImage(values, counts, reference, record, sourceImages, sourceUrl
     CD1_1: -scale, CD1_2: 0, CD2_1: 0, CD2_2: -scale,
     CDELT1: -scale, CDELT2: -scale, A_ORDER: 0, B_ORDER: 0
   };
-  const image = { values, width, height: width, header, flags: null, stackRecord: record, stackContributionCounts: counts, stackSourceImages: sourceImages, stackSourceUrls: sourceUrls, matrix: null };
+  const image = { values, width, height: width, header, flags: null, stackRecord: record, stackContributionCounts: counts, stackSourceUrls: sourceUrls, matrix: null };
   image.matrix = matrixFor(header);
   return image;
 }
 
-export async function warmCutout(observation, signal) {
+export async function warmCutout(observation, signal, priority = 2) {
+  const generation = dataGeneration;
   const key = renderKey(observation);
   const rendered = renderedFrames.get(key);
   if (rendered) return rendered;
+  assertStackBudget([observation], settings.fovArcmin);
   const exposures = (observation.exposures || [observation]).filter(item => item?.accessUrl);
   if (exposures.length <= 1) {
-    const entry = await warmSingleCutout(exposures[0] || observation, signal);
-    remember(renderedFrames, key, entry);
+    const entry = await warmSingleCutout(exposures[0] || observation, signal, priority);
+    remember(renderedFrames, renderKey(observation), entry);
     return entry;
   }
   const entries = [], sourceImages = [], sourceUrls = [];
-  for (const exposure of exposures) {
-    signal?.throwIfAborted();
-    try {
-      const entry = await warmSingleCutout(exposure, signal);
-      entries.push({ ...entry, observation: exposure });
-      sourceImages.push(entry.image);
+  const results = await Promise.allSettled(exposures.map(exposure => warmSingleCutout(exposure, signal, priority)));
+  signal?.throwIfAborted();
+  if (generation !== dataGeneration) throw new DOMException('Viewer changed.', 'AbortError');
+  for (let index = 0; index < results.length; index++) {
+    const result = results[index], exposure = exposures[index];
+    if (result.status === 'fulfilled') {
+      entries.push({ ...result.value, observation: exposure });
+      sourceImages.push(result.value.image);
       sourceUrls.push(cutoutRequestUrl(exposure));
-    } catch (error) {
-      if (error?.name === 'AbortError') throw error;
-    }
+    } else if (result.reason?.name === 'AbortError' || result.reason?.name === 'ImageBudgetError') throw result.reason;
   }
   const element = document.createElement('canvas');
-  const stacked = paintStackCanvas(element, entries, exposures);
-  const image = stackedImage(stacked.values, stacked.counts, sourceImages[0], stacked.record, sourceImages, sourceUrls);
+  const stacked = await paintStackCanvas(element, entries, exposures, signal);
+  signal?.throwIfAborted();
+  if (generation !== dataGeneration) throw new DOMException('Viewer changed.', 'AbortError');
+  const image = stackedImage(stacked.values, stacked.counts, sourceImages[0], stacked.record, sourceUrls);
   const entry = { canvas: element, image, coverage: stacked.coverage, stackRecord: stacked.record };
   remember(renderedFrames, renderKey(observation), entry);
   window.dispatchEvent(new CustomEvent('sky:cutout-warmed', { detail: { observation, canvas: element, stackRecord: stacked.record } }));
@@ -703,29 +573,67 @@ export async function warmCutout(observation, signal) {
 }
 
 async function showDeepStack() {
-  if (!timelineFrames.length) { cards('Search for observations before building a deep stack.'); return; }
-  const frames = timelineFrames.slice(0, Math.max(4, Math.min(400, Number(settings.maxStackFrames) || 80)));
+  const available = timelineFrames.filter(frame => !settings.band || Number(frame.detector) === Number(settings.band));
+  if (!available.length) { resetViewer('Search for observations in this detector before building a deep stack.'); return; }
+  const frames = available.slice(0, Math.max(4, Math.min(400, Number(settings.maxStackFrames) || 80)));
   activeSequence++;
   const sequence = activeSequence;
   cutoutController?.abort();
   cutoutController = new AbortController();
   const controller = cutoutController;
+  activeObservation = null;
+  document.getElementById('export-sky-png').disabled = true;
   status.hidden = false; status.classList.remove('is-error');
   cards(`Building a median stack from up to ${frames.length} UTC-day frames…`);
   const loaded = [], failedFrames = [];
   try {
-    for (let index = 0; index < frames.length; index++) {
+    assertStackBudget(frames, settings.fovArcmin);
+    let lastPreview = 0;
+    for (let offset = 0; offset < frames.length; offset += 4) {
       controller.signal.throwIfAborted();
       if (sequence !== activeSequence) return;
-      cards(`Stacking frame ${index + 1} of ${frames.length} · ${frames[index].observedStartUtc?.slice(0, 10) || 'date not reported'}…`);
-      try { loaded.push({ frame: frames[index], entry: await warmCutout(frames[index], controller.signal) }); }
-      catch (error) { if (error?.name === 'AbortError') throw error; failedFrames.push(frames[index]); }
+      await Promise.all(frames.slice(offset, offset + 4).map(async frame => {
+        try {
+          const entry = await warmCutout(frame, controller.signal, 1);
+          controller.signal.throwIfAborted();
+          if (sequence !== activeSequence) return;
+          const retained = entry.image.stackRecord ? entry : {
+            ...entry, image: { header: entry.image.header, stackSourceUrls: [cutoutRequestUrl(frame)] }
+          };
+          loaded.push({ frame, entry: retained });
+          loaded.sort((a, b) => frames.indexOf(a.frame) - frames.indexOf(b.frame));
+          if (loaded.length === 1) {
+            canvas.width = entry.canvas.width; canvas.height = entry.canvas.height;
+            context.drawImage(entry.canvas, 0, 0); applyChrome(entry.coverage);
+          }
+        } catch (error) {
+          if (controller.signal.aborted || error?.name === 'AbortError' || error?.name === 'ImageBudgetError') throw error;
+          failedFrames.push(frame);
+        }
+        if (sequence !== activeSequence) return;
+        const used = loaded.reduce((n, item) => n + (item.entry.stackRecord?.usedExposureCount || 1), 0);
+        const failed = failedFrames.reduce((n, frame) => n + (frame.exposures || [frame]).length, 0) + loaded.reduce((n, item) => n + (item.entry.stackRecord?.failedObservationIds.length || 0), 0);
+        cards(`Preview · ${loaded.length}/${frames.length} days · ${used} exposures · ${failed} failed exposures`);
+        caption.textContent = 'Building the deep median stack; preview includes completed daily frames only.';
+      }));
+      controller.signal.throwIfAborted();
+      if (sequence !== activeSequence) return;
+      if (loaded.length && performance.now() - lastPreview >= 1000) {
+        const preview = document.createElement('canvas');
+        const result = await paintStackCanvas(preview, loaded.map(item => ({ ...item.entry, observation: item.frame })), loaded.map(item => item.frame), controller.signal);
+        if (sequence !== activeSequence) return;
+        canvas.width = preview.width; canvas.height = preview.height;
+        context.drawImage(preview, 0, 0); applyChrome(result.coverage);
+        lastPreview = performance.now();
+      }
     }
     if (!loaded.length) throw new Error('No timeline frames could be loaded for the deep stack.');
     if (sequence !== activeSequence) return;
     const element = document.createElement('canvas');
     const frameEntries = loaded.map(item => ({ ...item.entry, observation: item.frame }));
-    const stacked = paintStackCanvas(element, frameEntries, loaded.map(item => item.frame));
+    const stacked = await paintStackCanvas(element, frameEntries, loaded.map(item => item.frame), controller.signal);
+    controller.signal.throwIfAborted();
+    if (sequence !== activeSequence) return;
     const allExposures = frames.flatMap(frame => frame.exposures || [frame]);
     const contributorRecords = loaded.flatMap(({ frame, entry }) => entry.stackRecord?.contributors || (frame.exposures || [frame]).map(item => ({
       observationId: item.observationId || '', productId: item.productId || '', release: item.release || item.collection || '',
@@ -736,8 +644,8 @@ async function showDeepStack() {
     const record = {
       ...stacked.record, deepStack: true,
       method: 'per-pixel median of separately aligned UTC-day median stacks; unreliable input pixels are excluded',
-      availableFrameCount: timelineFrames.length, requestedFrameCount: frames.length, usedFrameCount: loaded.length,
-      excludedByFrameLimit: Math.max(0, timelineFrames.length - frames.length),
+      availableFrameCount: available.length, requestedFrameCount: frames.length, usedFrameCount: loaded.length,
+      excludedByFrameLimit: Math.max(0, available.length - frames.length),
       requestedExposureCount: allExposures.length, usedExposureCount: contributorRecords.length,
       failedObservationIds: [...failedFrames.flatMap(frame => (frame.exposures || [frame]).map(item => item.observationId)), ...nestedFailed],
       contributors: contributorRecords,
@@ -745,9 +653,8 @@ async function showDeepStack() {
       productIds: contributorRecords.map(item => item.productId).filter(Boolean),
       exposureSeconds: contributorRecords.reduce((sum, item) => sum + (Number(item.exposureSeconds) || 0), 0)
     };
-    const sourceImages = loaded.flatMap(({ entry }) => entry.image.stackSourceImages || [entry.image]);
-    const sourceUrls = loaded.flatMap(({ entry }) => entry.image.stackSourceUrls || []);
-    const image = stackedImage(stacked.values, stacked.counts, loaded[0].entry.image, record, sourceImages, sourceUrls);
+    const sourceUrls = loaded.flatMap(({ frame, entry }) => entry.image.stackSourceUrls || [cutoutRequestUrl(frame)]);
+    const image = stackedImage(stacked.values, stacked.counts, loaded[0].entry.image, record, sourceUrls);
     image.deepStackSignature = deepStackSignature();
     const firstFrame = frames[0], lastFrame = frames.at(-1);
     const observation = { ...firstFrame, observedEndUtc: lastFrame.observedEndUtc || lastFrame.observedStartUtc, exposures: allExposures, stackLabel: 'Deep median stack' };
@@ -759,6 +666,7 @@ async function showDeepStack() {
     window.dispatchEvent(new CustomEvent('sky:deep-stack-built', { detail: { record } }));
   } catch (error) {
     if (sequence === activeSequence && !controller.signal.aborted) {
+      controller.abort();
       resetViewer(error.message); status.classList.add('is-error');
       document.getElementById('cutout-cache-state').textContent = 'Deep stack unavailable';
     }
@@ -786,7 +694,7 @@ function commitCutout(observation, entry, { announce = true } = {}) {
   caption.textContent = `${date} · D${observation.detector} · ${formatWavelength(observation)} · ${release}${processing}${stackLabel} · ${settings.fovArcmin}′ square · north up${masked ? ` · ${masked} flagged pixels masked` : ''}`;
   status.hidden = true;
   document.getElementById('export-sky-png').disabled = false;
-  document.getElementById('cutout-cache-state').textContent = 'Retrieved from IRSA · browser caching enabled';
+  document.getElementById('cutout-cache-state').textContent = image.stackRecord ? 'Aligned median stack · browser caching enabled' : 'Retrieved from NASA archive · browser caching enabled';
   window.dispatchEvent(new CustomEvent('sky:cutout-rendered', { detail: { observation, stackRecord: image.stackRecord || null } }));
   // Playback frames are not shared state: only a frame the user opened updates
   // the address bar. Click the sky image to mark a candidate source.
@@ -811,7 +719,7 @@ export async function showCutout(observation, { quiet = false, keepImage = false
   if (!entry && !quiet && !keepImage) { resetViewer(`Loading ${settings.fovArcmin}′ × ${settings.fovArcmin}′ cutout · ${observation.observedStartUtc?.slice(0, 10) || 'observation'} · D${observation.detector}…`); }
   try {
     if (!entry) {
-      entry = await warmCutout(observation, requestController.signal);
+      entry = await warmCutout(observation, requestController.signal, 0);
       if (sequence !== activeSequence) return;
     }
     if (sequence !== activeSequence) return;

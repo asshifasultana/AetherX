@@ -26,9 +26,9 @@ const state = {
   shownKey: null
 };
 
-// Frames are warmed after the archive search so playback does not pause on a
-// ~5 MB download between frames. The archive server admits one cutout at a
-// time, so warm-up is strictly sequential and yields to viewer requests.
+// Warm one upcoming daily frame at a time. Its exposures share the bounded S3
+// pool and yield queue priority to selected frames and deep-stack work. IRSA
+// fallback transfers remain serialized independently.
 const prefetch = {
   timer: null,
   controller: null,

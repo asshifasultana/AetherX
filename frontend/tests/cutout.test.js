@@ -19,6 +19,15 @@ async function withServer(fetchImpl, run, options = {}) {
   finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
 }
 
+test('aligned fallback pads the detector cutout while ordinary API requests keep their requested size', async () => {
+  let requested;
+  await withServer(async url => { requested = url.searchParams.get('size'); return new Response(prefix); }, async url => {
+    let response = await fetch(url + '&aligned=1'); assert.equal(response.status, 200); await response.arrayBuffer();
+    assert.equal(requested, `${16 * Math.SQRT2 + 1}arcmin`);
+    response = await fetch(url + '&aligned=invalid'); assert.equal(response.status, 400); await response.json();
+  });
+});
+
 test('cutouts stream before completion, preserve bytes, and hold admission for slow transfers', async () => {
   let finish;
   const completed = new Promise(resolve => { finish = resolve; });

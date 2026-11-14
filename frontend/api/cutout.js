@@ -35,7 +35,8 @@ export function validateCutout(params) {
   };
   const revision = params.get('revision') || '';
   if (revision.length > 100 || /[\x00-\x1f\x7f]/.test(revision)) throw new CutoutError('The observation revision is invalid.');
-  return { url: parsed.origin + parsed.pathname, raDeg: number('raDeg', 0, 360, false), decDeg: number('decDeg', -90, 90), fovArcmin: number('fovArcmin', 1, 300), revision };
+  if (params.has('aligned') && params.get('aligned') !== '1') throw new CutoutError('Invalid aligned cutout option.');
+  return { url: parsed.origin + parsed.pathname, raDeg: number('raDeg', 0, 360, false), decDeg: number('decDeg', -90, 90), fovArcmin: number('fovArcmin', 1, 300), revision, aligned: params.get('aligned') === '1' };
 }
 
 const tooLarge = () => new CutoutError('This cutout exceeds the 24 MiB limit. Choose a smaller field of view.', 413);
@@ -58,7 +59,11 @@ export function createCutoutHandler(fetchImpl = fetch, { gate = cutoutGate, clea
       timer = setTimeout(() => controller.abort(new CutoutError('IRSA took too long to return this cutout. Try again or choose a smaller field of view.', 504)), timeoutMs);
       await cleanup();
       const target = new URL(input.url);
-      target.search = new URLSearchParams({ center: `${input.raDeg},${input.decDeg}`, size: `${input.fovArcmin}arcmin` }).toString();
+      // A detector-aligned cutout needs room for the rotated sky square and
+      // interpolation/inspection neighbours. The browser crops both transports
+      // to one deterministic footprint before estimating the background.
+      const cutoutSize = input.aligned ? Math.min(300, input.fovArcmin * Math.SQRT2 + 1) : input.fovArcmin;
+      target.search = new URLSearchParams({ center: `${input.raDeg},${input.decDeg}`, size: `${cutoutSize}arcmin` }).toString();
       let response;
       for (let attempt = 0; attempt < 3; attempt++) {
         controller.signal.throwIfAborted();

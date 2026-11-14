@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { parseCoordinate, formatSexagesimal } from '../coordinates.js';
 import { presets } from '../presets.js';
-import { suggestNames } from '../object-names.js';
+import { objectNames, normalizeName, suggestNames } from '../object-names.js';
 import { DEFAULT_VIEW_STATE, decodeViewState, encodeViewState, linkViewSettings } from '../url-state.js';
 
 import { searchMarkup } from '../target-search.js';
@@ -63,7 +63,7 @@ function mount({ fetchImpl = async () => json(resolved), initial = {}, page = 'v
   window.self = window.top = window;
   const document = { getElementById: id => elements.get(id) || null, createElement: () => element(), documentElement: element(), querySelectorAll: selector => selector === '[data-target]' ? targets : [] };
   const context = {
-    ...viewerSettings, mountStarfield: () => {}, document, window, location, readSearchEntry, viewerUrl, legacyViewerDestination, parseCoordinate, formatSexagesimal, presets, suggestNames, encodeViewState, linkViewSettings,
+    ...viewerSettings, mountStarfield: () => {}, document, window, location, readSearchEntry, viewerUrl, legacyViewerDestination, parseCoordinate, formatSexagesimal, presets, objectNames, normalizeName, suggestNames, encodeViewState, linkViewSettings,
     initialViewState: { ...decodeViewState(search).state, ...initial }, isEmbedded: false, initialViewIssues: [],
     AbortController, URLSearchParams, URL, clearInterval, setInterval, setTimeout, clearTimeout, Event,
     Worker: class { postMessage(message) { workerMessages.push(message); } terminate() {} },

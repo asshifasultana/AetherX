@@ -234,7 +234,7 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
       if (selected) { event.preventDefault(); selected.click(); }
     }
   });
-  document.addEventListener('click', event => { if (!event.target.closest('.target-name-control')) closeAutocomplete(); });
+  document.addEventListener?.('click', event => { if (!event.target.closest('.target-name-control')) closeAutocomplete(); });
   // Back/Forward may restore native form values after this module mounts.
   // Reconcile the visible fields with that restored dropdown selection.
   window.addEventListener('pageshow', () => {

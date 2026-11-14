@@ -1,13 +1,23 @@
 // Cropping proxy: reads the public SPHEREx S3 mirror from next to the bucket
 // (deploy in iad1 / us-east-1), keeps only the pixels around the target and
 // returns them as a compact binary payload. The browser otherwise downloads
-// whole 2040-pixel detector rows, ~10x the bytes it uses. Nothing is stored.
+// whole 2040-pixel detector rows, ~10x the bytes it uses. Nothing is stored
+// here, but successful crops are cacheable by Vercel's CDN and the browser.
 import { gzipSync } from 'node:zlib';
 import { createFitsRangeLoader, cloudUrl } from '../lib/range-fits.js';
 import { createWorkGate } from '../lib/resources.js';
 
 export const CROP_MAGIC = 'SPXC', CROP_VERSION = 1, MAX_CROP_FOV = 30;
 const respond = (res, status, data) => { res.statusCode = status; res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store'); res.end(JSON.stringify(data)); };
+// A crop is fully determined by its query. With a revision (the product's
+// modification time) the archive file cannot change underneath it, so the
+// response never goes stale; without one, allow a day before rechecking.
+// Vercel's CDN reads s-maxage and caches per region; errors stay no-store.
+export function cropCacheControl(revision) {
+  return revision
+    ? 'public, max-age=31536000, s-maxage=31536000, immutable'
+    : 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800';
+}
 class CropError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
 
 export function validateCrop(params) {
@@ -72,7 +82,7 @@ export function createCropHandler({ load = createFitsRangeLoader(), gate = creat
       const payload = gzip ? gzipSync(body, { level: 2 }) : body;
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/octet-stream');
-      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('Cache-Control', cropCacheControl(input.revision));
       res.setHeader('X-Content-Type-Options', 'nosniff');
       res.setHeader('Vary', 'Accept-Encoding');
       if (gzip) res.setHeader('Content-Encoding', 'gzip');

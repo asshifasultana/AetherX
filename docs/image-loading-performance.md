@@ -6,7 +6,7 @@ The viewer first asks the `/api/crop` proxy for each exposure, and otherwise loa
 
 Measured on 2026-11-07 for Barnard D1 (16 days, 60 exposures, 16′), direct S3 loading took 205 s. Replaying the same 155 MB from memory took 22 s, so about 89% of the time was spent downloading. Range reads must fetch whole 2040-pixel detector rows, yet only about 230 columns are used. S3 offers neither HTTP/2 nor multi-range responses, so the browser cannot request less.
 
-`api/crop.js` runs the same range loader server-side. It is pinned to Vercel `iad1`, next to the `us-east-1` bucket, and returns only the cropped IMAGE/FLAGS (and optional VARIANCE) pixels as a gzipped binary payload decoded by `lib/crop-codec.js`. It stores nothing (`Cache-Control: no-store`).
+`api/crop.js` runs the same range loader server-side. It is pinned to Vercel `iad1`, next to the `us-east-1` bucket, and returns only the cropped IMAGE/FLAGS (and optional VARIANCE) pixels as a gzipped binary payload decoded by `lib/crop-codec.js`. It stores nothing itself, but successful crops are cacheable: with a `revision` (the product's modification time, which the viewer always sends) the response is `public, max-age=31536000, s-maxage=31536000, immutable`; without one it is `public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`. Vercel's CDN caches them per region, so only the first request for an exposure in each region pays the S3 read. Errors (400, 422, 502, 503, 504) stay `no-store`.
 
 - **Payload size:** about 98 KB per exposure on the wire, against about 2.6 MB of ranged S3 bytes (27× less).
 - **Fallback:** 503 (busy) is retried twice. Any other proxy failure falls back to direct S3, then to IRSA. A 422 (no detector coverage) is reported as is.

@@ -422,14 +422,28 @@ const wait = (ms, signal) => new Promise(resolve => {
   signal.addEventListener('abort', () => { clearTimeout(timer); resolve(); }, { once: true });
 });
 
+// When the reply isn't the guide's own JSON, the host or a proxy answered instead.
+function unavailableReason(status) {
+  if (status === 404 || status === 405) return `The AI guide isn't available on this server (HTTP ${status}).`;
+  if (status === 504 || status === 408) return 'The guide took too long and the server cut it off. Please retry.';
+  if (status === 502 || status === 503) return `The server is restarting or overloaded (HTTP ${status}). Please retry in a moment.`;
+  return `The guide is unavailable right now (HTTP ${status}). Please retry.`;
+}
+
 async function ask(signal, { final = false } = {}) {
   for (let attempt = 0; ; attempt++) {
-    const response = await fetch('/api/agent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: trimmedHistory(), ...(final ? { final: true } : {}) }),
-      signal
-    });
+    let response;
+    try {
+      response = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: trimmedHistory(), ...(final ? { final: true } : {}) }),
+        signal
+      });
+    } catch (error) {
+      if (error?.name === 'AbortError') throw error;
+      throw Object.assign(new Error("Can't reach the server. Check your connection and try again."), { code: 'NETWORK' });
+    }
     const data = await response.json().catch(() => ({}));
     // Wait for the upstream rate limit before trying again.
     if (response.status === 429 && data.code === 'AGENT_BUSY' && attempt < 3) {
@@ -441,7 +455,10 @@ async function ask(signal, { final = false } = {}) {
       if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
       continue;
     }
-    if (!response.ok) throw Object.assign(new Error(data.error || 'The guide is unavailable right now.'), { code: data.code });
+    if (!response.ok) {
+      if (!data.error) console.warn('AI guide: /api/agent answered HTTP %d without a JSON error', response.status);
+      throw Object.assign(new Error(data.error || unavailableReason(response.status)), { code: data.code || `HTTP_${response.status}` });
+    }
     if (!data.message) throw new Error('The guide returned an empty answer.');
     return { message: data.message, flagged: data.flagged || [] };
   }

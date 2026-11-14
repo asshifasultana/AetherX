@@ -72,6 +72,10 @@ export function retryAfterSeconds(headers) {
 const DEFAULT_RATE_COOLDOWN_MS = 20_000;
 const KEY_FAULT_COOLDOWN_MS = 60 * 60_000;
 const MAX_INLINE_WAIT_S = 6;
+// Answer (with JSON) before the host cuts the function off: Vercel's maxDuration
+// for this route is 30 s, and a killed function replies with a non-JSON page.
+const REQUEST_BUDGET_MS = 26_000;
+const UPSTREAM_TIMEOUT_MS = 20_000;
 
 /** Keys from OPENROUTER_API_KEYS (comma, semicolon or whitespace separated) plus OPENROUTER_API_KEY. */
 export function parseApiKeys(env = {}) {
@@ -242,12 +246,15 @@ export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), en
         ...(model.startsWith('openai/gpt-oss') ? { reasoning: { effort: 'low' } } : {})
       };
       const requestBody = JSON.stringify(payload);
+      const deadline = Date.now() + REQUEST_BUDGET_MS;
       const callWith = async entry => {
+        const left = deadline - Date.now();
+        if (left < 2_000) throw new AgentError(504, 'AGENT_TIMEOUT', 'The guide took too long to answer. Please retry.');
         const response = await fetchImpl(OPENROUTER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${entry.key}` },
           body: requestBody,
-          signal: AbortSignal.timeout(20_000)
+          signal: AbortSignal.timeout(Math.min(UPSTREAM_TIMEOUT_MS, left))
         });
         const data = await response.json().catch(() => null);
         const upstreamError = data?.error ?? data?.choices?.[0]?.error;
@@ -285,7 +292,7 @@ export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), en
         const limited = benched.find(entry => entry.status === 429);
         if (!limited) throw openRouterError(benched[0]?.status ?? 502);
         const wait = Math.max(0, (limited.until - now()) / 1000);
-        if (round === 0 && wait <= MAX_INLINE_WAIT_S) { waitedMs = Math.ceil(wait) * 1000 + 250; await pause(waitedMs); continue; }
+        if (round === 0 && wait <= MAX_INLINE_WAIT_S && Date.now() + wait * 1000 + 5_000 < deadline) { waitedMs = Math.ceil(wait) * 1000 + 250; await pause(waitedMs); continue; }
         throw openRouterError(429, wait);
       }
       const message = reply?.choices?.[0]?.message;

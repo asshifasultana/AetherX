@@ -1,4 +1,4 @@
-import { mkdir, copyFile, writeFile, cp, readFile, rm } from 'node:fs/promises';
+import { mkdir, copyFile, writeFile, cp, readFile, readdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { CONTEXT_PUBLIC_FILES } from '../frontend/context-assets.js';
@@ -91,6 +91,7 @@ for (const [name, maxDuration] of [['observations', 120], ['moving-observations'
   await copyFile(path.join(frontend, 'api', 'agent.js'), path.join(directory, 'api', 'agent.js'));
   await copyFile(path.join(frontend, 'lib', 'agent-tools.js'), path.join(directory, 'lib', 'agent-tools.js'));
   await copyFile(path.join(frontend, 'lib', 'agent-guard.js'), path.join(directory, 'lib', 'agent-guard.js'));
+  await copyFile(path.join(frontend, 'lib', 'spots.js'), path.join(directory, 'lib', 'spots.js'));
   await copyFile(path.join(frontend, 'viewer-settings.js'), path.join(directory, 'viewer-settings.js'));
   await writeFile(path.join(directory, 'package.json'), JSON.stringify({ type: 'module' }));
   await writeFile(path.join(directory, '.vc-config.json'), JSON.stringify({ runtime: 'nodejs24.x', handler: 'api/agent.js', launcherType: 'Nodejs', maxDuration: 30 }, null, 2));
@@ -115,5 +116,28 @@ const routes = Object.entries(ROUTE_GROUPS).map(([host, group]) => ({
   src: `^/api/(${group.routes.filter(name => name !== host).join('|')})/?$`,
   dest: `/api/${host}?__route=$1`,
 }));
+// A function that imports an uncopied file crashes on load (FUNCTION_INVOCATION_FAILED
+// for every request), so walk each function's import graph from its handler.
+{
+  const missing = [];
+  const functionsDir = path.join(output, 'functions', 'api');
+  for (const func of await readdir(functionsDir)) {
+    const directory = path.join(functionsDir, func);
+    const { handler } = JSON.parse(await readFile(path.join(directory, '.vc-config.json'), 'utf8'));
+    const seen = new Set();
+    const visit = async file => {
+      if (seen.has(file)) return;
+      seen.add(file);
+      let source;
+      try { source = await readFile(path.join(directory, file), 'utf8'); }
+      catch { missing.push(`${func}: ${file}`); return; }
+      for (const [, specifier] of source.matchAll(/(?:^|[\s;])(?:import|export)\s*(?:[^'"]*?\sfrom\s*)?['"](\.{1,2}\/[^'"]+)['"]/g)) {
+        await visit(path.posix.normalize(path.posix.join(path.posix.dirname(file), specifier.split(/[?#]/)[0])));
+      }
+    };
+    await visit(handler);
+  }
+  if (missing.length) throw new Error(`Function files imported but not copied:\n${missing.join('\n')}`);
+}
 await writeFile(path.join(output, 'config.json'), JSON.stringify({ version: 3, routes }, null, 2));
 console.log(`Vercel output ready: ${publicFiles.length} public assets, eleven Node.js API functions (serving fifteen endpoints), and the preset observation index.`);

@@ -1,4 +1,4 @@
-import { ensureSearchForm } from './target-search.js';
+import { ensureSearchForm, setSearchLoading } from './target-search.js';
 ensureSearchForm();
 const $ = id => document.getElementById('moving-' + id);
 const form = document.getElementById('target-search-form'), status = $('status'), canvas = $('canvas'), detector = $('detector');
@@ -14,6 +14,9 @@ function stopPlayback() {
 
 function setBusy(value) {
   busy = value;
+  setSearchLoading('moving', value);
+  status.hidden = value;
+  if (value) status.removeAttribute('data-error');
   $('cancel').hidden = !value;
   $('load').disabled = value;
   $('stack').disabled = value;
@@ -123,6 +126,7 @@ window.addEventListener('sky:moving-search-requested', async () => {
     return;
   }
   invalidate();
+  status.removeAttribute('data-error');
   search = null;
   $('selection').hidden = true;
   $('choices').replaceChildren();
@@ -145,15 +149,15 @@ window.addEventListener('sky:moving-search-requested', async () => {
       throw new Error(data.error || 'Moving-object search failed.');
     }
     search = data;
-    if (!data.exposures.length) { status.textContent = 'No public exposures matched this object and date range.'; return; }
+    if (!data.exposures.length) { status.setAttribute('data-error', 'true'); status.textContent = 'No public exposures matched this object and date range.'; return; }
     const detectors = [...new Set(data.exposures.map(e => e.detector))].sort();
     detector.replaceChildren(...detectors.map(d => new Option('D' + d, d)));
     $('selection').hidden = false;
     listExposures();
-    if (data.trajectoryError) status.textContent = `${data.exposures.length} candidates found. ${data.trajectoryError}`;
+    if (data.trajectoryError) { status.setAttribute('data-error', 'true'); status.textContent = data.trajectoryError; }
     else status.textContent += ` ${data.name} · Horizons ${data.solution}, viewed from SPHEREx.`;
   } catch (err) {
-    if (token === generation) status.textContent = err.message;
+    if (token === generation) { status.setAttribute('data-error', 'true'); status.textContent = err.message; }
   } finally {
     if (token === generation) {
       request = null;
@@ -175,13 +179,14 @@ function send(message, onResult) {
       return;
     }
     setBusy(false);
-    if (data.type === 'error') { status.textContent = data.message; return; }
+    if (data.type === 'error') { status.setAttribute('data-error', 'true'); status.textContent = data.message; return; }
     onResult(data.value);
     setBusy(false);
   };
   current.onerror = () => {
     if (token !== generation || worker !== current) return;
     invalidate();
+    status.setAttribute('data-error', 'true');
     status.textContent = 'The image worker stopped. Load the selected exposures again.';
   };
   current.postMessage(message);
@@ -192,6 +197,7 @@ $('load').addEventListener('click', () => {
   const checked = new Set(Array.from($('exposures').querySelectorAll('input:checked'), node => node.value));
   const exposures = search.exposures.filter(e => checked.has(e.productId) && e.detector === Number(detector.value));
   if (!exposures.length || exposures.length > 80) {
+    status.setAttribute('data-error', 'true');
     status.textContent = 'Select between 1 and 80 exposures from the list.';
     return;
   }
@@ -230,7 +236,7 @@ function showStack(stageName) {
 function stack(enhanced) {
   if (!worker || busy || !scan) return;
   const { min, max } = range();
-  if (!(min > 0 && max >= min)) { status.textContent = 'Enter a valid wavelength range.'; return; }
+  if (!(min > 0 && max >= min)) { status.setAttribute('data-error', 'true'); status.textContent = 'Enter a valid wavelength range.'; return; }
   stopPlayback();
   status.textContent = enhanced ? 'Checking independent references and matching stellar PSFs…' : 'Building the tracked median…';
   send({ type: 'stack', min, max, enhanced }, data => {

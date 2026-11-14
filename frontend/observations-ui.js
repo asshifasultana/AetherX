@@ -28,7 +28,7 @@ window.addEventListener('sky:target-selected', event => {
 });
 function setBusy(busy) {
   $('observations').setAttribute('aria-busy', String(busy));
-  $('find-observations').textContent = busy ? 'Searching IRSA…' : searchFailed ? 'Retry observations' : 'Find observations ↗';
+  $('find-observations').textContent = searchFailed ? 'Retry observations' : 'Find observations ↗';
   $('find-observations').disabled = busy; $('cancel-search').hidden = !busy;
 }
 async function search() {
@@ -42,7 +42,7 @@ async function search() {
   if (presetMotion(position)) params.set('targetId', position.targetId);
   submittedParams = params;
   emit('sky:observations-loading', { targetName, position: { ...position } });
-  setBusy(true); $('search-status').textContent = `Searching IRSA for ${targetName}. Archive queries can take up to 90 seconds.`;
+  setBusy(true); $('search-status').textContent = '';
   const timeout = setTimeout(() => activeController.abort('timeout'), 100000);
   try {
     const response = await fetch('/api/observations?' + params, { signal: activeController.signal });

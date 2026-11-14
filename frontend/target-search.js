@@ -6,8 +6,8 @@ import { presets } from './presets.js';
 export const searchMarkup = `
 <form id="target-search-form" class="target-search" novalidate aria-busy="false">
         <div class="target-search-row">
-          <label class="target-kind">Search for<select id="target-type"><option value="object">Star / object</option><option value="moving">Moving object</option><option value="coordinates">Coordinates</option></select></label>
-          <fieldset id="name-fields" class="target-name-fields"><legend class="sr-only">Object name</legend><label for="lookup-name" id="lookup-label">Object name</label><input id="lookup-name" name="object" maxlength="200" required autocomplete="off" placeholder="e.g. Sirius or M31" aria-describedby="lookup-help lookup-status"></fieldset>
+          <label class="target-kind"><span class="search-field-label">Search for</span><select id="target-type"><option value="object">Star / object</option><option value="moving">Moving object</option><option value="coordinates">Coordinates</option></select></label>
+          <fieldset id="name-fields" class="target-name-fields"><legend class="sr-only">Object name</legend><label for="lookup-name" id="lookup-label" class="search-field-label">Object name</label><input id="lookup-name" name="object" maxlength="200" required autocomplete="off" placeholder="e.g. Sirius or M31" aria-describedby="lookup-help lookup-status"></fieldset>
           <fieldset id="coordinate-fields" class="coordinate-fields" hidden disabled><legend class="sr-only">Sky coordinates</legend><label>Coordinate format<select id="coordinate-format"><option value="degrees">Decimal degrees</option><option value="sexagesimal">Hours / degrees, minutes, seconds</option></select></label><label>Right ascension <span id="ra-unit">degrees</span><input id="ra" value="269.4521" required autocomplete="off" placeholder="269.4521" aria-describedby="ra-error"><small id="ra-error" class="field-error"></small></label><label>Declination <span id="dec-unit">degrees</span><input id="dec" value="4.6934" required autocomplete="off" placeholder="+4.6934" aria-describedby="dec-error"><small id="dec-error" class="field-error"></small></label></fieldset>
           <button id="target-search-submit" class="primary-button" type="submit">Search <span aria-hidden="true">↗</span></button>
         </div>
@@ -17,6 +17,7 @@ export const searchMarkup = `
           <label>Search detector <select name="detector"><option value="">All</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label>
           <button type="button" id="moving-example">Try 3I/ATLAS</button>
         </fieldset>
+        <div id="search-loading" class="search-loading" role="progressbar" aria-label="Loading" hidden><span></span></div>
         <p id="lookup-help" class="coordinate-help">Enter a common name or catalog identifier, or choose a quick pick below.</p>
         <p id="target-search-status" role="status" aria-live="polite"></p>
         <div id="preset-panel" class="target-quick-picks" role="group" aria-label="Quick picks"><span>Quick picks</span>
@@ -27,13 +28,22 @@ export const searchMarkup = `
           <button type="button" data-target="draconis" aria-pressed="false">R Draconis</button>
         </div>
         <div id="lookup-feedback"><p id="lookup-status" role="status" aria-live="polite"></p><div id="lookup-suggestions" class="lookup-suggestions"></div>
-          <div id="lookup-confirmation" class="lookup-confirmation" hidden><h3 id="resolved-name"></h3><p id="resolved-coordinates"></p><p id="resolved-source"></p></div>
         </div>
         <div id="moving-feedback" hidden><p id="moving-status" role="status" aria-live="polite"></p><button type="button" id="moving-cancel" hidden>Cancel</button><div id="moving-choices"></div></div>
       </form>
 `;
 export function ensureSearchForm() {
   if (!document.getElementById('target-search-form')) document.getElementById('target-picker').innerHTML = searchMarkup;
+  if (document.getElementById('target-picker').getAttribute('data-minimal') === 'true') {
+    document.getElementById('lookup-name').setAttribute('aria-describedby', 'lookup-status');
+  }
+}
+
+const loadingSources = new Set();
+export function setSearchLoading(source, loading) {
+  if (loading) loadingSources.add(source); else loadingSources.delete(source);
+  document.getElementById('search-loading').hidden = loadingSources.size === 0;
+  document.getElementById('target-search-form').setAttribute('aria-busy', String(loadingSources.size > 0));
 }
 
 export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving = () => {}, invalidate = () => {}, onEdit = () => {}, initialPosition = { raDeg: 269.4521, decDeg: 4.6934 } }) {
@@ -115,10 +125,14 @@ export function mountTargetSearch({ onObject, onCoordinates, onPreset, onMoving 
     }
     if (!form.reportValidity()) return;
     const query = $('lookup-name').value.trim();
-    if (!query) { $('lookup-status').textContent = 'Enter an object name.'; $('lookup-name').focus(); return; }
+    if (!query) {
+      const status = mode === 'moving' ? $('moving-status') : $('lookup-status');
+      status.setAttribute('data-error', 'true'); status.textContent = 'Enter an object name.';
+      $('lookup-name').focus(); return;
+    }
     if (mode === 'moving') {
       const startDate = form.elements.startDate.value, endDate = form.elements.endDate.value, detector = form.elements.detector.value;
-      if (startDate > endDate) { $('moving-status').textContent = 'End date must be on or after the start date.'; form.elements.endDate.focus(); return; }
+      if (startDate > endDate) { $('moving-status').setAttribute('data-error', 'true'); $('moving-status').textContent = 'End date must be on or after the start date.'; form.elements.endDate.focus(); return; }
       const entry = { type: mode, query, startDate, endDate, detector }; publish(entry); onMoving(entry);
     } else { publish({ type: mode, query }); onObject(query); }
   });

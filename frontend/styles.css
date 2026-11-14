@@ -387,3 +387,27 @@ footer p,footer>span{font-size:15px;color:#59695e}
   .viewer-page .intro { gap: 20px; padding-bottom: 28px; }
   .viewer-search .target-quick-picks button { min-height: 44px; }
 }
+
+/* Viewer chrome stays focused on the search itself. */
+.viewer-page .viewer-header { min-height: 0; padding-top: 22px; padding-bottom: 22px; align-items: start; gap: 24px; }
+.viewer-header > .brand { padding-top: 6px; }
+.viewer-header .viewer-search { width: min(100%, 760px); padding-top: 0; }
+.viewer-page main { padding-top: 24px; }
+.viewer-search #lookup-help, .viewer-search #preset-panel, .viewer-search #moving-example { display: none !important; }
+.viewer-search .search-field-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.viewer-search #moving-status:not([data-error="true"]) { display: none; }
+.viewer-search #lookup-status, .viewer-search #target-search-status, .viewer-search #moving-status { color: #a13e2d; }
+.search-loading { height: 3px; margin-top: 12px; border-radius: 3px; background: #305e5218; overflow: hidden; }
+.search-loading > span { display: block; width: 32%; height: 100%; border-radius: inherit; background: var(--teal); animation: search-progress 1.25s ease-in-out infinite; }
+@keyframes search-progress { from { transform: translateX(-100%); } to { transform: translateX(415%); } }
+@media (prefers-reduced-motion: reduce) { .search-loading > span { animation: none; width: 50%; margin-left: 25%; } }
+@media (max-width: 760px) {
+  .viewer-page .viewer-header { padding-top: 16px; padding-bottom: 18px; gap: 18px; }
+  .viewer-header .viewer-search { width: 100%; }
+  .viewer-search .target-search-row { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+  .viewer-search .target-kind { grid-column: 1 / -1; }
+  .viewer-search .target-search-row > .primary-button { width: auto; }
+  .viewer-search .target-search .coordinate-fields, .viewer-search .target-search-row:has(#coordinate-fields:not([hidden])) > .primary-button { grid-column: 1 / -1; }
+}
+.viewer-page:has(#search-loading:not([hidden])) #timeline-status,
+.viewer-page:has(#search-loading:not([hidden])) #cutout-status { visibility: hidden; }

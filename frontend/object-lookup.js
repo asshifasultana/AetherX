@@ -1,3 +1,4 @@
+import { setSearchLoading } from './target-search.js';
 import { suggestNames } from './object-names.js';
 // Reject stale responses before publishing a resolved target.
 export function createLookupController({ fetchImpl = fetch, render, select, autoSelect = false }) {
@@ -23,20 +24,14 @@ export function createLookupController({ fetchImpl = fetch, render, select, auto
 }
 export function mountObjectLookup(select) {
   const $ = id => document.getElementById(id);
-  const form = $('target-search-form'), input = $('lookup-name');
-  const lookup = createLookupController({ select, autoSelect: true, render({ state, data, message, invalidName = false, suggestions = [] }) {
-    form.setAttribute('aria-busy', String(state === 'loading'));
+  const input = $('lookup-name');
+  const lookup = createLookupController({ select, autoSelect: true, render({ state, message, invalidName = false, suggestions = [] }) {
+    setSearchLoading('lookup', state === 'loading');
     $('target-search-submit').disabled = state === 'loading';
-    $('target-search-submit').textContent = state === 'loading' ? 'Resolving…' : 'Search ↗';
-    $('lookup-confirmation').hidden = state !== 'ready';
-    $('lookup-status').textContent = state === 'loading' ? 'Resolving object name…' : state === 'ready' ? 'Catalog position found.' : message || '';
+    $('target-search-submit').textContent = 'Search ↗';
+    $('lookup-status').textContent = message || '';
     input.setAttribute('aria-invalid', String(invalidName));
     $('lookup-suggestions').replaceChildren();
-    if (state === 'ready') {
-      $('resolved-name').textContent = data.resolvedName || data.submittedName;
-      $('resolved-coordinates').textContent = `RA ${data.raDeg}° · Dec ${data.decDeg >= 0 ? '+' : ''}${data.decDeg}° · ICRS`;
-      $('resolved-source').textContent = `${data.source.name} / ${data.source.resolver} · Retrieved ${data.retrievedAt}. Fixed catalog position; no proper-motion correction.`;
-    }
     if (suggestions.length) {
       const label = document.createElement('p'); label.textContent = 'Did you mean…? Suggestions require catalog verification.'; $('lookup-suggestions').append(label);
       for (const suggestion of suggestions) {

@@ -98,12 +98,13 @@ test('unified entry defaults to names and preserves separate drafts and inactive
   mode('coordinates'); assert.equal(get('ra').value, '123.45'); assert.equal(get('dec').value, '-6.7');
 });
 
-test('name submission resolves and selects once, retaining catalog provenance without confirmation', async () => {
+test('name submission resolves once without success copy or a catalog confirmation card', async () => {
   const { get, form, requests, selections } = mount();
   get('lookup-name').value = 'Sirius'; form.requestSubmit(); await flush();
   assert.equal(requests.length, 1); assert.match(requests[0].url, /resolve-object\?name=Sirius/);
   assert.equal(selections().length, 1); assert.equal(selections()[0].detail.raDeg, resolved.raDeg);
-  assert.equal(get('lookup-confirmation').hidden, false); assert.match(get('resolved-source').textContent, /SIMBAD/);
+  assert.equal(get('lookup-status').textContent, '');
+  assert.equal(get('search-loading').hidden, true);
   assert.equal(get('target-search-submit').disabled, false);
 });
 
@@ -113,11 +114,15 @@ test('switching mode or editing cancels resolution and rejects late responses', 
     const ui = mount({ fetchImpl: () => new Promise(resolve => { finish = resolve; }) });
     ui.get('lookup-name').value = 'Sirius'; ui.form.requestSubmit();
     assert.equal(ui.get('target-search-submit').disabled, true);
+    assert.equal(ui.get('target-search-submit').textContent, 'Search ↗');
+    assert.equal(ui.get('lookup-status').textContent, '');
+    assert.equal(ui.get('search-loading').hidden, false);
     if (action === 'mode') ui.mode('moving');
     else ui.get('lookup-name').dispatchEvent({ type: 'input' });
     assert.equal(ui.requests[0].options.signal.aborted, true);
     finish(json(resolved)); await flush();
     assert.equal(ui.selections().length, 0); assert.equal(ui.get('target-search-submit').disabled, false);
+    assert.equal(ui.get('search-loading').hidden, true);
   }
 });
 
@@ -160,10 +165,10 @@ test('moving searches validate dates and use the existing endpoint and parameter
   assert.equal(ui.selections().length, 0); assert.match(ui.get('moving-status').textContent, /No public exposures/);
 });
 
-test('moving navigation focuses shared input; designation choices and example resubmit through the same form', async () => {
+test('moving designation choices and example resubmit through the same form', async () => {
   let calls = 0;
   const ui = mount({ fetchImpl: async () => ++calls === 1 ? json({ error: 'Ambiguous', choices: [{ designation: '4', label: 'Vesta' }] }, 409) : json({ exposures: [] }) });
-  ui.get('moving-search-link').click(); assert.equal(ui.get('target-type').value, 'moving'); assert.equal(ui.focus(), ui.get('lookup-name'));
+  ui.mode('moving'); assert.equal(ui.get('target-type').value, 'moving');
   ui.get('moving-example').click(); await flush();
   assert.equal(ui.requests.length, 1); assert.match(ui.requests[0].url, /object=3I%2FATLAS/);
   ui.get('moving-choices').children[0].click(); await flush();
@@ -181,13 +186,15 @@ test('moving results still select exposures and pass them to the existing image 
   assert.equal(ui.workerMessages[0].exposures[0].productId, 'test-product');
 });
 
-test('archive progress and errors remain visible beside the unified input', () => {
+test('archive progress uses a bar and errors stay visible beside the unified input', () => {
   const ui = mount();
   ui.window.dispatchEvent({ type: 'sky:observations-loading', detail: { targetName: 'Sirius' } });
-  assert.match(ui.get('target-search-status').textContent, /Searching observations for Sirius/);
+  assert.equal(ui.get('target-search-status').textContent, '');
+  assert.equal(ui.get('search-loading').hidden, false);
   ui.get('search-error').hidden = false; ui.get('search-error').textContent = 'Archive unavailable';
   ui.window.dispatchEvent({ type: 'sky:observations-loaded', detail: { failed: true } });
   assert.equal(ui.get('target-search-status').textContent, 'Archive unavailable');
+  assert.equal(ui.get('search-loading').hidden, true);
   ui.mode('moving'); assert.equal(ui.get('target-search-status').hidden, true);
 });
 

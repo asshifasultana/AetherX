@@ -1,4 +1,4 @@
-import { ensureSearchForm, mountTargetSearch } from './target-search.js';
+import { ensureSearchForm, mountTargetSearch, setSearchLoading } from './target-search.js';
 import { readSearchEntry } from './search-route.js';
 import { presets } from './presets.js';
 import { mountObjectLookup } from './object-lookup.js';
@@ -53,13 +53,15 @@ const targetSearch = mountTargetSearch({
   },
   onMoving: () => window.dispatchEvent(new CustomEvent('sky:moving-search-requested'))
 });
-// Keep archive progress and failures next to the entry point as well as results.
-window.addEventListener('sky:observations-loading', event => {
-  $('target-search-status').textContent = `Searching observations for ${event.detail.targetName}…`;
+// The search area shows progress visually; only actionable failures get text.
+window.addEventListener('sky:observations-loading', () => {
+  setSearchLoading('observations', true);
+  $('target-search-status').textContent = '';
 });
 window.addEventListener('sky:observations-loaded', event => {
+  setSearchLoading('observations', false);
   $('target-search-status').textContent = event.detail.failed && !$('search-error').hidden
-    ? $('search-error').textContent : $('search-status').textContent;
+    ? $('search-error').textContent : '';
 });
 const modeDescriptions = {
   'time-lapse': 'Play observations in date order to follow changes over time.',

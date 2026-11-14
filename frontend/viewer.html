@@ -10,19 +10,13 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="viewer-page">
-  <header class="site-header">
-    <a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx<span class="brand-divider"></span><span class="brand-sub">SKY ATLAS</span></a>
-    <nav aria-label="Main navigation"><a class="nav-active" href="#explorer">Explore the sky</a><a id="moving-search-link" href="#target-picker">Track moving object</a><a href="#comet-benchmark">3I/ATLAS stack</a><a href="#mission">The mission <span aria-hidden="true">↗</span></a></nav>
-    <span class="header-note"><span class="status-dot"></span> A different view of the universe</span>
+  <header class="site-header viewer-header">
+    <a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a>
+    <div id="target-picker" class="viewer-search" data-minimal="true" role="search" aria-label="Search the sky"></div>
   </header>
 
   <main>
     <div id="share-notice" class="share-notice" role="note" hidden></div>
-    <section class="intro" aria-labelledby="page-title">
-      <div><p class="eyebrow"><span></span> AN INFRARED PERSPECTIVE</p><h1 id="page-title">The sky is never <em>still.</em></h1></div>
-      <div id="target-picker" class="viewer-search" role="search" aria-label="Search the sky"></div>
-    </section>
-
     <section id="explorer" class="explorer" aria-label="Sky image viewer">
       <div class="viewer" role="region" aria-label="Aligned SPHEREx FITS cutout viewer">
         <canvas id="sky-canvas" tabindex="0" role="img" aria-label="North-up sky image. Enable Inspect pixel quality to read a pixel value and its flag reasons."></canvas>

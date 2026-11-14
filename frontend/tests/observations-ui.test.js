@@ -49,7 +49,8 @@ const emptyResult = (source = { kind: 'live', name: 'NASA/IPAC IRSA', retrievedA
 test('Sirius outage preserves target and filters and supports a successful retry', async () => {
   const { get, requests, select, submit } = mount();
   select();
-  assert.equal(get('find-observations').textContent, 'Searching IRSA…');
+  assert.equal(get('find-observations').textContent, 'Find observations ↗');
+  assert.equal(get('search-status').textContent, '');
   const target = get('search-target').textContent;
   const params = new URL(requests[0].url, 'http://localhost').searchParams;
   assert.deepEqual(Object.fromEntries(params), { raDeg: '101.287155333', decDeg: '-16.716115861', detector: '3', release: 'qr2', startDate: '2025-05-01', endDate: '2025-05-31' });
@@ -62,7 +63,7 @@ test('Sirius outage preserves target and filters and supports a successful retry
   assert.equal(get('search-target').textContent, target);
   submit();
   assert.equal(requests[1].url, requests[0].url);
-  assert.equal(get('find-observations').textContent, 'Searching IRSA…');
+  assert.equal(get('find-observations').textContent, 'Find observations ↗');
   requests[1].resolve(json(emptyResult()));
   await flush();
   assert.equal(get('find-observations').textContent, 'Find observations ↗');
@@ -76,7 +77,7 @@ test('a new target clears retry state and preset fallback retains its outage war
   select(); requests[0].resolve(json({ error: 'Search failed.' }, 502)); await flush();
   assert.equal(get('find-observations').textContent, 'Retry observations');
   select(269.4521, 4.6934);
-  assert.equal(get('find-observations').textContent, 'Searching IRSA…');
+  assert.equal(get('find-observations').textContent, 'Find observations ↗');
   const data = emptyResult({ kind: 'scheduled-index', fallback: true, name: 'NASA/IPAC IRSA' });
   data.warnings = ['Live IRSA search was unavailable. Showing the last successful preset index; newer observations or revisions may be missing.'];
   requests[1].resolve(json(data)); await flush();

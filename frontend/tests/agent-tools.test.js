@@ -16,7 +16,7 @@ test('every tool has a well-formed function schema', () => {
     for (const key of entry.function.parameters.required) assert.ok(key in entry.function.parameters.properties, `${entry.function.name}.${key}`);
   }
   // Schemas are resent every round, so keep their token cost low.
-  assert.ok(JSON.stringify(AGENT_TOOLS).length < 4500);
+  assert.ok(JSON.stringify(AGENT_TOOLS).length < 10000); // 24 tools, about 2.5k tokens per round
 });
 
 test('enums mirror the viewer settings and presets', () => {

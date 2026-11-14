@@ -9,6 +9,9 @@ export const PLAYBACK_ACTIONS = ['play', 'pause', 'step_forward', 'step_back', '
 export const PLAYBACK_SPEEDS = [0.5, 1, 2, 4];
 export const COMPARE_REFERENCES = ['first', 'previous', 'deep-stack', 'frame'];
 export const NOTE_MAX = 200;
+export const QUEST_IDS = ['be-barnard', 'be-tombaugh', 'be-leverrier', 'hidden-planet'];
+export const TOUR_IDS = ['highlights'];
+export const MAX_SPOT = 9;
 
 const values = key => settingRule(key).values;
 // Keep schemas compact because they are resent on every round.
@@ -73,7 +76,56 @@ export const AGENT_TOOLS = Object.freeze([
   }),
   tool('make_share_link', 'Link that reopens this exact view, with a one-sentence note for viewers.', {
     note: str()
-  }, ['note'])
+  }, ['note']),
+  // Investigation tools. A "spot" is a numbered marker (1-9) on the image.
+  tool('find_changes', 'List compact brighter/fainter patches in the difference view on screen (use compare_frames view=difference or pick_epochs first). Marks the strongest as agent spots and reports moved pairs.', {
+    limit: int('1-6, default 3'), mark: bool('default true')
+  }),
+  tool('mark_spot', 'Mark a numbered agent spot at raDeg/decDeg.', {
+    raDeg: { type: 'number' }, decDeg: { type: 'number' }, label: str()
+  }, ['raDeg', 'decDeg']),
+  tool('measure_source', 'Aperture photometry of a spot in up to 12 loaded frames: flux and S/N per date, and whether brightness varies. Rules glitches and variable stars in or out.', {
+    spot: int(), max_frames: int('3-12')
+  }, ['spot']),
+  tool('get_spectrum', 'Measure a spot across wavelengths (up to 24 frames) and return plain hints (methane dip near 3.3um, 4.4-5um rise). Uses SPHEREx colours.', {
+    spot: int()
+  }, ['spot']),
+  tool('crossmatch', 'Check a spot against Gaia stars and JPL known asteroids/comets at a frame date. Updates the case file.', {
+    spot: int(), date: str(null, 'YYYY-MM-DD, default frame on screen')
+  }, ['spot']),
+  tool('get_case', 'A spot case file: suspects ruled out/supported, evidence and the computed verdict. Never call something unexplained unless this verdict says so.', {
+    spot: int()
+  }, ['spot']),
+  tool('pick_epochs', 'Show a difference between two frames about gap_days apart (default 180: the six-month gap where distant bodies shift most for SPHEREx).', {
+    gap_days: int('1-400')
+  }),
+  tool('predict_parallax_pair', 'Where a body at distance_au seen at a spot would appear on another date (parallax only). Marks the predicted position.', {
+    spot: int(), distance_au: { type: 'number', description: '30-2000' }, date: str(null, 'YYYY-MM-DD, default reference frame')
+  }, ['spot', 'distance_au']),
+  tool('precover', 'From the motion between two spots (from_spot then to_spot), predict positions in the other loaded frames and measure there to find the object again.', {
+    from_spot: int(), to_spot: int()
+  }, ['from_spot', 'to_spot']),
+  tool('second_opinion', 'Ask a vision model whether the change at a spot looks real or like an artefact (supporting evidence only).', {
+    spot: int()
+  }, ['spot']),
+  tool('start_quest', 'Start a discovery re-enactment game. Returns the story and goal to tell the visitor.', {
+    id: str(QUEST_IDS)
+  }, ['id']),
+  tool('check_answer', 'Check the visitor spot against the running quest answer.', {
+    spot: int()
+  }, ['spot']),
+  tool('planet_nine_region', 'Most probable sky cells where Planet Nine could still hide (Brown & Batygin 2021, after ZTF/DES/Pan-STARRS). go=true moves to cell number `top`.', {
+    top: int('1-10'), go: bool()
+  }),
+  tool('patrol', 'Search several Planet Nine cells in turn: six-month difference, find changes, crossmatch. Slow.', {
+    cells: int('1-12, default 3')
+  }),
+  tool('start_tour', 'Play the scripted one-minute tour.', {
+    id: str(TOUR_IDS)
+  }),
+  tool('prepare_report', 'Build a report card for a spot (position, checks passed and open, link) the visitor can send to the team.', {
+    spot: int()
+  }, ['spot'])
 ]);
 
 export const TOOL_NAMES = AGENT_TOOLS.map(entry => entry.function.name);
@@ -107,6 +159,11 @@ function settingsFrom(args, mapping, errors) {
 function positiveInt(value) {
   const number = Number(value);
   return Number.isInteger(number) && number >= 1 ? number : null;
+}
+
+function spotNumber(value) {
+  const number = Number(value);
+  return Number.isInteger(number) && number >= 1 && number <= MAX_SPOT ? number : null;
 }
 
 function validDate(value) {
@@ -183,6 +240,67 @@ export function validateToolCall(name, rawArgs) {
     }
     case 'make_share_link': {
       return done({ note: sanitizeNote(args.note) });
+    }
+    case 'find_changes': {
+      const limit = args.limit === undefined || args.limit === null ? 3 : Number(args.limit);
+      if (!Number.isInteger(limit) || limit < 1 || limit > 6) errors.push('limit must be 1-6.');
+      return done({ limit, mark: coerce(args.mark) !== false });
+    }
+    case 'mark_spot': {
+      const ra = Number(args.raDeg), dec = Number(args.decDeg);
+      if (!Number.isFinite(ra) || !Number.isFinite(dec) || dec < -90 || dec > 90) errors.push('raDeg/decDeg are out of range.');
+      return done({ raDeg: ((ra % 360) + 360) % 360, decDeg: dec, label: sanitizeNote(args.label, 40) });
+    }
+    case 'measure_source': case 'get_spectrum': case 'crossmatch': case 'get_case': case 'second_opinion': case 'check_answer': case 'prepare_report': {
+      const spot = spotNumber(args.spot);
+      if (!spot) errors.push(`spot must be 1-${MAX_SPOT}.`);
+      const result = { spot };
+      if (name === 'measure_source' && args.max_frames !== undefined && args.max_frames !== null) {
+        const max = Number(args.max_frames);
+        if (!Number.isInteger(max) || max < 3 || max > 12) errors.push('max_frames must be 3-12.'); else result.max_frames = max;
+      }
+      if (name === 'crossmatch' && args.date !== undefined && args.date !== null) {
+        result.date = validDate(args.date);
+        if (!result.date) errors.push('date must be YYYY-MM-DD.');
+      }
+      return done(result);
+    }
+    case 'pick_epochs': {
+      const gap = args.gap_days === undefined || args.gap_days === null ? 180 : Number(args.gap_days);
+      if (!Number.isInteger(gap) || gap < 1 || gap > 400) errors.push('gap_days must be 1-400.');
+      return done({ gap_days: gap });
+    }
+    case 'predict_parallax_pair': {
+      const spot = spotNumber(args.spot), distance = Number(args.distance_au);
+      if (!spot) errors.push(`spot must be 1-${MAX_SPOT}.`);
+      if (!Number.isFinite(distance) || distance < 30 || distance > 2000) errors.push('distance_au must be 30-2000.');
+      const result = { spot, distance_au: distance };
+      if (args.date !== undefined && args.date !== null) { result.date = validDate(args.date); if (!result.date) errors.push('date must be YYYY-MM-DD.'); }
+      return done(result);
+    }
+    case 'precover': {
+      const from = spotNumber(args.from_spot), to = spotNumber(args.to_spot);
+      if (!from || !to || from === to) errors.push('from_spot and to_spot must be two different spots 1-9.');
+      return done({ from_spot: from, to_spot: to });
+    }
+    case 'start_quest': {
+      if (!QUEST_IDS.includes(args.id)) errors.push(`id must be one of ${QUEST_IDS.join(', ')}.`);
+      return done({ id: args.id });
+    }
+    case 'planet_nine_region': {
+      const top = args.top === undefined || args.top === null ? 3 : Number(args.top);
+      if (!Number.isInteger(top) || top < 1 || top > 10) errors.push('top must be 1-10.');
+      return done({ top, go: coerce(args.go) === true });
+    }
+    case 'patrol': {
+      const cells = args.cells === undefined || args.cells === null ? 3 : Number(args.cells);
+      if (!Number.isInteger(cells) || cells < 1 || cells > 12) errors.push('cells must be 1-12.');
+      return done({ cells });
+    }
+    case 'start_tour': {
+      const id = args.id ?? 'highlights';
+      if (!TOUR_IDS.includes(id)) errors.push(`id must be one of ${TOUR_IDS.join(', ')}.`);
+      return done({ id });
     }
     default: return { ok: false, error: `Unhandled tool ${name}.` };
   }

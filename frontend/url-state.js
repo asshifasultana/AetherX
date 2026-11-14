@@ -36,6 +36,8 @@ export const DEFAULT_VIEW_STATE = Object.freeze({
   frameDate: '',
   markRaDeg: null,
   markDecDeg: null,
+  // Spots 2 and later; spot 1 keeps the original mra/mdec parameters.
+  extraSpots: Object.freeze([]),
   targetId: null,
   embed: false,
   culture: 'all',
@@ -45,6 +47,13 @@ export const DEFAULT_VIEW_STATE = Object.freeze({
   referenceDate: '',
   note: ''
 });
+
+export const MAX_EXTRA_SPOTS = 8;
+function cleanSpots(spots) {
+  return (Array.isArray(spots) ? spots : [])
+    .filter(spot => Number.isFinite(spot?.raDeg) && Number.isFinite(spot?.decDeg) && spot.decDeg >= -90 && spot.decDeg <= 90)
+    .slice(0, MAX_EXTRA_SPOTS);
+}
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -94,6 +103,8 @@ export function encodeViewState(state = {}) {
     params.set('mra', formatNumber(normaliseRa(merged.markRaDeg)));
     params.set('mdec', formatNumber(merged.markDecDeg));
   }
+  const extra = cleanSpots(merged.extraSpots);
+  if (extra.length) params.set('spots', extra.map(spot => `${formatNumber(normaliseRa(spot.raDeg))},${formatNumber(spot.decDeg)}`).join(';'));
   if (merged.targetId) params.set('target', merged.targetId);
   if (merged.embed) params.set('embed', '1');
   if (CULTURE_OPTIONS.includes(merged.culture) && merged.culture !== 'all') params.set('culture',merged.culture);
@@ -192,6 +203,15 @@ export function decodeViewState(input) {
     issues.push('The marked source in this link is incomplete or invalid, so no source is marked.');
   }
 
+  if (params.has('spots')) {
+    const parts = String(params.get('spots') || '').split(';').filter(Boolean);
+    const spots = parts.map(part => part.split(',').map(value => parseNumber(value)))
+      .filter(([ra, dec]) => ra !== null && dec !== null && dec >= -90 && dec <= 90)
+      .map(([ra, dec]) => ({ raDeg: normaliseRa(ra), decDeg: dec }));
+    if (spots.length !== parts.length) issues.push('Some marked spots in this link are invalid and were dropped.');
+    state.extraSpots = spots.slice(0, MAX_EXTRA_SPOTS);
+  }
+
   if (params.has('target')) {
     const text = (params.get('target') || '').trim();
     if (/^[a-z0-9-]{1,32}$/i.test(text)) state.targetId = text;
@@ -238,7 +258,7 @@ export function viewStateSignature(state = {}) {
   return [
     merged.raDeg, merged.decDeg, merged.fovArcmin, merged.band,
     merged.startDate, merged.endDate, merged.frameDate,
-    merged.markRaDeg ?? '', merged.markDecDeg ?? '', merged.targetId ?? '', merged.embed ? 1 : 0, merged.culture, merged.gaia ? 1 : 0, merged.wise ? 1 : 0,
+    merged.markRaDeg ?? '', merged.markDecDeg ?? '', cleanSpots(merged.extraSpots).map(spot => `${spot.raDeg},${spot.decDeg}`).join(';'), merged.targetId ?? '', merged.embed ? 1 : 0, merged.culture, merged.gaia ? 1 : 0, merged.wise ? 1 : 0,
     ...VIEW_SETTING_PARAMS.map(([key]) => merged[key]), merged.referenceDate, cleanNote(merged.note)
   ].join('|');
 }

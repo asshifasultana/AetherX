@@ -31,7 +31,8 @@ function summaryText() {
   if(state.gaia)parts.push('Gaia markers');
   if (state.wise) parts.push('AllWISE markers');
   if (Number.isFinite(state.markRaDeg) && Number.isFinite(state.markDecDeg)) {
-    parts.push(`marked source ${state.markRaDeg.toFixed(4)}°, ${signed(state.markDecDeg)}°`);
+    const extra = Array.isArray(state.extraSpots) ? state.extraSpots.length : 0;
+    parts.push(extra ? `${extra + 1} marked spots` : `marked spot ${state.markRaDeg.toFixed(4)}°, ${signed(state.markDecDeg)}°`);
   }
   return parts.join(' · ');
 }
@@ -111,11 +112,11 @@ function mount() {
 
   $('clear-mark')?.addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('sky:clear-source-mark'));
-    announce('Marked source cleared.');
+    announce('Marked spots cleared.');
   });
 
   for (const type of ['sky:target-selected', 'sky:viewer-settings-changed', 'sky:search-filters-changed',
-    'sky:source-marked', 'sky:frame-shown', 'sky:context-settings-changed']) {
+    'sky:source-marked', 'sky:spots-changed', 'sky:frame-shown', 'sky:context-settings-changed']) {
     window.addEventListener(type, refresh);
   }
 }

@@ -5,6 +5,7 @@
 
 import { shareUrl } from './share.js';
 import { presets } from './presets.js';
+import { createInvestigator } from './agent-investigate.js';
 
 const BANDS = ['0.75–1.09 μm', '1.10–1.62 μm', '1.63–2.41 μm', '2.42–3.82 μm', '3.83–4.41 μm', '4.42–5.00 μm'];
 const DISPLAY_KEYS = ['look', 'brightness', 'contrast', 'stretch', 'scaleMode', 'colours', 'invert', 'smoothing'];
@@ -24,6 +25,7 @@ export function createViewerController() {
     latest.observations = { loading: false, count: Array.isArray(event.detail?.observations) ? event.detail.observations.length : 0, failed: Boolean(event.detail?.failed) };
   });
   window.addEventListener('sky:deep-stack-built', event => { latest.deepStack = event.detail?.record || null; });
+  window.addEventListener('sky:timeline-frames-changed', event => { latest.frames = Array.isArray(event.detail?.frames) ? event.detail.frames : []; });
 
   /** Resolve with an event's detail (or null on timeout / abort). */
   function waitFor(type, { timeout = 15000, signal, test = () => true } = {}) {
@@ -139,7 +141,7 @@ export function createViewerController() {
   }
 
   const handlers = {
-    async get_view_state() { return snapshot(); },
+    async get_view_state() { return { ...snapshot(), spots: await investigator.spotsSummary(), ...(investigator.quest() ? { quest: investigator.quest().id } : {}) }; },
 
     async set_display({ changes }, { signal }) {
       const rendered = await applySettings(changes, { signal, timeout: 10000 });
@@ -228,12 +230,15 @@ export function createViewerController() {
     }
   };
 
-  async function execute(name, args, { signal } = {}) {
+  const investigator = createInvestigator({ base: handlers, latest, emit, settle, needFrames, snapshot });
+  Object.assign(handlers, investigator.handlers);
+
+  async function execute(name, args, { signal, progress } = {}) {
     const handler = handlers[name];
     if (!handler) return { ok: false, error: `Unknown tool ${name}.` };
-    try { return await handler(args, { signal }); }
+    try { return await handler(args, { signal, progress }); }
     catch (error) { return { ok: false, error: error?.message || 'The viewer could not do that.' }; }
   }
 
-  return { execute, snapshot };
+  return { execute, snapshot, investigator };
 }

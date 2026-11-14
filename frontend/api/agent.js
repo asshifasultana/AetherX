@@ -4,29 +4,41 @@
 // tool schemas, so the endpoint cannot be used as a general-purpose LLM relay.
 
 import { AGENT_TOOLS, TOOL_NAMES } from '../lib/agent-tools.js';
+import { forbiddenClaims } from '../lib/agent-guard.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const DEFAULT_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b';
-const MAX_BODY_BYTES = 48 * 1024;
+const MAX_BODY_BYTES = 64 * 1024;
 const MAX_MESSAGES = 40;
-const MAX_TOOL_CALLS = 4;
+const MAX_TOOL_CALLS = 6;
 const MAX_USER_CHARS = 2000;
 const MAX_TOOL_CHARS = 6000;
 const RATE_WINDOW_MS = 60_000;
 const RATE_LIMIT = 30;
 
-export const SYSTEM_PROMPT = `You are the SphereX sky guide inside a web viewer of real NASA SPHEREx infrared images. Visitors are curious members of the public, not astronomers.
-You control the viewer with tools: change brightness and contrast, blink frames, compare frames (difference), play or step the time-lapse, build deep stacks, switch detector band, change field of view, toggle overlays, move to a new target, and make share links.
+export const SYSTEM_PROMPT = `You are the SphereX sky detective inside a web viewer of real NASA SPHEREx infrared images. Visitors are curious members of the public, not astronomers.
+You control the viewer with tools (display, blink, difference, playback, deep stacks, band, field of view, overlays, targets, share links) and you investigate: find_changes lists compact changes and marks them as numbered spots; measure_source, get_spectrum, crossmatch (Gaia stars + JPL known asteroids), predict_parallax_pair, precover and second_opinion test a spot; get_case shows its case file. You also run games (start_quest, check_answer), the Planet Nine map (planet_nine_region, patrol), a scripted tour (start_tour) and report cards (prepare_report).
+Spots: visitors click the image to mark numbered spots; their messages may start with [Spot N: ra=…, dec=…]. Refer to spots by number ("spot 2").
+How to investigate a spot: keep its suspects in mind (glitch, colour-shift ghost, known star, fast-moving star, known asteroid, variable star, something distant). Run the test that rules out the most suspects next (usually crossmatch, then measure_source). The case file's verdict is computed by code: only call a spot "unexplained" when get_case says "unexplained — needs follow-up", and even then say it needs another sighting.
+For a multi-step investigation, start your reply with one line "Plan: …" (3-5 short steps), then act. Call independent tools together in one turn (for example crossmatch for spots 1, 2 and 3 at once). crossmatch, measure_source and precover already return the spot's verdict, so call get_case only when the visitor asks for the case file. Finish with a short summary of what was ruled out and what is still open.
+Search methods from history:
+- Barnard (1916): compared plates 22 years apart and found a "new" star paired with a missing one; one star had moved. SPHEREx looks about 90° from the Sun, so very distant bodies barely move within days but shift by roughly 2 AU/distance between visits six months apart (about 13.7′ at 500 AU). Use pick_epochs (180 days), find_changes and predict_parallax_pair.
+- Tombaugh (1930): blinked plates 6 days apart and saw a small steady shift, then ruled out asteroids and plate flaws. Works where SPHEREx revisits often (the ecliptic poles) and for asteroids.
+- Le Verrier (1846): went where a prediction pointed. planet_nine_region gives Brown & Batygin's 2021 map of where Planet Nine could still hide.
 Rules:
-- Act, don't just explain: when the visitor asks to see something, call the tools that show it, then say in 1-3 short friendly sentences what is on screen and what to look for.
-- Ground every statement about the image in tool results (get_view_state, compare_frames, deep-stack records). Never claim to see an object, motion or change that no tool result reports. If a tool says something is still loading, say so.
+- Act, don't just explain: call the tools that show what was asked, then say in 1-3 short friendly sentences what is on screen and what to look for.
+- Every number you write must come from a tool result or the visitor's message. Never claim to see an object, motion or change that no tool result reports. If a tool says something is still loading, say so.
+- Never claim a discovery, a new planet, or that anything is Planet X or Planet Nine. Planet Nine is hypothetical; an unmatched spot is "unexplained", most turn out to be artefacts, and one patch of data can never confirm a planet. SPHEREx single images also reach only moderately faint objects, while Planet Nine is predicted to be fainter, so a quiet patrol rules things out rather than finding them.
 - Frames are numbered from 1. Dates are UTC.
-- In difference views orange means brighter and blue means fainter. SPHEREx observes each spot at a slightly different wavelength on each visit, so some residuals around stars are normal and not real changes.
-- When followProperMotion is true, a preset star is kept centred in every frame, so its own motion does not appear in blink or difference views. To show it moving, set followProperMotion to false first. Do not attribute an orange/blue pair to the target's motion unless followProperMotion is false.
-- A deep stack can take a while to build; tell the visitor it is building.
-- Use plain words; explain jargon (sigma = how many times above the noise) briefly the first time.
-- When the visitor wants to share, or after building a notable view if they ask for a link, call make_share_link with one helpful sentence as the note, then give them the link.
+- In difference views orange means brighter and blue means fainter. SPHEREx sees each spot at a slightly different wavelength each visit, so residuals around stars are normal and not real changes.
+- When followProperMotion is true, a preset star is kept centred in every frame, so its own motion does not appear in blink or difference views. To show it moving, set followProperMotion to false first.
+- In games, keep the story for after the visitor finds the answer, and give hints rather than the answer.
+- A deep stack or patrol can take a while; tell the visitor it is working.
+- Use plain words; explain jargon briefly the first time (sigma = how many times above the noise).
+- When the visitor wants to share, call make_share_link with one helpful sentence as the note, then give them the link.
 - Stay on the topic of the sky, SPHEREx and this viewer. Politely decline unrelated requests.`;
+
+export const CRITIC_PROMPT = `You are a sceptical astronomer reviewing a public AI guide's case file for one spot in NASA SPHEREx infrared images. In at most 2 short plain sentences, give the strongest ordinary explanation that has not been ruled out, or the single check that would most likely show it is an artefact or a known object. Use only the case file. Never mention discoveries or new planets.`;
 
 const hits = new Map();
 function rateLimited(key, now = Date.now()) {
@@ -158,6 +170,17 @@ function openRouterError(status, retryAfter = null) {
   return new AgentError(502, 'AGENT_UPSTREAM', 'The guide could not get an answer from OpenRouter. Please retry.');
 }
 
+/** Which optional guide features this server has keys and models for. */
+export function capabilitiesOf(env = {}) {
+  const keys = parseApiKeys(env).length > 0;
+  return {
+    agent: keys,
+    vision: keys && Boolean(env.OPENROUTER_VISION_MODEL),
+    critic: keys && Boolean(env.OPENROUTER_CRITIC_MODEL),
+    store: Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_KEY)
+  };
+}
+
 export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), env = process.env, now = () => Date.now(), pause = sleep } = {}) {
   let pool = null;
   let poolSignature = '';
@@ -175,6 +198,11 @@ export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), en
       res.statusCode = error instanceof AgentError ? error.status : 500;
       res.end(JSON.stringify({ error: error instanceof AgentError ? error.message : 'The guide failed unexpectedly. Please retry.', code: error instanceof AgentError ? error.code : 'INTERNAL_ERROR', ...(error instanceof AgentError ? error.extra : {}) }));
     };
+    if (req.method === 'GET' && /[?&]capabilities\b/.test(String(req.url || ''))) {
+      res.setHeader('Cache-Control', 'public, max-age=300');
+      res.end(JSON.stringify(capabilitiesOf(env)));
+      return;
+    }
     if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); fail(new AgentError(405, 'METHOD_NOT_ALLOWED', 'Use POST to talk to the guide.')); return; }
     const keys = getPool();
     if (!keys.size) { fail(new AgentError(503, 'AGENT_UNCONFIGURED', 'The AI guide is not set up on this server yet (missing OPENROUTER_API_KEYS).')); return; }
@@ -183,16 +211,25 @@ export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), en
     try {
       let body;
       try { body = await readJson(req); } catch (error) { if (error instanceof AgentError) throw error; throw new AgentError(400, 'BAD_REQUEST', 'The request was not valid JSON.'); }
-      const messages = sanitizeMessages(body?.messages);
-      const model = env.OPENROUTER_MODEL || DEFAULT_MODEL;
-      const payload = {
+      const critic = body?.mode === 'critic';
+      if (critic && !env.OPENROUTER_CRITIC_MODEL) throw new AgentError(404, 'CRITIC_DISABLED', 'The sceptic is not enabled on this server.');
+      const caseText = critic ? text(JSON.stringify(body?.case ?? {}), 4000) : '';
+      const messages = critic ? [{ role: 'user', content: `Case file:\n${caseText}` }] : sanitizeMessages(body?.messages);
+      const model = critic ? env.OPENROUTER_CRITIC_MODEL : env.OPENROUTER_MODEL || DEFAULT_MODEL;
+      const payload = critic ? {
+        model,
+        messages: [{ role: 'system', content: CRITIC_PROMPT }, ...messages],
+        temperature: 0.4,
+        max_tokens: 220
+      } : {
         model,
         messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages],
         tools: AGENT_TOOLS,
-        tool_choice: 'auto',
+        // The browser asks for a final, tool-free summary when its step budget runs out.
+        tool_choice: body?.final === true ? 'none' : 'auto',
         provider: { require_parameters: true },
         temperature: 0.3,
-        max_tokens: 700,
+        max_tokens: 900,
         ...(model.startsWith('openai/gpt-oss') ? { reasoning: { effort: 'low' } } : {})
       };
       const requestBody = JSON.stringify(payload);
@@ -248,9 +285,13 @@ export function createAgentHandler({ fetchImpl = (...args) => fetch(...args), en
         .filter(call => TOOL_NAMES.includes(call?.function?.name))
         .slice(0, MAX_TOOL_CALLS)
         .map(call => ({ id: String(call.id), type: 'function', function: { name: call.function.name, arguments: String(call.function.arguments ?? '{}') } })) : [];
+      const content = stripThinking(message.content);
+      if (critic) { res.end(JSON.stringify({ objection: content || '', model })); return; }
+      const flagged = content && !toolCalls.length ? forbiddenClaims(content) : [];
       res.end(JSON.stringify({
-        message: { role: 'assistant', content: stripThinking(message.content), ...(toolCalls.length ? { tool_calls: toolCalls } : {}) },
-        model
+        message: { role: 'assistant', content, ...(toolCalls.length ? { tool_calls: toolCalls } : {}) },
+        model,
+        ...(flagged.length ? { flagged } : {})
       }));
     } catch (error) {
       if (error?.name === 'TimeoutError') { fail(new AgentError(504, 'AGENT_TIMEOUT', 'The guide took too long to answer. Please retry.')); return; }

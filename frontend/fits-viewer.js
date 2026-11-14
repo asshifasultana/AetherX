@@ -1,4 +1,5 @@
-import { canvasToSky } from './sky-projection.js';
+import { canvasToSky, skyToCanvas } from './sky-projection.js';
+import { createSpotList, MAX_SPOTS } from './lib/spots.js';
 import { displayGrid } from './display-grid.js';
 import { initialViewState } from './share.js';
 import { QUALITY_FLAGS, FLAG_CATEGORIES, maskBitsFor } from './lib/pixel-quality.js';
@@ -18,7 +19,7 @@ const canvas = document.getElementById('sky-canvas');
 const context = canvas.getContext('2d', { alpha: false });
 const status = document.getElementById('cutout-status');
 const caption = document.getElementById('cutout-caption');
-const sourceMark = document.getElementById('source-mark');
+const spotLayer = document.getElementById('spot-layer');
 const pixelInspector = document.getElementById('pixel-inspector');
 const pixelInspectorResult = document.getElementById('pixel-inspector-result');
 const overlay = document.getElementById('overlay-canvas');
@@ -51,10 +52,10 @@ let comparisonScale = null;
 let shown = null;
 let blinkTimer = null;
 let deepTemplateCache = null;
-// A marked candidate source is an absolute sky position, so it survives frame
-// changes, band changes and a new search. Only the field of view can move it
-// (partly) out of frame.
-let markedSource = null;
+// Marked spots are absolute sky positions, so they survive frame changes, band
+// changes and a new search. Only the field of view can move one (partly) out of
+// frame. Visitors add spots by clicking; the AI guide adds its own.
+const spots = createSpotList();
 const PIXEL_ARCSEC = 6.15;
 // Decoded frames and their rendered canvases live in memory so playback can swap
 // frames with a single draw instead of re-fetching and re-parsing FITS.
@@ -144,7 +145,7 @@ function resetViewer(message) {
   document.getElementById('export-sky-png').disabled = true;
   document.getElementById('coverage-note').hidden = true;
   context.fillStyle = '#08090e'; context.fillRect(0, 0, canvas.width, canvas.height);
-  if (sourceMark) sourceMark.hidden = true;
+  if (spotLayer) spotLayer.hidden = true;
   caption.textContent = '';
   status.hidden = false; status.classList.remove('is-error');
   cards(message);
@@ -214,14 +215,48 @@ function paintGrid(element, values, width, { mapper = null, lut = null, smooth =
   return { limits, automatic };
 }
 
+// A fake moving source the AI guide's "hidden planet" quest adds to every
+// rendered exposure. It is added to a copy of the projected grid, never to the
+// decoded or cached data, and is removed by clearing it.
+let synthetic = null;
+function imageMjd(image) {
+  const header = image?.header || {};
+  const average = Number(header['MJD-AVG']);
+  if (Number.isFinite(average)) return average;
+  const start = Date.parse(String(header['DATE-BEG'] ?? header['DATE-OBS'] ?? '').replace(/(\d)$/, '$1Z'));
+  return Number.isFinite(start) ? start / 86400000 + 40587 : NaN;
+}
+function withSynthetic(values, width, image) {
+  if (!synthetic || image.stackRecord) return values;
+  const mjd = imageMjd(image);
+  if (!Number.isFinite(mjd)) return values;
+  const days = mjd - synthetic.epochMjd;
+  const sky = { raDeg: synthetic.raDeg + days * synthetic.raPerDay, decDeg: synthetic.decDeg + days * synthetic.decPerDay };
+  const center = image.pointing || displayedCenter;
+  const point = skyToCanvas({ ...sky, size: width, centerRaDeg: center.raDeg, centerDecDeg: center.decDeg });
+  if (!point) return values;
+  // One fixed brightness in image units for every exposure, so a fake that
+  // stays put cancels in a difference and one that moves shows as a pair.
+  const peak = Number.isFinite(synthetic.peak) ? synthetic.peak : synthetic.peakSigma * estimateBackground(values).noise;
+  if (!(peak > 0)) return values;
+  const copy = Float32Array.from(values), spread = 2 * 0.7 ** 2;
+  for (let y = Math.floor(point.y) - 3; y <= Math.ceil(point.y) + 3; y++) for (let x = Math.floor(point.x) - 3; x <= Math.ceil(point.x) + 3; x++) {
+    if (x < 0 || y < 0 || x >= width || y >= Math.floor(copy.length / width)) continue;
+    const index = y * width + x;
+    if (Number.isFinite(copy[index])) copy[index] += peak * Math.exp(-((x - point.x) ** 2 + (y - point.y) ** 2) / spread);
+  }
+  return copy;
+}
+
 function paintCanvas(element, image) {
   const projected = image.stackRecord
     ? { values: image.values, flags: new Uint32Array(image.values.length), coverage: image.values.reduce((n, v) => n + Number.isFinite(v), 0) / image.values.length, width: image.width }
     : image.projection;
   if (!projected) throw new Error('This image has not been projected.');
   if (!projected.values.some(Number.isFinite)) throw new Error('No valid pixels remain after applying the quality mask.');
-  paintGrid(element, projected.values, projected.width, { covered: projected.covered || null, psfFrame: projected.psfFrame || null });
-  element.spherexGrid = { values: projected.values, flags: image.stackRecord ? null : projected.flags };
+  const values = withSynthetic(projected.values, projected.width, image);
+  paintGrid(element, values, projected.width, { covered: projected.covered || null, psfFrame: projected.psfFrame || null });
+  element.spherexGrid = { values, flags: image.stackRecord ? null : projected.flags };
   return projected.coverage;
 }
 
@@ -288,20 +323,49 @@ async function drawImage(image) {
 }
 
 
-function setMarkedSource(sky) {
-  markedSource = sky && Number.isFinite(sky.raDeg) && Number.isFinite(sky.decDeg)
-    ? { raDeg: sky.raDeg, decDeg: sky.decDeg }
-    : null;
+function publishSpots() {
   positionMark();
-  window.dispatchEvent(new CustomEvent('sky:source-marked', { detail: markedSource ? { ...markedSource } : {} }));
+  const list = spots.list();
+  window.dispatchEvent(new CustomEvent('sky:spots-changed', { detail: { spots: list } }));
+  const first = list.find(spot => spot.origin === 'user') || list[0];
+  window.dispatchEvent(new CustomEvent('sky:source-marked', { detail: first ? { raDeg: first.raDeg, decDeg: first.decDeg } : {} }));
 }
 
-// Place the DOM marker over the stretched canvas. Percentages of the element box
-// map one-to-one onto canvas pixels, so the mark stays put at every field of view
-// even though the canvas has a fixed pixel grid and a fluid CSS size.
+const formatSpot = spot => `${spot.raDeg.toFixed(4)}°, ${spot.decDeg >= 0 ? '+' : ''}${spot.decDeg.toFixed(4)}°`;
+
+// Place one numbered DOM marker per spot over the stretched canvas. Percentages
+// of the element box map one-to-one onto canvas pixels, so marks stay put at
+// every field of view even though the canvas has a fluid CSS size.
 function positionMark() {
-  if (!sourceMark) return;
-  sourceMark.hidden = true;
+  if (!spotLayer) return;
+  const size = canvas.width, list = spots.list();
+  if (!list.length || !size || !document.querySelector('.viewer')?.classList.contains('has-image')) { spotLayer.hidden = true; return; }
+  spotLayer.hidden = false;
+  const elements = list.map(spot => {
+    const point = skyToCanvas({ raDeg: spot.raDeg, decDeg: spot.decDeg, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
+    if (!point) return null;
+    const clamp = value => Math.max(0, Math.min(size - 1, value));
+    const x = clamp(point.x), y = clamp(point.y), offscreen = x !== point.x || y !== point.y;
+    const mark = document.createElement('div');
+    mark.className = `source-mark spot-mark is-${spot.origin}${offscreen ? ' is-offscreen' : ''}`;
+    mark.style.left = `${((x + 0.5) / size) * 100}%`;
+    mark.style.top = `${((y + 0.5) / size) * 100}%`;
+    mark.dataset.spot = String(spot.n);
+    const ring = document.createElement('span'); ring.className = 'source-mark-ring';
+    const label = document.createElement('button');
+    label.type = 'button'; label.className = 'source-mark-label spot-label';
+    label.textContent = `${spot.n}${offscreen ? ' · outside field' : ''}`;
+    label.title = `Spot ${spot.n}${spot.label ? ` (${spot.label})` : ''} · ${formatSpot(spot)}${offscreen ? ' · outside this field of view' : ''}. Click to ask the AI guide about it.`;
+    label.setAttribute('aria-label', `Spot ${spot.n} at ${formatSpot(spot)}. Ask the AI guide about it.`);
+    label.addEventListener('click', event => { event.stopPropagation(); window.dispatchEvent(new CustomEvent('sky:spot-selected', { detail: { ...spot } })); });
+    const remove = document.createElement('button');
+    remove.type = 'button'; remove.className = 'spot-remove'; remove.textContent = '×';
+    remove.setAttribute('aria-label', `Remove spot ${spot.n}`);
+    remove.addEventListener('click', event => { event.stopPropagation(); spots.remove(spot.n); publishSpots(); });
+    mark.append(ring, label, remove);
+    return mark;
+  }).filter(Boolean);
+  spotLayer.replaceChildren(...elements);
 }
 
 canvas.addEventListener('click', event => {
@@ -316,7 +380,8 @@ canvas.addEventListener('click', event => {
     x, y, size, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg
   });
   if (settings.inspectPixels) { inspectionCanvasPoint = { x, y }; inspectPixel(activeObservation.image, sky); return; }
-  if (sky) setMarkedSource(sky);
+  if (sky && spots.add(sky, { origin: 'user' })) publishSpots();
+  else if (sky) cards(`Up to ${MAX_SPOTS} spots can be marked. Remove one first.`);
 });
 
 
@@ -478,7 +543,67 @@ function skyAtContributor(sky, stack, pointing) {
   return pixel && canvasToSky({ x: pixel[0], y: pixel[1], size: stack.width, centerRaDeg: pointing.raDeg, centerDecDeg: pointing.decDeg });
 }
 
-window.addEventListener('sky:clear-source-mark', () => setMarkedSource(null));
+window.addEventListener('sky:clear-source-mark', () => { spots.clear(); publishSpots(); });
+// The AI guide adds, removes or clears spots; respond() gets the spots it added.
+window.addEventListener('sky:agent-spots', event => {
+  const detail = event.detail || {};
+  if (detail.clear) spots.clear(detail.clear === 'all' ? null : detail.clear);
+  for (const n of detail.remove || []) spots.remove(n);
+  const added = (detail.add || []).map(spot => spots.add(spot, { origin: spot.origin || 'agent', label: spot.label })).filter(Boolean);
+  publishSpots();
+  detail.respond?.({ added, spots: spots.list() });
+});
+window.addEventListener('sky:spots-requested', event => event.detail?.respond?.(spots.list()));
+
+// The AI guide's find_changes tool reads the difference image on screen.
+window.addEventListener('sky:difference-requested', event => {
+  const respond = event.detail?.respond;
+  if (!respond) return;
+  if (shown?.kind !== 'difference') { respond(null); return; }
+  respond({
+    values: shown.values, significant: shown.significant, width: shown.width, sigma: shown.sigma, threshold: shown.threshold,
+    center: { ...displayedCenter }, referenceLabel: shown.referenceLabel,
+    date: shown.observation?.observedStartUtc || '', referenceDate: shown.referenceObservation?.observedStartUtc || ''
+  });
+});
+
+// Small image stamps around a sky position (new frame, reference, difference)
+// for the vision second opinion. PNG data URLs, nearest-neighbour enlarged.
+window.addEventListener('sky:stamps-requested', event => {
+  const { raDeg, decDeg, sizePx = 24, scale = 4, respond } = event.detail || {};
+  if (!respond) return;
+  if (shown?.kind !== 'difference' || !shown.currentCanvas) { respond(null); return; }
+  const point = skyToCanvas({ raDeg, decDeg, size: shown.width, centerRaDeg: displayedCenter.raDeg, centerDecDeg: displayedCenter.decDeg });
+  if (!point) { respond(null); return; }
+  const crop = source => {
+    if (!source) return null;
+    const stamp = document.createElement('canvas');
+    stamp.width = stamp.height = sizePx * scale;
+    const ctx = stamp.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(source, Math.round(point.x - sizePx / 2), Math.round(point.y - sizePx / 2), sizePx, sizePx, 0, 0, sizePx * scale, sizePx * scale);
+    return stamp.toDataURL('image/png');
+  };
+  respond({ current: crop(shown.currentCanvas), reference: crop(shown.referenceCanvas), difference: crop(canvas) });
+});
+
+// Noise of the image on screen (MAD), so a fake source can be set to a chosen
+// number of sigma once and keep that brightness in every exposure.
+window.addEventListener('sky:noise-requested', event => {
+  const values = shown?.kind === 'difference' ? null : shown?.values;
+  event.detail?.respond?.(values ? estimateBackground(values).noise : null);
+});
+
+// The hidden-planet quest: add or remove a synthetic moving source, then redraw.
+window.addEventListener('sky:inject-synthetic', event => {
+  const detail = event.detail || {};
+  synthetic = detail.source && Number.isFinite(detail.source.raDeg) ? { ...detail.source } : null;
+  renderedFrames.clear();
+  deepTemplateCache = null;
+  if (activeObservation?.image && !isComparisonMode()) void drawImage(activeObservation.image);
+  else if (activeTimelineFrame) void showCutout(activeTimelineFrame, { quiet: true, keepImage: true });
+  detail.respond?.({ ok: true, active: Boolean(synthetic) });
+});
 
 // The exact proxy URL for a frame at the current target and field of view. The
 // time-lapse preloader uses the same URL so its cached download is reused.
@@ -969,7 +1094,7 @@ async function composeComparison(frame, entry, signal, sequence) {
   }
   const element = document.createElement('canvas');
   paintGrid(element, diff, width, { mapper: differenceMapper(sigma, threshold * 2), lut: colormap('diverging'), smooth: false });
-  return { kind: 'difference', canvas: element, values: diff, unit, sigma, threshold, significant, brighter, fainter, referenceLabel };
+  return { kind: 'difference', canvas: element, values: diff, unit, sigma, threshold, significant, brighter, fainter, referenceLabel, currentCanvas: entry.canvas, referenceCanvas, referenceObservation };
 }
 
 function commitComposite(observation, entry, composed, { announce = true } = {}) {
@@ -988,7 +1113,8 @@ function commitComposite(observation, entry, composed, { announce = true } = {})
   canvas.dataset.deepStack = 'false';
   const date = frameLabel(observation), wave = formatWavelength(observation);
   if (composed.kind === 'difference') {
-    shown = { values: composed.values, flags: null, width: source.width, unit: composed.unit, kind: 'difference', sigma: composed.sigma, threshold: composed.threshold, significant: composed.significant, brighter: composed.brighter, fainter: composed.fainter, referenceLabel: composed.referenceLabel };
+    shown = { values: composed.values, flags: null, width: source.width, unit: composed.unit, kind: 'difference', sigma: composed.sigma, threshold: composed.threshold, significant: composed.significant, brighter: composed.brighter, fainter: composed.fainter, referenceLabel: composed.referenceLabel,
+      currentCanvas: composed.currentCanvas, referenceCanvas: composed.referenceCanvas, observation, referenceObservation: composed.referenceObservation };
     caption.textContent = `Difference · ${date} − ${composed.referenceLabel} · noise σ = ${formatValue(composed.sigma)}${composed.unit ? ` ${composed.unit}` : ''} · ${composed.brighter} pixels brighter and ${composed.fainter} fainter beyond ±${composed.threshold}σ · ${wave}`;
     setCacheState('Difference image · orange brighter, blue fainter');
   } else if (composed.kind === 'trail') {
@@ -1248,6 +1374,8 @@ document.getElementById('lock-scale')?.addEventListener('click', () => {
 
 // Restore a marked source carried by a shared link before any image is loaded.
 if (Number.isFinite(initialViewState.markRaDeg) && Number.isFinite(initialViewState.markDecDeg)) {
-  setMarkedSource({ raDeg: initialViewState.markRaDeg, decDeg: initialViewState.markDecDeg });
+  spots.add({ raDeg: initialViewState.markRaDeg, decDeg: initialViewState.markDecDeg }, { origin: 'user' });
 }
+for (const spot of initialViewState.extraSpots || []) spots.add(spot, { origin: 'user' });
+if (spots.list().length) publishSpots();
 resetViewer('Waiting for observations.');

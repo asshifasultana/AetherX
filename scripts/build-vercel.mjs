@@ -32,7 +32,11 @@ for (const file of publicFiles) {
   }
   if (missing.length) throw new Error(`Static files imported but not published:\n${missing.join('\n')}`);
 }
+<<<<<<< HEAD
 for (const [name, maxDuration] of [['observations', 120], ['moving-observations', 120], ['observation-quality', 30], ['pixel-quality', 10], ['index-status', 10], ['cutout', 120], ['crop', 30], ['resolve-object', 15], ['gaia-sources',15], ['wise-sources',15]]) {
+=======
+for (const [name, maxDuration] of [['observations', 120], ['moving-observations', 120], ['observation-quality', 30], ['pixel-quality', 10], ['index-status', 10], ['cutout', 120], ['crop', 30], ['resolve-object', 15], ['gaia-sources',15]]) {
+>>>>>>> b1000e71310364d53953bec9fae30536b5b52241
   const directory = path.join(output, 'functions', 'api', `${name}.func`);
   await mkdir(path.join(directory, 'api'), { recursive: true });
   await mkdir(path.join(directory, 'lib'), { recursive: true });

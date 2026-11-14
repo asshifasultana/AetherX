@@ -835,7 +835,11 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 @media(max-width:760px) {
   .viewer-page { --viewer-frame-width:min(100%,960px,max(260px,calc(100dvh - var(--workspace-header-height,64px) - 330px))); }
 }
+<<<<<<< HEAD
 .viewer-page :is(.display-panel,.frame-provenance,.share-bar,#mission) { display:none; }
+=======
+.viewer-page :is(.display-panel,.frame-provenance,.share-bar,.gaia-readouts,#mission) { display:none; }
+>>>>>>> b1000e71310364d53953bec9fae30536b5b52241
 .viewer-page .workspace[data-sidebar-open="false"] .sidebar-rail-toggle { display:none; }
 .viewer-page .workspace[data-sidebar-open="true"] { grid-template-columns:320px minmax(0,1fr); }
 .viewer-page .workspace[data-sidebar-open="true"] .workspace-sidebar { display:block; height:100%; top:0; }
@@ -844,7 +848,11 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .viewer-page .workspace[data-sidebar-open="true"] .viewer-stage { flex:none; }
 .viewer-page .workspace[data-sidebar-open="true"] .viewer-stage > .viewer-shell { height:auto; width:min(100%,660px); }
 .viewer-page .workspace[data-sidebar-open="true"] .viewer-shell > .viewer { flex:none; }
+<<<<<<< HEAD
 .viewer-page .workspace[data-sidebar-open="true"] :is(.display-panel,.viewer-readouts,.frame-provenance,.share-bar,.cultural-context,#ai-guide,#observations,#mission) { display:revert; }
+=======
+.viewer-page .workspace[data-sidebar-open="true"] :is(.display-panel,.viewer-readouts,.frame-provenance,.share-bar,.gaia-readouts,.cultural-context,#ai-guide,#observations,#mission) { display:revert; }
+>>>>>>> b1000e71310364d53953bec9fae30536b5b52241
 .viewer-page .workspace[data-sidebar-open="true"] .viewer-stage { flex-direction:column; align-items:center; }
 .viewer-page .workspace[data-sidebar-open="true"] .display-panel { width:100%; flex:none; }
 .is-embed .viewer-page .viewer-stage > .viewer-shell { width:min(100%,calc(100dvh - var(--playback-height,160px) - 72px)); }
@@ -926,6 +934,7 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
 .viewer-page .timeline-filmstrip { display:flex; padding:6px 2px 0; margin-top:2px; }
 .viewer-page .timeline-filmstrip:empty { display:none; }
 
+<<<<<<< HEAD
 .survey-legend { display:flex; gap:12px; margin-top:6px; font-size:12px; }
 .survey-legend:not(:has(> :not([hidden]))) { display:none; }
 .survey-layers {
@@ -958,6 +967,8 @@ button { transition:background-color 160ms ease,border-color 160ms ease,transfor
   .survey-layers button { min-height:44px; }
 }
 
+=======
+>>>>>>> b1000e71310364d53953bec9fae30536b5b52241
 /* A full-screen HUD, in the top layer so fullscreen and sidebar states cannot cover it. */
 .preview-loading { position:fixed; inset:0; z-index:1000; outline:none; margin:0; border:0; width:100vw; max-width:none; height:100dvh; max-height:none; padding:32px; display:flex; align-items:center; justify-content:center; overflow:auto; color:#8ce8cd; background:#080d18; isolation:isolate; color-scheme:dark; }
 .preview-loading::backdrop { background:#080d18; }

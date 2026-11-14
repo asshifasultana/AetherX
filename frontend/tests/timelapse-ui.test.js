@@ -26,12 +26,8 @@ function mount({ pending = null, show, warm, ready = true, tutorial = false } = 
     showCutout: async frame => { requests.push(frame); return show ? show(frame, emit) : {}; },
     warmCutout: warm || (async () => {}), isCutoutReady: () => ready
   };
-  // What the search loader sees: the latest progress and how often it was told "ready".
-  const loader = { progress: null, ready: 0 };
-  context.window.addEventListener('sky:loader-progress', event => { loader.progress = event.detail.value; });
-  context.window.addEventListener('sky:loader-ready', () => { loader.ready++; });
   runInNewContext(source + '\nglobalThis.playbackState = state;', context);
-  return { get, emit, timers, requests, loader, state: context.playbackState, load(items = observations) { emit('sky:observations-loaded', { observations: items }); } };
+  return { get, emit, timers, requests, state: context.playbackState, load(items = observations) { emit('sky:observations-loaded', { observations: items }); } };
 }
 
 test('default time-lapse loads the first frame and waits for Play', async () => {
@@ -111,24 +107,24 @@ test('search loader waits for the selected image and every timeline preview', as
     show: () => new Promise(resolve => { finishImage = resolve; }),
     warm: () => new Promise(resolve => { finishPreview = resolve; }) });
   ui.emit('sky:observations-loading');
-  assert.equal(ui.loader.ready, 0);
+  assert.equal(ui.get('preview-loading').hidden, false);
   ui.load(); await flush();
-  assert.equal(ui.loader.ready, 0);
+  assert.equal(ui.get('preview-loading').hidden, false);
   ui.emit('sky:cutout-rendered', { observation: observations[0] });
   finishImage({}); await flush();
-  assert.equal(ui.loader.ready, 0);
+  assert.equal(ui.get('preview-loading').hidden, false);
   const timer = [...ui.timers.values()].find(item => item.delay === 200);
   const batch = timer.fn(); await flush();
-  assert.equal(ui.loader.ready, 0);
+  assert.equal(ui.get('preview-loading').hidden, false);
   finishPreview(); await batch; await flush();
-  assert.equal(ui.loader.ready, 1);
+  assert.equal(ui.get('preview-loading').hidden, true);
 });
 
 test('empty or failed archive searches dismiss the loader', () => {
   for (const failed of [false, true]) {
     const ui = mount(); ui.emit('sky:observations-loading');
     ui.emit('sky:observations-loaded', { observations: [], failed });
-    assert.equal(ui.loader.ready, 1);
+    assert.equal(ui.get('preview-loading').hidden, true);
   }
 });
 
@@ -139,10 +135,10 @@ test('failed image downloads settle loading instead of trapping the viewer', asy
   ui.emit('sky:observations-loading'); ui.load(); await flush();
   const timer = [...ui.timers.values()].find(item => item.delay === 200);
   timer.fn(); await flush();
-  assert.equal(ui.loader.ready, 1);
+  assert.equal(ui.get('preview-loading').hidden, true);
 });
 
-test('loader progress sweeps to 90 quickly, slows below 100, and resets for a new search', () => {
+test('HUD sweeps to 90 quickly, slows below 100, and resets for a new search', () => {
   const ui = mount({ ready: false });
   const tick = delay => {
     const entry = [...ui.timers.entries()].find(([, timer]) => timer.delay === delay);
@@ -150,20 +146,37 @@ test('loader progress sweeps to 90 quickly, slows below 100, and resets for a ne
     ui.timers.delete(entry[0]); entry[1].fn();
   };
   ui.emit('sky:observations-loading');
-  assert.equal(ui.loader.progress, 0);
+  assert.equal(ui.get('preview-loading-percent').textContent, '00');
   for (let i = 0; i < 10; i++) tick(70);
-  assert.equal(ui.loader.progress, 90);
+  assert.equal(ui.get('preview-loading-percent').textContent, '90');
   for (let i = 0; i < 400; i++) tick(250);
-  assert.equal(ui.loader.ready, 0);
-  assert.ok(ui.loader.progress > 98 && ui.loader.progress < 100);
+  assert.equal(ui.get('preview-loading').hidden, false);
+  assert.ok(Number(ui.get('preview-loading-percent').textContent) < 100);
   ui.emit('sky:observations-loaded', { observations: [] });
-  assert.equal(ui.loader.progress, 100);
-  assert.equal(ui.loader.ready, 1);
+  assert.equal(ui.get('preview-loading-percent').textContent, '100');
+  assert.equal(ui.get('preview-loading').hidden, true);
   assert.ok(![...ui.timers.values()].some(timer => timer.delay === 70 || timer.delay === 250));
   ui.emit('sky:observations-loading');
-  assert.equal(ui.loader.progress, 0);
-  // Readiness is reported once per search, not again on later updates.
+  assert.equal(ui.get('preview-loading-percent').textContent, '00');
+});
+
+test('loading facts rotate through stars, SPHEREx and Planet Nine, and stop when ready', () => {
+  const ui = mount({ ready: false });
+  const tick = delay => {
+    const entry = [...ui.timers.entries()].find(([, timer]) => timer.delay === delay);
+    assert.ok(entry); ui.timers.delete(entry[0]); entry[1].fn();
+  };
+  ui.emit('sky:observations-loading');
+  assert.match(ui.get('preview-loading-fact').textContent, /100 billion stars/);
+  tick(6000); tick(180);
+  assert.match(ui.get('preview-loading-fact').textContent, /SPHEREx.*102/);
+  tick(6000); tick(180); tick(6000); tick(180);
+  assert.match(ui.get('preview-loading-fact').textContent, /Planet Nine.*yet to be discovered/);
+  // Finishing in the middle of a fade cancels the pending text swap too.
+  tick(6000);
+  const lastFact = ui.get('preview-loading-fact').textContent;
   ui.emit('sky:observations-loaded', { observations: [] });
-  ui.emit('sky:deep-stack-error');
-  assert.equal(ui.loader.ready, 2);
+  assert.equal(ui.get('preview-loading').hidden, true);
+  assert.ok(![...ui.timers.values()].some(timer => timer.delay === 6000 || timer.delay === 180));
+  assert.equal(ui.get('preview-loading-fact').textContent, lastFact);
 });

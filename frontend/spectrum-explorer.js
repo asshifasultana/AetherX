@@ -1,5 +1,7 @@
+import { decodeCrop } from './lib/crop-codec.js';
+import { projectSkyToPixel } from './lib/fits-engine.js';
 import { createWavelengthReader } from './lib/wavelength.js';
-import { measureAt } from './lib/photometry.js';
+import { DEFAULT_MASK_BITS } from './lib/pixel-quality.js';
 import { observeCutout } from './fits-viewer.js';
 import { exposureCenter } from './presets.js';
 
@@ -14,6 +16,12 @@ const el = (tag, attrs = {}, parent = svg) => {
   parent.append(node); return node;
 };
 const finite = value => value !== '' && value !== null && value !== undefined && Number.isFinite(Number(value));
+const median = values => {
+  if (!values.length) return NaN;
+  values.sort((a, b) => a - b); const middle = values.length >> 1;
+  return values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
+};
+const pixelAreaSr = matrix => Math.abs(matrix.determinant) * (Math.PI / 180) ** 2;
 
 window.addEventListener('sky:target-selected', event => {
   position = event.detail; targetName = $('object-name')?.textContent || 'selected target';
@@ -53,8 +61,49 @@ $('jump-wavelength').addEventListener('click', () => {
 });
 $('build-spectrum').addEventListener('click', () => { void buildSpectrum(); });
 
-function measure(observation, signal) {
-  return measureAt(observation, exposureCenter(position, observation), signal, { wavelengthAt });
+async function measure(observation, signal) {
+  const sourcePosition = exposureCenter(position, observation);
+  const params = new URLSearchParams({
+    url: observation.accessUrl, raDeg: String(sourcePosition.raDeg), decDeg: String(sourcePosition.decDeg),
+    fovArcmin: '3', flags: '1', variance: '1',
+    revision: observation.productModifiedAt || observation.metadataModifiedAt || ''
+  });
+  const response = await fetch(`/api/crop?${params}`, { signal });
+  if (!response.ok) {
+    let message = `Image request failed (${response.status}).`;
+    try { message = (await response.json()).error || message; } catch {}
+    throw new Error(message);
+  }
+  const image = decodeCrop(await response.arrayBuffer());
+  if (!image.flags || !image.variance) throw new Error('Quality flags or variance are unavailable for this product.');
+  if (!/mjy\s*\/\s*sr|mjy\s*sr(?:\^?-1|-1)/i.test(String(image.header.BUNIT || ''))) throw new Error('This product does not report flux in MJy/sr.');
+  const pixel = projectSkyToPixel(image, sourcePosition.raDeg, sourcePosition.decDeg);
+  if (!pixel) throw new Error('The selected sky position is outside this image.');
+  const x = Math.round(pixel[0]), y = Math.round(pixel[1]);
+  const source = [], background = [], variance = [];
+  for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) {
+    const px = x + dx, py = y + dy;
+    if (px < 0 || py < 0 || px >= image.width || py >= image.height) continue;
+    const index = py * image.width + px, value = image.values[index], v = image.variance[index];
+    if (!Number.isFinite(value) || (image.flags[index] & DEFAULT_MASK_BITS) !== 0) continue;
+    const radius = Math.hypot(dx, dy);
+    if (radius <= 1.5 && Number.isFinite(v) && v >= 0) { source.push(value); variance.push(v); }
+    else if (radius >= 4.5 && radius <= 8) background.push(value);
+  }
+  if (source.length < 5 || background.length < 12) throw new Error('Too few unflagged pixels around the target for a stable quick-look measurement.');
+  const sky = median(background), scatter = 1.4826 * median(background.map(value => Math.abs(value - sky)));
+  const area = pixelAreaSr(image.matrix), sourceSum = source.reduce((sum, value) => sum + value - sky, 0);
+  const varianceSum = variance.reduce((sum, value) => sum + value, 0) + source.length ** 2 * (scatter ** 2 / background.length);
+  const scale = 1e12 * area; // MJy/sr × pixel solid angle → μJy.
+  const [w, dec] = [sourcePosition.raDeg, sourcePosition.decDeg];
+  const wavelength = await wavelengthAt(observation.accessUrl, image.sourceX + pixel[0], image.sourceY + pixel[1]);
+  if (!finite(wavelength) || wavelength <= 0) throw new Error('Wavelength calibration is unavailable at the selected position.');
+  return {
+    wavelengthUm: wavelength, fluxMicroJy: sourceSum * scale, errorMicroJy: Math.sqrt(varianceSum) * scale,
+    time: Date.parse(observation.observedStartUtc || '') || 0,
+    observation, detector: Number(observation.detector), pixelsUsed: source.length,
+    raDeg: w, decDeg: dec, flagsChecked: true
+  };
 }
 
 async function buildSpectrum() {

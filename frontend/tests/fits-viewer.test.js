@@ -66,7 +66,7 @@ test('viewer paints previews, preserves every contributor and suppresses stale r
     assert.deepEqual(elements.get('sky-canvas').pixels, clearPixels);
     assert.equal(elements.get('quality-legend').hidden, false);
     assert.equal(elements.get('colour-bar').hidden, false);
-    assert.equal(elements.get('spot-layer').hidden, true);
+    assert.equal(elements.get('source-mark').hidden, true);
     const originalFetch = globalThis.fetch;
     let inspected;
     globalThis.fetch = async (url, options) => {

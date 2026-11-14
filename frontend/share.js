@@ -99,23 +99,12 @@ if (typeof window !== 'undefined') {
     });
   });
 
-  window.addEventListener('sky:spots-changed', event => {
-    const list = Array.isArray(event.detail?.spots) ? event.detail.spots : [];
-    const [first, ...rest] = list;
-    update({
-      markRaDeg: first ? first.raDeg : null,
-      markDecDeg: first ? first.decDeg : null,
-      markRadiusArcsec: first?.radiusArcsec ?? null,
-      extraSpots: rest.map(spot => ({ raDeg: spot.raDeg, decDeg: spot.decDeg, radiusArcsec: spot.radiusArcsec ?? null }))
-    });
-  });
-
   window.addEventListener('sky:source-marked', event => {
     const detail = event.detail || {};
     if (Number.isFinite(detail.raDeg) && Number.isFinite(detail.decDeg)) {
-      update({ markRaDeg: detail.raDeg, markDecDeg: detail.decDeg, markRadiusArcsec: detail.radiusArcsec ?? null });
+      update({ markRaDeg: detail.raDeg, markDecDeg: detail.decDeg });
     } else {
-      update({ markRaDeg: null, markDecDeg: null, markRadiusArcsec: null });
+      update({ markRaDeg: null, markDecDeg: null });
     }
   });
 

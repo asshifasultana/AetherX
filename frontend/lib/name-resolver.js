@@ -12,29 +12,6 @@ export function validateName(params) {
   }
   return raw.trim();
 }
-// Optional distance hints. A missing or "~" value simply leaves the field out.
-// Each pattern captures a value and, when given, its "[uncertainty]".
-const SESAME_HINTS = {
-  parallax: /^%X\s+([+-]?\d*\.?\d+(?:e[+-]?\d+)?)(?:\s+\[(\d*\.?\d+)\])?/im,
-  redshift: /^%V\s+z\s*:?\s*([+-]?\d*\.?\d+(?:e[+-]?\d+)?)/im,
-  velocity: /^%V\s+v\s*:?\s*([+-]?\d*\.?\d+(?:e[+-]?\d+)?)/im
-};
-const SIMBAD_HINTS = {
-  parallax: /^Parallax(?:es \(mas\))?:\s*([+-]?\d*\.?\d+(?:e[+-]?\d+)?)(?:\s+\[(\d*\.?\d+)\])?/im,
-  redshift: /^Redshift:\s*([+-]?\d*\.?\d+(?:e[+-]?\d+)?)/im
-};
-export function distanceHints(text, { parallax, redshift, velocity }) {
-  const hints = {};
-  const plx = text.match(parallax);
-  if (plx && Number.isFinite(Number(plx[1]))) {
-    hints.parallaxMas = Number(plx[1]);
-    if (plx[2] !== undefined && Number.isFinite(Number(plx[2]))) hints.parallaxErrorMas = Number(plx[2]);
-  }
-  const z = text.match(redshift), v = velocity && text.match(velocity);
-  if (z && Number.isFinite(Number(z[1]))) hints.redshift = Number(z[1]);
-  else if (v && Number.isFinite(Number(v[1]))) hints.redshift = Number(v[1]) / 299792.458;
-  return hints;
-}
 export function parseSesame(text) {
   if (text.length > 1000000 || !/^#\s/m.test(text) || /<\s*(?:!doctype|html)/i.test(text)) throw new ResolveError('The resolver returned an invalid response. Please retry.', 502, 'UPSTREAM_ERROR');
   const sections = text.split(/^#=/m).slice(1);
@@ -49,7 +26,7 @@ export function parseSesame(text) {
   const numeric = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i;
   const raDeg = Number(match?.[1]), decDeg = Number(match?.[2]);
   if (!source || !match || !numeric.test(match[1]) || !numeric.test(match[2]) || !Number.isFinite(raDeg) || !Number.isFinite(decDeg) || raDeg < 0 || raDeg >= 360 || decDeg < -90 || decDeg > 90) throw new ResolveError('The resolver returned invalid coordinates. Please retry.', 502, 'UPSTREAM_ERROR');
-  return { resolvedName: section.match(/^%I\.0\s+(.+)$/m)?.[1].trim() || null, raDeg, decDeg, frame: 'icrs', ...distanceHints(section, SESAME_HINTS), source: { name: 'CDS Sesame', resolver: { S: 'SIMBAD', N: 'NED', V: 'VizieR' }[source[1]], url: 'https://cds.unistra.fr/cgi-bin/Sesame' } };
+  return { resolvedName: section.match(/^%I\.0\s+(.+)$/m)?.[1].trim() || null, raDeg, decDeg, frame: 'icrs', source: { name: 'CDS Sesame', resolver: { S: 'SIMBAD', N: 'NED', V: 'VizieR' }[source[1]], url: 'https://cds.unistra.fr/cgi-bin/Sesame' } };
 }
 export function parseSimbad(text) {
   const invalid = () => new ResolveError('The SIMBAD mirror returned an invalid response. Please retry.', 502, 'UPSTREAM_ERROR');
@@ -59,7 +36,7 @@ export function parseSimbad(text) {
   const coordinates = text.match(/^Coordinates\(ICRS[^\n]*?\):\s*(\d+\s+\d+\s+\d+(?:\.\d+)?)\s+([+-]\d+\s+\d+\s+\d+(?:\.\d+)?)(?:\s|$)/m);
   if (!/^C\.D\.S\.\s+-\s+SIMBAD/m.test(text) || !name || !coordinates) throw invalid();
   try {
-    return { resolvedName: name.trim(), raDeg: parseCoordinate(coordinates[1], 'ra', 'sexagesimal'), decDeg: parseCoordinate(coordinates[2], 'dec', 'sexagesimal'), frame: 'icrs', ...distanceHints(text, SIMBAD_HINTS), source: { name: 'SIMBAD Harvard mirror', resolver: 'SIMBAD', url: 'https://simbad.cfa.harvard.edu/simbad/' } };
+    return { resolvedName: name.trim(), raDeg: parseCoordinate(coordinates[1], 'ra', 'sexagesimal'), decDeg: parseCoordinate(coordinates[2], 'dec', 'sexagesimal'), frame: 'icrs', source: { name: 'SIMBAD Harvard mirror', resolver: 'SIMBAD', url: 'https://simbad.cfa.harvard.edu/simbad/' } };
   } catch { throw invalid(); }
 }
 export function createNameResolver({ fetchImpl = fetch, now = Date.now, timeoutMs = 10000, primaryTimeoutMs = 2000, ttlMs = 86400000, maxEntries = 200 } = {}) {

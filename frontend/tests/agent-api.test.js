@@ -41,7 +41,7 @@ test('the proxy owns the system prompt, tools and model, and returns only the re
   assert.equal(sent.body.model, 'test-model');
   assert.deepEqual(sent.body.messages, [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: 'make it brighter' }]);
   assert.deepEqual(sent.body.tools, AGENT_TOOLS);
-  assert.equal(sent.body.max_tokens, 900);
+  assert.equal(sent.body.max_tokens, 700);
   assert.equal(sent.body.tool_choice, 'auto');
   assert.deepEqual(sent.body.provider, { require_parameters: true });
   assert.equal(sent.body.reasoning, undefined);
@@ -100,7 +100,7 @@ test('OpenRouter failures map to friendly errors, including error bodies with HT
   assert.equal(res.statusCode, 400);
 
   res = response();
-  await createAgentHandler({ env: { OPENROUTER_API_KEY: 'k' } })(request('POST', { messages: [{ role: 'user', content: 'x'.repeat(70000) }] }, { ip: '10.0.0.5' }), res);
+  await createAgentHandler({ env: { OPENROUTER_API_KEY: 'k' } })(request('POST', { messages: [{ role: 'user', content: 'x'.repeat(60000) }] }, { ip: '10.0.0.5' }), res);
   assert.equal(res.statusCode, 413);
 });
 

@@ -20,9 +20,7 @@
     },
     "api/crop.js": {
       "maxDuration": 30,
-      "regions": [
-        "iad1"
-      ]
+      "regions": ["iad1"]
     },
     "api/index-status.js": {
       "maxDuration": 10,
@@ -35,15 +33,6 @@
       "maxDuration": 15
     },
     "api/star-details.js": {
-      "maxDuration": 10
-    },
-    "api/agent-vision.js": {
-      "maxDuration": 30
-    },
-    "api/known-objects.js": {
-      "maxDuration": 30
-    },
-    "api/cases.js": {
       "maxDuration": 10
     }
   }

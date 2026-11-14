@@ -16,8 +16,7 @@ test('every tool has a well-formed function schema', () => {
     for (const key of entry.function.parameters.required) assert.ok(key in entry.function.parameters.properties, `${entry.function.name}.${key}`);
   }
   // Schemas are resent every round, so keep their token cost low.
-  // A loose ceiling only: clear descriptions matter more than a few hundred tokens.
-  assert.ok(JSON.stringify(AGENT_TOOLS).length < 20000);
+  assert.ok(JSON.stringify(AGENT_TOOLS).length < 4500);
 });
 
 test('enums mirror the viewer settings and presets', () => {
@@ -66,27 +65,4 @@ test('navigation and share notes are normalised', () => {
   const controls = 'a' + String.fromCharCode(0) + 'b' + String.fromCharCode(0x2028) + 'c   d';
   assert.equal(sanitizeNote(controls), 'a b c d');
   assert.equal(validateToolCall('make_share_link', { note: 'x'.repeat(500) }).args.note.length, 200);
-});
-
-test('remove_spots takes exactly one of spots, keep or all', () => {
-  assert.deepEqual(validateToolCall('remove_spots', { keep: [5] }).args, { keep: [5] });
-  assert.deepEqual(validateToolCall('remove_spots', { spots: [2, 3, 3] }).args, { spots: [2, 3] });
-  assert.deepEqual(validateToolCall('remove_spots', { spots: 4 }).args, { spots: [4] });
-  assert.deepEqual(validateToolCall('remove_spots', { all: true }).args, { all: true });
-  assert.equal(validateToolCall('remove_spots', {}).ok, false);
-  assert.equal(validateToolCall('remove_spots', { keep: [5], all: true }).ok, false);
-  assert.equal(validateToolCall('remove_spots', { spots: [12] }).ok, false);
-});
-
-test('snapshot and side-by-side arguments are validated', () => {
-  assert.deepEqual(validateToolCall('take_snapshot', {}).args, { caption: '' });
-  assert.deepEqual(validateToolCall('take_snapshot', { caption: 'Spot 2\nnow' }).args, { caption: 'Spot 2 now' });
-  const pair = validateToolCall('compare_side_by_side', { panels: [{ date: '2025-08-21', label: 'Before' }, { date: '2026-02-20', mode: 'difference' }], caption: 'Six months apart' });
-  assert.deepEqual(pair.args, { panels: [{ date: '2025-08-21', label: 'Before' }, { date: '2026-02-20', mode: 'difference' }], caption: 'Six months apart' });
-  assert.deepEqual(validateToolCall('compare_side_by_side', '{"panels":"[{\\"detector\\":1},{\\"detector\\":6}]"}').args.panels, [{ detector: 1 }, { detector: 6 }]);
-  assert.equal(validateToolCall('compare_side_by_side', { panels: [{ frame: 1 }] }).ok, false);
-  assert.equal(validateToolCall('compare_side_by_side', { panels: [{}, {}, {}, {}, {}] }).ok, false);
-  assert.equal(validateToolCall('compare_side_by_side', { panels: [{ mode: 'blink' }, {}] }).ok, false);
-  assert.equal(validateToolCall('compare_side_by_side', { panels: [{ detector: 7 }, {}] }).ok, false);
-  assert.equal(validateToolCall('compare_side_by_side', { panels: [{ date: 'yesterday' }, {}] }).ok, false);
 });

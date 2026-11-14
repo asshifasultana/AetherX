@@ -28,18 +28,6 @@ test('unresolved is distinct from malformed, incomplete and out-of-range respons
   assert.throws(() => parseSesame('# source\n#=S=Simbad: 1\n#=N=NED: 0\n'), { status: 502 });
   for (const text of ['', '<html>Service unavailable</html>', '# Sirius\n', fixture.replace('%J ', '%J.E '), fixture.replace('101.287155333', '360'), fixture.replace('-16.716115861', '-91'), fixture.replace('101.287155333', 'NaN'), fixture.replace('101.287155333', 'Infinity')]) assert.throws(() => parseSesame(text), { status: 502 });
 });
-test('distance hints come from parallax and redshift lines when present', () => {
-  assert.equal(data.parallaxMas, undefined); assert.equal(data.redshift, undefined);
-  const sesame = parseSesame(fixture.replace('%I.0', '%X 379.21 [1.58] A 2007A&A...474..653V\n%V v -5.50 [0.4] A 2006AstL...32..759G\n%I.0'));
-  assert.equal(sesame.parallaxMas, 379.21); assert.equal(sesame.parallaxErrorMas, 1.58);
-  assert.ok(Math.abs(sesame.redshift + 5.5 / 299792.458) < 1e-12);
-  assert.equal(parseSesame(fixture.replace('%I.0', '%V z 0.0158 [0.0001] C ref\n%I.0')).redshift, 0.0158);
-  // Lines from SIMBAD's ASCII output (values verified against the live Harvard mirror).
-  const simbad = parseSimbad(mirrorFixture + 'Parallax: 546.9759 [0.0401] A 2020yCat.1350....0G\nRedshift: -0.000367 [0.000000] A 2018MNRAS.475.1960F\n');
-  assert.equal(simbad.parallaxMas, 546.9759); assert.equal(simbad.parallaxErrorMas, 0.0401); assert.equal(simbad.redshift, -0.000367);
-  const absent = parseSimbad(mirrorFixture + 'Parallax: ~ [~] ~ ~\nRedshift: ~ [~ ~ ] ~ ~\n');
-  assert.ok(!('parallaxMas' in absent) && !('redshift' in absent));
-});
 test('single-name validation rejects controls, batches and duplicate parameters', () => {
   for (const name of ['', ' ', 'a'.repeat(201), 'M31\nM42', 'M31\u0000', 'M31\u0085', 'M31\u200b', 'M31&M42', 'M31;M42']) assert.throws(() => validateName(params(name)), { status: 400 });
   assert.throws(() => validateName(new URLSearchParams('name=M31&name=M42')), { status: 400 });

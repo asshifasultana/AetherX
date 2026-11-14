@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer, get } from 'node:http';
+import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { createCropHandler, cropCacheControl, encodeCrop, validateCrop } from '../api/crop.js';
+import { createCropHandler, encodeCrop, validateCrop } from '../api/crop.js';
 import { decodeCrop, loadViaProxy } from '../lib/crop-codec.js';
 import { createFitsRangeLoader } from '../lib/range-fits.js';
 import { createWorkGate } from '../lib/resources.js';
@@ -39,7 +39,7 @@ test('proxy payload round-trips to exactly the direct range-loader result', asyn
     await withServer(createCropHandler({ load: rangeLoader(bytes), gate }), async endpoint => {
       const response = await fetch(`${endpoint}?${query(settings)}`);
       assert.equal(response.status, 200);
-      assert.equal(response.headers.get('cache-control'), cropCacheControl(''));
+      assert.equal(response.headers.get('cache-control'), 'no-store');
       const direct = await rangeLoader(bytes)(accessUrl, target, { fovArcmin: 1, hideBadPixels: settings.flags === '1', includeFlags: settings.flags === '1' });
       const proxied = decodeCrop(await response.arrayBuffer());
       sameImage(proxied, direct);
@@ -48,32 +48,11 @@ test('proxy payload round-trips to exactly the direct range-loader result', asyn
   }
 });
 
-test('successful crops are CDN-cacheable, immutably when the revision is pinned', async () => {
-  const bytes = makeFits();
-  await withServer(createCropHandler({ load: rangeLoader(bytes), gate: createWorkGate({ rss: () => 0 }) }), async endpoint => {
-    const pinned = await fetch(`${endpoint}?${query({ revision: '2025-08-22T03:14:15Z' })}`);
-    assert.equal(pinned.status, 200);
-    assert.match(pinned.headers.get('cache-control'), /^public, .*s-maxage=31536000.*immutable/);
-    const unpinned = await fetch(`${endpoint}?${query()}`);
-    assert.match(unpinned.headers.get('cache-control'), /^public, .*s-maxage=86400/);
-    assert.doesNotMatch(unpinned.headers.get('cache-control'), /immutable/);
-    // One cache entry for every browser: no Vary, and gzip whatever was asked for.
-    assert.equal(pinned.headers.get('vary'), null);
-    for (const encoding of ['gzip, deflate, br, zstd', 'gzip, deflate, br', 'identity']) {
-      const response = await new Promise((resolve, reject) => get(`${endpoint}?${query({ revision: 'r1' })}`, { headers: { 'Accept-Encoding': encoding } }, resolve).on('error', reject));
-      response.resume();
-      assert.equal(response.headers['content-encoding'], 'gzip');
-      assert.equal(response.headers.vary, undefined);
-    }
-  });
-});
-
 test('proxy reports coverage as 422, archive failures as 502, and busy as 503', async () => {
   const bytes = makeFits();
   await withServer(createCropHandler({ load: rangeLoader(bytes), gate: createWorkGate({ rss: () => 0 }) }), async endpoint => {
     const response = await fetch(`${endpoint}?${query({ raDeg: 180, decDeg: 0 })}`);
     assert.equal(response.status, 422); assert.match((await response.json()).error, /coverage/);
-    assert.equal(response.headers.get('cache-control'), 'no-store', 'errors are never cached');
     assert.equal((await fetch(`${endpoint}?${query({ fovArcmin: 99 })}`)).status, 400);
   });
   await withServer(createCropHandler({ load: async () => { throw new Error('S3 request failed (503).'); }, gate: createWorkGate({ rss: () => 0 }) }), async endpoint => {

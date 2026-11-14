@@ -2,11 +2,10 @@ import { SearchError } from '../lib/observations.js';
 import { createIndexedSearch } from '../lib/index-store.js';
 import { gzipSync } from 'node:zlib';
 // Search results compress ~16x (Barnard's Star: 408 KB of JSON becomes 25 KB).
-// Always gzip and never send Vary: Vercel's CDN keys Vary on the exact
-// Accept-Encoding string, which would give each browser its own cache.
 function sendJson(req, res, data) {
   const body = Buffer.from(JSON.stringify(data));
-  const gzip = body.length > 1024;
+  const gzip = body.length > 1024 && /\bgzip\b/.test(String(req.headers?.['accept-encoding'] || ''));
+  res.setHeader('Vary', 'Accept-Encoding');
   if (gzip) res.setHeader('Content-Encoding', 'gzip');
   res.end(gzip ? gzipSync(body, { level: 6 }) : body);
 }

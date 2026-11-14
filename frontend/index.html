@@ -5,13 +5,11 @@
   <meta name="theme-color" content="#080d18">
   <meta name="description" content="Search stars, moving objects, and sky coordinates in the SPHEREx sky atlas.">
   <title>SPHEREx — Explore the sky</title>
-  <!-- Sky colour clock shared across pages; see SKY_KEY in starfield.js. -->
-  <script>try { var skyNow = Date.now() / 1000, skyEpoch = parseFloat(sessionStorage.getItem('sky-epoch')); if (!isFinite(skyEpoch)) { skyEpoch = skyNow - Math.random() * 45; sessionStorage.setItem('sky-epoch', skyEpoch); } document.documentElement.style.setProperty('--sky-start', (skyNow - skyEpoch).toFixed(2)); } catch (error) {}</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="home-page">
   <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
-  <header class="site-header"><a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx</a><button id="tour-restart" class="home-viewer-link" type="button">How it works</button></header>
+  <header class="site-header"><a class="brand" href="/" aria-label="SPHEREx home"><span class="brand-mark" aria-hidden="true">✳</span> SPHEREx<span class="brand-divider"></span><span class="brand-sub">SKY ATLAS</span></a><button id="tour-restart" class="home-viewer-link" type="button">How it works</button></header>
   <main class="home-main">
     <section class="home-search" aria-labelledby="home-title">
       <p class="eyebrow">AN INFRARED PERSPECTIVE</p>

@@ -8,6 +8,13 @@ import { takePendingFrameDate } from './share.js';
 const $ = id => document.getElementById(id);
 const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
 const timeFormat = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' });
+const MODE_LABELS = {
+  'time-lapse': 'Time-lapse',
+  blink: 'Blink',
+  difference: 'Difference',
+  'motion-trail': 'Motion trail',
+  'deep-stack': 'Deep stack'
+};
 
 const state = {
   observations: [],
@@ -47,13 +54,50 @@ let playbackController = null;
 // Search readiness includes every filmstrip frame, not just the selected image.
 let searchPending = false, archivePending = false, selectedPending = false;
 let loadingProgress = 0, loadingProgressTimer = null;
-// The search loader (search-loader.js) draws this progress and plays the exit;
-// this module only decides how far along the search is and when it is done.
-const emitLoader = (type, detail) => window.dispatchEvent(new CustomEvent(type, { detail }));
+// Sources: https://science.nasa.gov/universe/stars/
+// https://science.nasa.gov/blogs/spherex/2025/03/11/nasas-spherex-mission-2/
+// https://www.nasa.gov/missions/spherex/why-nasas-spherex-mission-will-make-most-colorful-cosmic-map-ever/
+// https://science.nasa.gov/solar-system/planet-x/
+const LOADING_FACTS = [
+  'The Milky Way alone contains more than 100 billion stars.',
+  'SPHEREx sees the sky in 102 infrared colors invisible to human eyes.',
+  'Some small stars can shine for trillions of years.',
+  'Planet Nine is a predicted world beyond Neptune that has yet to be discovered.',
+  'Stars are born inside enormous clouds of gas and dust.',
+  'SPHEREx is designed to map the entire sky four times in two years.',
+  'The most massive stars may live for only a few million years.',
+  'SPHEREx will survey more than 450 million galaxies and 100 million stars.',
+  'A baby star is called a protostar.',
+  'You can help search for distant worlds using infrared images from NASA’s WISE mission.',
+  'Stars shine by fusing hydrogen into helium in their cores.',
+  'SPHEREx searches for frozen water and other ingredients for life between stars.',
+  'Our Sun is roughly halfway through its main-sequence lifetime.',
+  'A white dwarf packs a star’s leftover core into roughly Earth’s size.',
+  'Massive stars forge elements such as oxygen, neon, and magnesium.',
+  'Material shed by dying stars helps build the next generation of stars.'
+];
+let loadingFactIndex = -1, loadingFactTimer = null;
+function showNextLoadingFact() {
+  loadingFactIndex = (loadingFactIndex + 1) % LOADING_FACTS.length;
+  $('preview-loading-fact').textContent = LOADING_FACTS[loadingFactIndex];
+  $('preview-loading-fact').classList.toggle('is-changing', false);
+}
+function scheduleLoadingFact() {
+  loadingFactTimer = setTimeout(() => {
+    if (!searchPending) return;
+    $('preview-loading-fact').classList.toggle('is-changing', true);
+    loadingFactTimer = setTimeout(() => {
+      if (!searchPending) return;
+      showNextLoadingFact();
+      scheduleLoadingFact();
+    }, 180);
+  }, 6000);
+}
 
 function paintLoadingProgress(value) {
   loadingProgress = value;
-  emitLoader('sky:loader-progress', { value });
+  $('preview-loading-percent').textContent = String(Math.floor(value)).padStart(2, '0');
+  $('preview-loading-progress').style.transform = `scaleX(${value / 100})`;
 }
 function tickLoadingProgress() {
   // An estimated visual cadence: a quick first sweep, then a gentle approach
@@ -65,22 +109,34 @@ function tickLoadingProgress() {
   loadingProgressTimer = setTimeout(tickLoadingProgress, loadingProgress < 90 ? 70 : 250);
 }
 function updatePreviewLoading() {
-  if (!searchPending) return;
+  const loader = $('preview-loading');
+  if (!loader) return;
   const frames = document.documentElement?.classList.contains('is-tour-preview')
     ? state.frames.slice(state.index, state.index + 1) : state.frames;
   const settled = frames.filter(frame => {
     const key = observationKey(frame);
     return prefetch.fetched.has(key) || prefetch.failed.has(key) || isCutoutReady(frame);
   }).length;
-  const busy = archivePending || selectedPending || settled < frames.length;
+  const busy = searchPending && (archivePending || selectedPending || settled < frames.length);
+  loader.hidden = !busy;
   document.querySelector('.viewer')?.setAttribute('aria-busy', String(busy));
-  if (busy) return;
-  searchPending = false;
-  clearTimeout(loadingProgressTimer); loadingProgressTimer = null;
-  paintLoadingProgress(100);
-  emitLoader('sky:loader-ready', { frames: frames.length });
+  if (!busy) {
+    searchPending = false;
+    clearTimeout(loadingProgressTimer); loadingProgressTimer = null;
+    clearTimeout(loadingFactTimer); loadingFactTimer = null;
+    paintLoadingProgress(100);
+    loader.close?.();
+    // The viewer chrome is hidden behind the first-paint loader; reveal it once
+    // the opening search has settled.
+    document.documentElement?.classList?.remove?.('is-initial-search');
+    return;
+  }
+  if (!loader.open) loader.showModal?.();
+
 }
 
+
+$('preview-loading')?.addEventListener('cancel', event => { if (searchPending) event.preventDefault(); });
 
 const dateOf = frame => new Date(frameTime(frame));
 const shortDate = frame => dateFormat.format(dateOf(frame));
@@ -95,29 +151,6 @@ const wavelength = frame => {
   return Number.isFinite(low) && Number.isFinite(high) ? `${low.toFixed(2)}–${high.toFixed(2)} μm` : '';
 };
 const setStatus = text => { $('timeline-status').textContent = text; };
-const modeLabels = {
-  'time-lapse': 'Time-lapse',
-  blink: 'Blink comparison',
-  difference: 'Difference image',
-  'motion-trail': 'Motion trail',
-  'deep-stack': 'Deep stack'
-};
-
-function updateModeUi() {
-  const deepStack = state.viewMode === 'deep-stack';
-  const count = state.frames.length;
-  $('timeline-heading').textContent = modeLabels[state.viewMode] || 'Sky view';
-  $('playback-row').hidden = deepStack;
-  $('timeline-filmstrip').hidden = deepStack;
-  if (deepStack) {
-    const detector = state.frames[state.index]?.detector ?? state.band;
-    $('frame-count').textContent = count ? `DEEP STACK${detector ? ` · D${detector}` : ''}` : 'DEEP STACK · NO IMAGES LOADED';
-  } else {
-    $('frame-count').textContent = count
-      ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
-      : 'NO IMAGES LOADED';
-  }
-}
 
 function updatePlayButton() {
   const button = $('play-button');
@@ -125,6 +158,22 @@ function updatePlayButton() {
   button.setAttribute('aria-label', state.playing ? 'Pause observation time-lapse' : 'Play observation time-lapse');
   button.setAttribute('aria-pressed', String(state.playing));
   button.classList.toggle('is-playing', state.playing);
+}
+
+// The panel carries the selected mode's name and hides the frame controls for
+// a deep stack, which is one combined image rather than a sequence.
+function updateModeUI() {
+  const deepStack = state.viewMode === 'deep-stack';
+  $('timeline-heading').textContent = MODE_LABELS[state.viewMode] || 'Time-lapse';
+  const panel = document.querySelector?.('.timeline-panel');
+  if (panel) panel.dataset.viewMode = state.viewMode;
+  const count = state.frames.length;
+  $('frame-count').textContent = deepStack
+    ? (count ? 'SINGLE COMBINED IMAGE' : 'NO IMAGES LOADED')
+    : count
+      ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
+      : 'NO IMAGES LOADED';
+  if (deepStack && state.playing) pausePlayback();
 }
 
 function updateStepButtons() {
@@ -146,7 +195,7 @@ function nextPrefetchFrame(excluded = new Set()) {
 function schedulePrefetch(delay = 0) {
   clearTimeout(prefetch.timer);
   prefetch.timer = null;
-  if (!state.frames.length || prefetch.paused || document.documentElement?.classList.contains('is-tour-preview')) return;
+  if (!state.frames.length || prefetch.paused || state.viewMode === 'deep-stack' || document.documentElement?.classList.contains('is-tour-preview')) return;
   prefetch.timer = setTimeout(() => { void runPrefetch(); }, delay);
 }
 
@@ -308,16 +357,6 @@ function renderFilmstrip() {
 
 function updateCurrent({ keepSlider = false } = {}) {
   const frame = state.frames[state.index];
-  if (state.viewMode === 'deep-stack') {
-    $('timeline-date').textContent = state.frames.length ? 'Deep stack' : 'Waiting for observations';
-    $('timeline-meta').hidden = false;
-    if (!state.frames.length) $('timeline-meta').textContent = 'Load observations to build one combined image.';
-    $('timeline').value = '0';
-    $('timeline').style.setProperty('--progress', '0%');
-    $('timeline').setAttribute('aria-valuetext', state.frames.length ? 'One combined deep-stack image' : 'No observations loaded');
-    updateStepButtons();
-    return;
-  }
   if (!frame) {
     $('timeline-date').textContent = 'Waiting for observations';
     $('timeline-meta').hidden = false;
@@ -329,7 +368,7 @@ function updateCurrent({ keepSlider = false } = {}) {
     updateStepButtons();
     return;
   }
-  $('timeline-date').textContent = frameDate(frame);
+  $('timeline-date').textContent = state.viewMode === 'deep-stack' ? 'One combined image' : frameDate(frame);
   $('timeline-meta').textContent = '';
   $('timeline-meta').hidden = true;
   const sources = frame.exposures || [frame];
@@ -370,7 +409,7 @@ function updateCurrent({ keepSlider = false } = {}) {
 
 function render() {
   const count = state.frames.length;
-  updateModeUi();
+  updateModeUI();
   $('release-calibration-note').hidden = true;
   $('timeline-start').textContent = count ? shortDate(state.frames[0]).toUpperCase() : 'FIRST FRAME';
   $('timeline-end').textContent = count ? shortDate(state.frames[count - 1]).toUpperCase() : 'LATEST FRAME';
@@ -434,7 +473,7 @@ function rebuild({ keepTime = false, announce = true } = {}) {
 }
 
 async function selectFrame(index, { playback = false } = {}) {
-  if (!state.frames.length || state.viewMode === 'deep-stack') return;
+  if (!state.frames.length) return;
   state.index = Math.max(0, Math.min(state.frames.length - 1, index));
   updateCurrent();
   const frame = state.frames[state.index];
@@ -510,7 +549,7 @@ function scheduleNext(delay) {
 }
 
 async function playPlayback() {
-  if (state.frames.length < 2) return;
+  if (state.frames.length < 2 || state.viewMode === 'deep-stack') return;
   // Keep a bounded lookahead running while the selected frame has priority.
   state.playing = true;
   state.token++;
@@ -522,6 +561,7 @@ async function playPlayback() {
 }
 
 function togglePlayback() {
+  if (state.viewMode === 'deep-stack') return;
   if (state.playing) pausePlayback({ manual: true });
   else { state.userPaused = false; void playPlayback(); }
 }
@@ -532,8 +572,8 @@ $('set-reference').addEventListener('click', () => {
   if (!frame) return;
   window.dispatchEvent(new CustomEvent('sky:reference-frame-pinned', { detail: { key: observationKey(frame) } }));
 });
-$('step-back').addEventListener('click', () => { pausePlayback({ manual: true }); void selectFrame(state.index - 1); });
-$('step-forward').addEventListener('click', () => { pausePlayback({ manual: true }); void selectFrame(state.index + 1); });
+$('step-back').addEventListener('click', () => { if (state.viewMode === 'deep-stack') return; pausePlayback({ manual: true }); void selectFrame(state.index - 1); });
+$('step-forward').addEventListener('click', () => { if (state.viewMode === 'deep-stack') return; pausePlayback({ manual: true }); void selectFrame(state.index + 1); });
 $('speed-button').addEventListener('click', () => {
   state.speed = nextSpeed(state.speed);
   $('speed-value').textContent = `${state.speed}×`;
@@ -541,7 +581,7 @@ $('speed-button').addEventListener('click', () => {
   if (state.playing) { pausePlayback(); void playPlayback(); }
 });
 $('timeline').addEventListener('input', event => {
-  if (!state.frames.length) return;
+  if (!state.frames.length || state.viewMode === 'deep-stack') return;
   pausePlayback({ manual: true });
   state.index = nearestFrameIndex(state.frames, Number(event.target.value) / 1000);
   updateCurrent({ keepSlider: true });
@@ -549,7 +589,7 @@ $('timeline').addEventListener('input', event => {
   state.scrubTimer = setTimeout(() => { void selectFrame(state.index); }, 180);
 });
 $('timeline').addEventListener('change', () => {
-  if (!state.frames.length) return;
+  if (!state.frames.length || state.viewMode === 'deep-stack') return;
   clearTimeout(state.scrubTimer);
   void selectFrame(state.index);
 });
@@ -583,6 +623,10 @@ window.addEventListener('sky:agent-playback', async event => {
   const detail = event.detail || {};
   const reply = result => { detail.respond?.(result); publishPlaybackState(); };
   if (!state.frames.length) { reply({ ok: false, error: 'No observations are loaded yet.' }); return; }
+  if (state.viewMode === 'deep-stack' && detail.action !== 'pause') {
+    reply({ ok: false, error: 'Deep stack shows one combined image. Switch to time-lapse, difference, or motion trail to use the timeline.' });
+    return;
+  }
   const last = state.frames.length - 1;
   try {
     switch (detail.action) {
@@ -637,7 +681,7 @@ function applyPendingReference() {
 }
 
 document.addEventListener('keydown', event => {
-  if (!state.frames.length || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+  if (!state.frames.length || state.viewMode === 'deep-stack' || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
   if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes(event.target?.tagName)) return;
   if (event.key === 'ArrowLeft') { event.preventDefault(); pausePlayback({ manual: true }); void selectFrame(state.index - 1); }
   else if (event.key === 'ArrowRight') { event.preventDefault(); pausePlayback({ manual: true }); void selectFrame(state.index + 1); }
@@ -652,8 +696,7 @@ window.addEventListener('sky:viewer-settings-changed', event => {
     // Difference and motion trail can still be played frame by frame; blink
     // animates on its own and a deep stack has no timeline position.
     if (state.viewMode === 'deep-stack' || state.viewMode === 'blink') pausePlayback();
-    updateModeUi();
-    updateCurrent();
+    updateModeUI();
   }
   if (detail.pinnedReferenceKey !== undefined && detail.pinnedReferenceKey !== state.pinnedKey) {
     state.pinnedKey = detail.pinnedReferenceKey || '';
@@ -700,8 +743,11 @@ window.addEventListener('sky:target-selected', () => {
 
 window.addEventListener('sky:observations-loading', () => {
   clearTimeout(loadingProgressTimer);
-  searchPending = true; archivePending = true; selectedPending = false;
   paintLoadingProgress(0);
+  searchPending = true; archivePending = true; selectedPending = false;
+  clearTimeout(loadingFactTimer);
+  showNextLoadingFact();
+  scheduleLoadingFact();
   loadingProgressTimer = setTimeout(tickLoadingProgress, 70);
   updatePreviewLoading();
   state.observations = [];

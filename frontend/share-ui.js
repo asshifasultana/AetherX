@@ -31,8 +31,7 @@ function summaryText() {
   if(state.gaia)parts.push('Gaia markers');
   if (state.wise) parts.push('AllWISE markers');
   if (Number.isFinite(state.markRaDeg) && Number.isFinite(state.markDecDeg)) {
-    const extra = Array.isArray(state.extraSpots) ? state.extraSpots.length : 0;
-    parts.push(extra ? `${extra + 1} marked spots` : `marked spot ${state.markRaDeg.toFixed(4)}°, ${signed(state.markDecDeg)}°`);
+    parts.push(`marked source ${state.markRaDeg.toFixed(4)}°, ${signed(state.markDecDeg)}°`);
   }
   return parts.join(' · ');
 }
@@ -96,25 +95,6 @@ function mount() {
       : 'Copying failed. Select the address bar to copy this view.', { error: !ok });
   });
 
-  // Header share button: always visible, copies a link that reopens this exact view.
-  let noticeTimer = null;
-  $('share-link')?.addEventListener('click', async () => {
-    const notice = $('share-link-notice');
-    const url = shareUrl({ embed: false });
-    // Phones get the native share sheet; desktops copy straight to the clipboard.
-    if (navigator.share && matchMedia('(pointer:coarse)').matches) {
-      try { await navigator.share({ title: document.title, url }); return; }
-      catch (error) { if (error?.name === 'AbortError') return; }
-    }
-    const ok = await copyText(url);
-    if (!ok) { window.prompt('Copy this link to share the view:', url); return; }
-    if (!notice) return;
-    notice.textContent = 'Link copied — it reopens this exact view.';
-    notice.hidden = false;
-    clearTimeout(noticeTimer);
-    noticeTimer = setTimeout(() => { notice.hidden = true; }, 2500);
-  });
-
   $('copy-embed')?.addEventListener('click', async () => {
     const panel = $('embed-panel');
     const code = $('embed-code');
@@ -131,11 +111,11 @@ function mount() {
 
   $('clear-mark')?.addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('sky:clear-source-mark'));
-    announce('Marked spots cleared.');
+    announce('Marked source cleared.');
   });
 
   for (const type of ['sky:target-selected', 'sky:viewer-settings-changed', 'sky:search-filters-changed',
-    'sky:source-marked', 'sky:spots-changed', 'sky:frame-shown', 'sky:context-settings-changed']) {
+    'sky:source-marked', 'sky:frame-shown', 'sky:context-settings-changed']) {
     window.addEventListener(type, refresh);
   }
 }

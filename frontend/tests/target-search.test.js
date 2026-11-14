@@ -61,14 +61,11 @@ function mount({ fetchImpl = async () => json(resolved), initial = {}, page = 'v
   const window = element(), dispatch = window.dispatchEvent.bind(window);
   window.dispatchEvent = event => { events.push(event); return dispatch(event); };
   window.self = window.top = window;
-  const document = { getElementById: id => elements.get(id) || null, createElement: () => element(), documentElement: element(), body: element(), querySelectorAll: selector => selector === '[data-target]' ? targets : [] };
-  // The homepage fades its panel before navigating; run that delay at once here.
-  const departures = [];
-  const timeout = page === 'home' ? (fn, delay) => { departures.push(delay); fn(); return departures.length; } : setTimeout;
+  const document = { getElementById: id => elements.get(id) || null, createElement: () => element(), documentElement: element(), querySelectorAll: selector => selector === '[data-target]' ? targets : [] };
   const context = {
     ...viewerSettings, mountStarfield: () => {}, document, window, location, readSearchEntry, viewerUrl, legacyViewerDestination, parseCoordinate, formatSexagesimal, presets, objectNames, normalizeName, suggestNames, encodeViewState, linkViewSettings,
     initialViewState: { ...decodeViewState(search).state, ...initial }, isEmbedded: false, initialViewIssues: [],
-    AbortController, URLSearchParams, URL, clearInterval, setInterval, setTimeout: timeout, clearTimeout, Event,
+    AbortController, URLSearchParams, URL, clearInterval, setInterval, setTimeout, clearTimeout, Event,
     Worker: class { postMessage(message) { workerMessages.push(message); } terminate() {} },
     CustomEvent: class { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } },
     FormData: class { constructor(form) { return Object.entries(form.elements).filter(([key]) => key === 'object' || !get('moving-fields').disabled).map(([key, field]) => [key, field.value]); } },
@@ -79,7 +76,7 @@ function mount({ fetchImpl = async () => json(resolved), initial = {}, page = 'v
   runInNewContext(source, context);
   const mode = value => { get('target-type').value = value; get('target-type').dispatchEvent({ type: 'change' }); };
   const selections = () => events.filter(event => event.type === 'sky:target-selected');
-  return { get, mode, form, targets, navigations, requests, selections, events, window, workerMessages, departures, focus: () => focused };
+  return { get, mode, form, targets, navigations, requests, selections, events, window, workerMessages, focus: () => focused };
 }
 
 test('unified entry defaults to names and preserves separate drafts and inactive fieldsets', () => {
@@ -216,8 +213,6 @@ test('shared links restore their exact position and preset identity through the 
 test('homepage name searches navigate without resolving or loading viewer modules', () => {
   const ui = mount({ page: 'home' }); ui.get('lookup-name').value = 'Sirius'; ui.form.requestSubmit();
   assert.equal(ui.navigations.length, 1); assert.equal(ui.requests.length, 0);
-  // The panel fades out before the page changes.
-  assert.deepEqual(ui.departures, [700]);
   const url = new URL(ui.navigations[0], 'http://localhost');
   assert.equal(url.pathname, '/viewer.html'); assert.equal(url.searchParams.get('q'), 'Sirius');
   assert.equal(url.searchParams.get('searchType'), 'object'); assert.equal(url.searchParams.has('ra'), false);
@@ -288,7 +283,21 @@ test('FOV dragging only updates the readout and commits one viewer-settings even
   ui.get('field-of-view').dispatchEvent({ type: 'change' });
   assert.equal(changes().length, 1); assert.equal(changes()[0].detail.fovArcmin, 19);
   ui.get('field-of-view').dispatchEvent({ type: 'change' }); assert.equal(changes().length, 1);
-  ui.get('reset-button').click(); assert.equal(ui.get('field-of-view').value, 16);
+  ui.get('colours').value = 'magma'; ui.get('colours').dispatchEvent({ type: 'change' });
+  ui.get('reset-button').click();
+  assert.equal(ui.get('field-of-view').value, 16);
+  assert.equal(ui.get('colours').value, 'grayscale');
+});
+
+test('every new search starts from the default viewer settings', () => {
+  const ui = mount();
+  for (const [id, value] of [['detector-array', '5'], ['colours', 'magma'], ['view-mode', 'difference']]) {
+    ui.get(id).value = value; ui.get(id).dispatchEvent({ type: 'change' });
+  }
+  ui.get('lookup-name').value = 'Sirius'; ui.form.requestSubmit();
+  assert.equal(ui.get('detector-array').value, '2');
+  assert.equal(ui.get('colours').value, 'grayscale');
+  assert.equal(ui.get('view-mode').value, 'time-lapse');
 });
 
 test('sidebar dropdowns retain detector and view-mode behavior and moving targets never show fixed coordinates', () => {

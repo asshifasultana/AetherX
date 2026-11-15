@@ -14,7 +14,12 @@ export const QUESTS = Object.freeze({
     goal: 'Two photos a year apart are flipping. One star jumped. Click it.',
     story: 'In 1916 E. E. Barnard compared a new photographic plate with one from 1894 and saw a "new" star — then found a matching missing star about 4 arcminutes away on the old plate. One star had moved, about 10.3 arcseconds a year, the fastest of any star in our sky. Older Harvard plates traced it back to 1888.',
     lesson: 'A pair — one star appearing and one vanishing — years apart, then checked on older photos.',
-    setup: { preset: 'barnard', mode: 'blink', followProperMotion: false, compare: 'first-last' },
+    // Held on the star's own position, the answer would sit dead centre every
+    // time, so each game picks one of 16 framings that put it 3′ or 4.5′ off
+    // (the default field is 16′ across). A fixed set, not a free random shift:
+    // crops are cached by their exact centre, so a framing someone has already
+    // played loads from the cache.
+    setup: { preset: 'barnard', mode: 'blink', followProperMotion: false, compare: 'first-last', offCentre: { ringsArcmin: [3, 4.5], directions: 8 } },
     toleranceArcsec: 30
   },
   'be-tombaugh': {
@@ -44,6 +49,21 @@ export const QUESTS = Object.freeze({
 });
 
 export const QUEST_IDS = Object.keys(QUESTS);
+
+/** Every framing a quest may use: evenly spaced directions on each ring, alternate rings turned half a step. */
+export function viewOffsets({ ringsArcmin, directions }) {
+  const round = value => Number(value.toFixed(2)) + 0;
+  return ringsArcmin.flatMap((distance, ring) => Array.from({ length: directions }, (_, step) => {
+    const angle = (step + (ring % 2) / 2) * 2 * Math.PI / directions;
+    return { eastArcmin: round(distance * Math.cos(angle)), northArcmin: round(distance * Math.sin(angle)) };
+  }));
+}
+
+/** One of those framings, picked at random. */
+export function randomViewOffset(setup, random = Math.random) {
+  const offsets = viewOffsets(setup);
+  return offsets[Math.min(offsets.length - 1, Math.floor(random() * offsets.length))];
+}
 
 /** Where Barnard's Star is on two dates (MJD), for checking a click. */
 export function barnardTrack(fromMjd, toMjd) {

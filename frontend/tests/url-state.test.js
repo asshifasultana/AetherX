@@ -36,7 +36,7 @@ test('default values are omitted individually', () => {
 
 test('dates, frame date and target are preserved', () => {
   const state = {
-    ...DEFAULT_VIEW_STATE, raDeg: 76.9567, decDeg: 30.4043,
+    ...DEFAULT_VIEW_STATE, raDeg: 76.956526, decDeg: 30.401438,
     startDate: '2025-06-01', endDate: '2026-01-31', frameDate: '2025-09-14', targetId: 'aurigae'
   };
   const query = encodeViewState(state);

@@ -57,6 +57,25 @@ test('a fixed-sky view holds one position, so the star moves across the frames',
   assert.equal(viewerTarget(preset('aurigae'), false).targetId, 'aurigae');
 });
 
+test('a view offset shifts the fixed-sky centre and nothing else', () => {
+  const offset = { eastArcmin: 3, northArcmin: -2 };
+  const centred = viewerTarget(preset('barnard'), false);
+  const shifted = viewerTarget({ ...preset('barnard'), viewOffset: offset }, false);
+  const moved = arcsec(centred, shifted);
+  assert.ok(Math.abs(moved.east - 180) < 0.1, `east ${moved.east}`);
+  assert.ok(Math.abs(moved.north + 120) < 0.1, `north ${moved.north}`);
+  assert.equal(shifted.fixedSkyFor, 'barnard');
+  assert.equal(shifted.targetId, undefined);
+  assert.equal(shifted.viewOffset, undefined);
+  // Micro-degree values, so the crop requests (and their cache keys) are the same in every browser.
+  assert.equal(shifted.raDeg, Number(shifted.raDeg.toFixed(6)));
+  assert.equal(shifted.decDeg, Number(shifted.decDeg.toFixed(6)));
+  // The search and the proper-motion view still use the preset itself.
+  const tracked = { ...preset('barnard'), viewOffset: offset };
+  assert.ok(presetMotion(tracked));
+  assert.equal(viewerTarget(tracked, true), tracked);
+});
+
 test('archive searches keep the tracked preset id so footprints follow the star', () => {
   const search = validateSearch(new URLSearchParams({ raDeg: presets.wise.raDeg, decDeg: presets.wise.decDeg, targetId: 'wise' }));
   assert.equal(search.targetId, 'wise');

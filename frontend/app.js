@@ -211,7 +211,9 @@ window.addEventListener('sky:agent-navigate', event => {
     objectLookup.invalidate();
     targetSearch.setEntry({ type: 'object', query: target.name });
     window.dispatchEvent(new CustomEvent('sky:search-entry', { detail: { type: 'object', query: target.name } }));
-    selected = detail.preset; position = { raDeg: target.raDeg, decDeg: target.decDeg, frame: 'icrs', targetId: detail.preset };
+    // A game may ask for the fixed-sky view to be framed off the star (presets.js viewerTarget).
+    const offset = detail.viewOffset, shifted = Number.isFinite(offset?.eastArcmin) && Number.isFinite(offset?.northArcmin);
+    selected = detail.preset; position = { raDeg: target.raDeg, decDeg: target.decDeg, frame: 'icrs', targetId: detail.preset, ...(shifted ? { viewOffset: { eastArcmin: offset.eastArcmin, northArcmin: offset.northArcmin } } : {}) };
     updateSelection(); showPosition(target);
   } else if (typeof detail.name === 'string' && detail.name && !Number.isFinite(detail.raDeg)) {
     targetSearch.setEntry({ type: 'object', query: detail.name });

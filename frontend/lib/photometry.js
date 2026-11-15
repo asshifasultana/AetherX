@@ -3,6 +3,11 @@
 // with variance-based errors. Shared by the spectrum explorer and the AI
 // guide's measure_source and get_spectrum tools.
 //
+// The aperture is centred on the sub-pixel position of the source, and pixels
+// its edge crosses count by the fraction inside. SPHEREx stars are barely one
+// pixel wide, so snapping to the nearest pixel would change the measured flux
+// from one exposure to the next.
+//
 // An area spot (radiusArcsec) is measured as one big aperture: the total flux
 // inside the circle above a local background ring 1.5–2× its radius. Masked or
 // off-image pixels inside it are filled with the mean of the usable ones, and
@@ -26,6 +31,21 @@ const pixelAreaSr = matrix => Math.abs(matrix.determinant) * (Math.PI / 180) ** 
 const PIXEL_ARCSEC = 6.15;
 const MAX_CROP_FOV_ARCMIN = 30;
 const MIN_AREA_COVERAGE = 0.6;
+// A point needs most of its aperture; this was "5 of 9 pixels" on a whole-pixel grid.
+const MIN_POINT_COVERAGE = 5 / 9;
+const EDGE_SAMPLES = 10;
+
+/** Fraction of the pixel at offset (dx, dy) from the centre that lies inside a circle. */
+export function circleOverlap(dx, dy, radius) {
+  const distance = Math.hypot(dx, dy);
+  if (distance <= radius - Math.SQRT1_2) return 1;
+  if (distance >= radius + Math.SQRT1_2) return 0;
+  let inside = 0;
+  for (let j = 0; j < EDGE_SAMPLES; j++) for (let i = 0; i < EDGE_SAMPLES; i++) {
+    if (Math.hypot(dx + (i + 0.5) / EDGE_SAMPLES - 0.5, dy + (j + 0.5) / EDGE_SAMPLES - 0.5) <= radius) inside++;
+  }
+  return inside / EDGE_SAMPLES ** 2;
+}
 
 /** Aperture and background ring in pixels, and the crop size that holds them. */
 export function apertureFor(radiusArcsec) {
@@ -58,32 +78,34 @@ export async function measureAt(observation, position, signal, { wavelength = tr
   if (!/mjy\s*\/\s*sr|mjy\s*sr(?:\^?-1|-1)/i.test(String(image.header.BUNIT || ''))) throw new Error('This product does not report flux in MJy/sr.');
   const pixel = projectSkyToPixel(image, position.raDeg, position.decDeg);
   if (!pixel) throw new Error('The selected sky position is outside this image.');
-  const x = Math.round(pixel[0]), y = Math.round(pixel[1]);
-  const source = [], background = [], beyond = [], variance = [];
-  const reach = Math.ceil(aperture.outer);
-  let inAperture = 0;
-  for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) {
-    const radius = Math.hypot(dx, dy);
-    if (radius > reach) continue;
-    if (radius <= aperture.radius) inAperture++;
-    const px = x + dx, py = y + dy;
+  const [cx, cy] = pixel, x = Math.round(cx), y = Math.round(cy);
+  // An area keeps whole pixels (its edge is a small part of it); a point is
+  // small enough that the pixels on its edge must count by their share.
+  const share = aperture.area ? (dx, dy) => Number(Math.hypot(dx, dy) <= aperture.radius) : (dx, dy) => circleOverlap(dx, dy, aperture.radius);
+  const source = [], background = [], beyond = [];
+  const limit = Math.ceil(aperture.outer), reach = limit + 1;
+  let apertureWeight = 0, usedWeight = 0;
+  for (let py = y - reach; py <= y + reach; py++) for (let px = x - reach; px <= x + reach; px++) {
+    const dx = px - cx, dy = py - cy, radius = Math.hypot(dx, dy);
+    const weight = share(dx, dy);
+    apertureWeight += weight;
     if (px < 0 || py < 0 || px >= image.width || py >= image.height) continue;
     const index = py * image.width + px, value = image.values[index], v = image.variance[index];
     if (!Number.isFinite(value) || (image.flags[index] & DEFAULT_MASK_BITS) !== 0) continue;
-    if (radius <= aperture.radius) { if (Number.isFinite(v) && v >= 0) { source.push(value); variance.push(v); } }
+    if (weight > 0) { if (Number.isFinite(v) && v >= 0) { source.push({ value, variance: v, weight }); usedWeight += weight; } }
     else if (radius >= aperture.inner && radius <= aperture.outer) background.push(value);
-    else if (aperture.area && radius > aperture.radius + 2) beyond.push(value);
+    else if (aperture.area && radius > aperture.radius + 2 && radius <= limit) beyond.push(value);
   }
   // A large area's ring can run off the crop; then any sky clear of the area is used.
   const sample = background.length >= 12 || !aperture.area ? background : beyond;
-  if (source.length < 5 || sample.length < 12) throw new Error('Too few unflagged pixels around the target for a stable quick-look measurement.');
-  const coverage = source.length / inAperture;
+  const coverage = apertureWeight > 0 ? usedWeight / apertureWeight : 0;
+  if ((!aperture.area && coverage < MIN_POINT_COVERAGE) || sample.length < 12) throw new Error('Too few unflagged pixels around the target for a stable quick-look measurement.');
   if (aperture.area && coverage < MIN_AREA_COVERAGE) throw new Error(`Only ${Math.round(coverage * 100)}% of the area has usable pixels in this exposure.`);
-  const fill = aperture.area ? inAperture / source.length : 1;
+  const fill = aperture.area ? apertureWeight / usedWeight : 1;
   const sky = median(sample.slice()), scatter = 1.4826 * median(sample.map(value => Math.abs(value - sky)));
-  const area = pixelAreaSr(image.matrix), sourceSum = fill * source.reduce((sum, value) => sum + value - sky, 0);
-  const counted = aperture.area ? inAperture : source.length;
-  const varianceSum = fill ** 2 * variance.reduce((sum, value) => sum + value, 0) + counted ** 2 * (scatter ** 2 / sample.length);
+  const area = pixelAreaSr(image.matrix), sourceSum = fill * source.reduce((sum, item) => sum + item.weight * (item.value - sky), 0);
+  const counted = aperture.area ? apertureWeight : usedWeight;
+  const varianceSum = fill ** 2 * source.reduce((sum, item) => sum + item.weight ** 2 * item.variance, 0) + counted ** 2 * (scatter ** 2 / sample.length);
   const scale = 1e12 * area; // MJy/sr × pixel solid angle → μJy.
   let wavelengthUm = null;
   if (wavelength) {

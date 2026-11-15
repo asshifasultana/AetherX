@@ -5,7 +5,9 @@ export const presets = {
   epsilon: { name: 'Epsilon Indi B', type: 'BROWN-DWARF SYSTEM · INDUS', description: 'Two faint companions. Background stars hold still so you can watch them move across the dates.', raDeg: 331.0441, decDeg: -56.7828 },
   // The challenge's discovery-epoch coordinates; cutouts follow proper motion.
   wise: { name: 'WISE 0855', type: 'SUBSTELLAR OBJECT · HYDRA', description: 'A cold, fast-moving neighbor. Background stars hold still so you can watch it move across the dates.', raDeg: 133.79512916666666, decDeg: -7.245147222222222 },
-  aurigae: { name: 'RW Aurigae', type: 'YOUNG STELLAR SYSTEM · AURIGA', description: 'A young stellar system with a changing story. A place to look for the unexpected.', raDeg: 76.9567, decDeg: 30.4043 },
+  // SIMBAD ICRS position of RW Aur (05 07 49.566 +30 24 05.18). The earlier
+  // 30.4043 was 10″ north of the star, outside the quick-look spectrum aperture.
+  aurigae: { name: 'RW Aurigae', type: 'YOUNG STELLAR SYSTEM · AURIGA', description: 'A young stellar system with a changing story. A place to look for the unexpected.', raDeg: 76.956526, decDeg: 30.401438 },
   draconis: { name: 'R Draconis', type: 'VARIABLE STAR · DRACO', description: 'Follow the rhythm of a variable star and imagine the stories hidden between observations.', raDeg: 248.1676, decDeg: 66.7550 }
 };
 
@@ -45,12 +47,20 @@ export function motionPosition(motion, mjd) {
 // The viewer's target. When proper motion is followed, the preset is returned
 // unchanged and each exposure is centred on the star. Otherwise a fixed sky
 // position (no targetId) is returned so background stars stay still and the
-// star itself visibly moves.
+// star itself visibly moves. An optional viewOffset ({ eastArcmin, northArcmin })
+// shifts that fixed centre, so a game can frame the star away from the middle.
 export function viewerTarget(position, followMotion = true) {
   const motion = presetMotion(position);
   if (followMotion || !motion) return position;
-  const { targetId, ...rest } = position;
-  return { ...rest, ...motionPosition(motion, FIXED_SKY_MJD), fixedSkyFor: targetId };
+  const { targetId, viewOffset, ...rest } = position;
+  const center = motionPosition(motion, FIXED_SKY_MJD);
+  if (Number.isFinite(viewOffset?.eastArcmin) && Number.isFinite(viewOffset?.northArcmin)) {
+    // Rounded to a micro-degree so every browser asks for the same (cacheable) crops.
+    const micro = value => Number(value.toFixed(6));
+    center.decDeg = micro(center.decDeg + viewOffset.northArcmin / 60);
+    center.raDeg = micro((center.raDeg + viewOffset.eastArcmin / 60 / Math.cos(center.decDeg * Math.PI / 180) + 360) % 360);
+  }
+  return { ...rest, ...center, fixedSkyFor: targetId };
 }
 
 export function exposureMidpointMjd(observation) {

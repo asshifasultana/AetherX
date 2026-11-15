@@ -7,7 +7,7 @@ import { parallaxShift, equatorialToEcliptic, eclipticToEquatorial, solarElongat
 import { createCase, applyEvidence, verdict, summarize, createCaseBook } from '../lib/case-file.js';
 import { checkReply, stripProblems, forbiddenClaims, correctionPrompt, leakedToolNames, plainToolNames, asksPermission } from '../lib/agent-guard.js';
 import { spectralHints } from '../lib/spectral-hints.js';
-import { QUESTS, checkQuestAnswer, barnardTrack, distanceToTrackArcsec } from '../lib/quests.js';
+import { QUESTS, checkQuestAnswer, barnardTrack, distanceToTrackArcsec, randomViewOffset, viewOffsets } from '../lib/quests.js';
 import { TOURS } from '../lib/tours.js';
 import { fastStarPasses, compassDirection, yearOf } from '../lib/proper-motion.js';
 import { propagateGaia } from '../gaia-core.js';
@@ -216,6 +216,25 @@ test('quests: a click on Barnard’s Star track is correct, a far click is not',
   assert.equal(wrong.correct, false);
   assert.ok(!wrong.story, 'the story is kept until the answer is found');
   assert.deepEqual(Object.keys(QUESTS).sort(), ['be-barnard', 'be-leverrier', 'be-tombaugh', 'hidden-planet']);
+});
+
+test('quests: Be Barnard frames the star off-centre but inside the default field', () => {
+  const setup = QUESTS['be-barnard'].setup.offCentre;
+  const offsets = viewOffsets(setup);
+  // A fixed, repeatable set of framings, so their image crops can be cached.
+  assert.equal(offsets.length, 16);
+  assert.deepEqual(viewOffsets(setup), offsets);
+  assert.equal(new Set(offsets.map(offset => `${offset.eastArcmin},${offset.northArcmin}`)).size, 16, 'all different');
+  for (const offset of offsets) {
+    const distance = Math.hypot(offset.eastArcmin, offset.northArcmin);
+    assert.ok(distance >= 2.5 && distance <= 5, `clear of the centre, well inside a 16′ field (${distance})`);
+  }
+  assert.deepEqual(offsets[0], { eastArcmin: 3, northArcmin: 0 });
+  assert.deepEqual(offsets[2], { eastArcmin: 0, northArcmin: 3 });
+  // Every framing can be drawn, and the ends of the random range stay in the list.
+  assert.deepEqual(Array.from({ length: 16 }, (_, i) => randomViewOffset(setup, () => (i + 0.5) / 16)), offsets);
+  assert.deepEqual(randomViewOffset(setup, () => 0), offsets[0]);
+  assert.deepEqual(randomViewOffset(setup, () => 0.999999), offsets[15]);
 });
 
 test('tour steps only use real tools with valid arguments', () => {

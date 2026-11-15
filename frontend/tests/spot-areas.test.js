@@ -60,7 +60,7 @@ test('the guide can mark areas and resize spots within limits', () => {
   assert.equal(validateToolCall('resize_spot', { spot: 12, radius_arcsec: 60 }).ok, false);
 });
 
-import { measureAt, apertureFor } from '../lib/photometry.js';
+import { measureAt, apertureFor, circleOverlap } from '../lib/photometry.js';
 import { encodeCrop } from '../api/crop.js';
 import { DEFAULT_MASK_BITS } from '../lib/pixel-quality.js';
 import { createCase, applyEvidence, summarize, createCaseBook } from '../lib/case-file.js';
@@ -108,6 +108,48 @@ test('masked pixels inside an area are filled, and a mostly masked area is refus
   assert.ok(holed.areaCoverage < 1 && holed.areaCoverage > 0.75);
   assert.ok(Math.abs(holed.fluxMicroJy / full.fluxMicroJy - 1) < 1e-6);
   await assert.rejects(measureAt(observation, position, null, { wavelength: false, radiusArcsec: 61.5, fetchImpl: serve(discCrop({ maskEvery: 1 }).image) }), /Too few|usable pixels/);
+});
+
+// A star about one pixel wide (σ 0.55 px, total 100 MJy/sr·px) on a flat sky,
+// with the measured sky position falling (fx, fy) pixels off a pixel centre.
+function starCrop(fx, fy) {
+  const size = 41, center = 20, sigma = 0.55, steps = 9;
+  const values = new Float32Array(size * size).fill(1), flags = new Uint32Array(size * size), variance = new Float32Array(size * size).fill(1e-4);
+  for (let y = center - 6; y <= center + 6; y++) for (let x = center - 6; x <= center + 6; x++) {
+    let sum = 0;
+    for (let j = 0; j < steps; j++) for (let i = 0; i < steps; i++) {
+      const dx = x + (i + 0.5) / steps - 0.5 - (center + fx), dy = y + (j + 0.5) / steps - 0.5 - (center + fy);
+      sum += Math.exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
+    }
+    values[y * size + x] += 100 * sum / steps ** 2 / (2 * Math.PI * sigma * sigma);
+  }
+  const header = { CTYPE1: 'RA---TAN', CTYPE2: 'DEC--TAN', CRVAL1: 10, CRVAL2: 5, CRPIX1: center + 1 + fx, CRPIX2: center + 1 + fy, CD1_1: -6.15 / 3600, CD1_2: 0, CD2_1: 0, CD2_2: 6.15 / 3600, BUNIT: 'MJy/sr' };
+  return { values, flags, variance, width: size, height: size, header, sourceX: 0, sourceY: 0 };
+}
+
+test('the aperture edge counts pixels by the fraction inside the circle', () => {
+  assert.equal(circleOverlap(0, 0, 1.5), 1);
+  assert.equal(circleOverlap(3, 0, 1.5), 0);
+  const corner = circleOverlap(1, 1, 1.5);
+  assert.ok(corner > 0.4 && corner < 0.7, `corner pixel ${corner}`);
+  // The shares of every pixel add up to the area of the circle.
+  let area = 0;
+  for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) area += circleOverlap(dx + 0.3, dy - 0.4, 1.5);
+  assert.ok(Math.abs(area / (Math.PI * 1.5 ** 2) - 1) < 0.02, `area ${area}`);
+});
+
+test('a point is measured where the source is, not at the nearest pixel centre', async () => {
+  const fluxes = [];
+  for (const [fx, fy] of [[0, 0], [0.25, 0], [0.49, 0], [0.49, 0.49], [0.3, -0.4], [-0.2, 0.45]]) {
+    fluxes.push((await measureAt(observation, position, null, { wavelength: false, fetchImpl: serve(starCrop(fx, fy)) })).fluxMicroJy);
+  }
+  const mean = fluxes.reduce((sum, value) => sum + value, 0) / fluxes.length;
+  // The same star reads the same wherever it falls on the pixel grid; snapping
+  // the aperture to a whole pixel spreads these by more than 5%.
+  assert.ok((Math.max(...fluxes) - Math.min(...fluxes)) / mean < 0.03, fluxes.join(', '));
+  // A 1.5-pixel circle holds about 91% of this star.
+  const total = 100 * 1e12 * (6.15 / 3600 * Math.PI / 180) ** 2;
+  assert.ok(mean / total > 0.88 && mean / total < 0.95, `${mean / total}`);
 });
 
 test('an area case file lists what is inside and never rules suspects', () => {

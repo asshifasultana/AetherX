@@ -13,7 +13,7 @@ import { chooseEpochPair, WAVELENGTH_WARN_UM } from './lib/epochs.js';
 import { locateTarget } from './lib/target-locate.js';
 import { propagateGaia } from './gaia-core.js';
 import { spectralHints } from './lib/spectral-hints.js';
-import { QUESTS, NORTH_ECLIPTIC_POLE, barnardTrack, checkQuestAnswer } from './lib/quests.js';
+import { QUESTS, NORTH_ECLIPTIC_POLE, barnardTrack, checkQuestAnswer, randomViewOffset } from './lib/quests.js';
 import { TOURS } from './lib/tours.js';
 import { submitRecovery } from './lib/planetx-votes.js';
 import { shareUrl } from './share.js';
@@ -616,7 +616,7 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
     const setup = definition.setup;
     quest = { id, misses: 0, expected: null };
     if (setup.preset) {
-      const moved = await base.go_to_target({ preset: setup.preset }, { signal });
+      const moved = await base.go_to_target({ preset: setup.preset, ...(setup.offCentre ? { viewOffset: randomViewOffset(setup.offCentre) } : {}) }, { signal });
       if (moved.ok === false) return moved;
     } else if (Number.isFinite(setup.raDeg)) {
       const moved = await base.go_to_target({ raDeg: setup.raDeg, decDeg: setup.decDeg, name: setup.name }, { signal });

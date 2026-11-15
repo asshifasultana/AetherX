@@ -17,8 +17,7 @@ const planetxSteps = [
   { open: '#planetx-lab', tab: '#lab-tab-plant', target: ['.lab-sliders', '#planetx-lab > summary'], title: 'Set distance and brightness', copy: 'Slide how far away and how bright the fake planet is. The shaded band marks Planet Nine models; the tick marks this image’s limit.' },
   { open: '#planetx-lab', tab: '#lab-tab-plant', target: ['.lab-canvas-wrap', '#planetx-lab > summary'], title: 'Watch it blink', copy: 'The planet is drawn into two real SPHEREx photos taken days apart. Watch it hop between them and fade into the noise.' },
   { open: '#planetx-lab', tab: '#lab-tab-plant', target: ['.lab-readout', '#planetx-lab > summary'], title: 'Read the verdict', copy: 'See its signal, whether it would be detected and this image’s 5σ limit. Plant a model Planet Nine to see why it is likely past SPHEREx’s reach.' },
-  { open: '#planetx-lab', tab: '#lab-tab-plant', target: ['#lab-hide', '.lab-stage-tools', '#planetx-lab > summary'], title: 'Play hide and seek', copy: 'Hide it from me hides the planet so you can hunt for it. Your rounds count towards How deep can we see?' },
-  { target: '#planetx-evidence > summary', title: 'Weigh the evidence', copy: 'Read why some astronomers propose a ninth planet and what observations challenge the idea.' }
+  { open: '#planetx-lab', tab: '#lab-tab-plant', target: ['#lab-hide', '.lab-stage-tools', '#planetx-lab > summary'], title: 'Play hide and seek', copy: 'Hide it from me hides the planet so you can hunt for it. Your rounds count towards How deep can we see?' }
 ];
 
 function viewerSteps(moving) {
@@ -233,7 +232,8 @@ export function mountOnboarding() {
     steps.forEach(step => { for (const selector of [].concat(step.target || [])) { const target = document.querySelector(selector); if (target) resizeObserver.observe(target); } });
     render(); root.querySelector('#tour-next').focus({ preventScroll: true });
   }
-  document.getElementById('tour-restart')?.addEventListener('click', () => open(0));
+  // The header's How it works button, plus any in-page shortcut to the same tour.
+  for (const button of document.querySelectorAll('#tour-restart, [data-tour-restart]')) button.addEventListener('click', () => open(0));
   // First visit runs the search half on the home page, then hands off to the
   // real viewer. Viewer help stays available from its own button afterwards.
   if (planetx) {

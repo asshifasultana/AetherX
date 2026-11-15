@@ -53,22 +53,25 @@ export function createSearchStore({ url, key, fetchImpl = fetch, now = () => Dat
       } catch { return null; }
     },
     // `used: false` (refresh job) leaves last_used_at alone so unused rows still age out.
-    async put(kind, cacheKey, params, result, { used = true } = {}) {
+    // `lastUsedAt` sets it explicitly, for a row the job moves to a new key.
+    async put(kind, cacheKey, params, result, { used = true, lastUsedAt } = {}) {
       try {
         const at = iso(now());
+        const lastUsed = lastUsedAt ? { last_used_at: iso(Date.parse(lastUsedAt)) } : used ? { last_used_at: at } : {};
         await call('?on_conflict=key', {
           method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal', timeoutMs: writeTimeoutMs,
-          body: { key: cacheRowKey(kind, cacheKey), kind, params, result, saved_at: at, checked_at: at, ...(used ? { last_used_at: at } : {}) }
+          body: { key: cacheRowKey(kind, cacheKey), kind, params, result, saved_at: at, checked_at: at, ...lastUsed }
         });
         return true;
       } catch { return false; }
     },
     // Refresh-job operations throw, so the job can report what failed.
     async listForRefresh({ usedSince, limit = 60 }) {
-      const response = await call(`?select=key,kind,params,result,checked_at&last_used_at=gte.${encodeURIComponent(iso(usedSince))}&order=checked_at.asc&limit=${limit}`, { timeoutMs: jobTimeoutMs });
+      const response = await call(`?select=key,kind,params,result,checked_at,last_used_at&last_used_at=gte.${encodeURIComponent(iso(usedSince))}&order=checked_at.asc&limit=${limit}`, { timeoutMs: jobTimeoutMs });
       return response.json();
     },
     markChecked: rowKey => patch(rowKey, { checked_at: iso(now()) }, jobTimeoutMs),
+    remove: rowKey => call(`?key=eq.${rowKey}`, { method: 'DELETE', prefer: 'return=minimal', timeoutMs: jobTimeoutMs }),
     deleteUnused: before => call(`?last_used_at=lt.${encodeURIComponent(iso(before))}`, { method: 'DELETE', prefer: 'return=minimal', timeoutMs: jobTimeoutMs })
   };
 }

@@ -74,7 +74,7 @@ Live searches (proper-motion stars such as Barnard's Star, custom positions, com
 
 2. Set `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` (the project's secret or `service_role` key) on Railway, on Vercel, and as GitHub Actions secrets. The key stays on the server; with RLS on and no policies, nothing else can read the table.
 
-Saved results are fresh for 36 hours when the search covers the last 30 days (or has no end date), and for 7 days otherwise. If IRSA, MOST or JPL Horizons is down, results up to 7 days past that are served with a warning. The daily update workflow runs `npm run refresh:cache`, which re-runs recent-range searches, re-runs comet searches only when JPL's orbit solution changed, and deletes rows unused for 7 days. Any Supabase failure is treated as a cache miss; without the variables the cache is off.
+Saved results are fresh for 36 hours when the search covers the last 30 days (or has no end date), and for 7 days otherwise. If IRSA, MOST or JPL Horizons is down, results up to 7 days past that are served with a warning. The daily update workflow runs `npm run refresh:cache`, which re-runs recent-range searches, re-runs comet searches only when JPL's orbit solution changed, moves searches saved under an older SPHEREx collection list (for example before DR1) to the current list, and deletes rows unused for 7 days. Any Supabase failure is treated as a cache miss; without the variables the cache is off.
 
 ## Object-name lookup
 

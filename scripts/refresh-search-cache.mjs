@@ -21,15 +21,17 @@ export async function refreshSearchCache({
   collections = COLLECTIONS
 }) {
   // Searches key on the collection list. Rows saved under an older list (QR2,
-  // before DR1) are never read again, so let them age out instead of refreshing.
+  // before DR1) are never read again, so the job re-runs them under the current
+  // list (a new row, keeping the visitor's last-used time) and deletes the old one.
   const current = JSON.stringify([...collections].sort());
   const isCurrent = row => JSON.stringify([...(row.params?.collections || [])].sort()) === current;
-  const counts = { checked: 0, refreshed: 0, unchanged: 0, skipped: 0, failed: 0 };
+  const counts = { checked: 0, refreshed: 0, migrated: 0, unchanged: 0, skipped: 0, failed: 0 };
   // Writes from the job keep last_used_at as is, so unused rows still age out.
-  const writer = {
+  const writerFor = options => ({
     get: async () => null,
-    async put(kind, key, params, result) { if (!await store.put(kind, key, params, result, { used: false })) throw new Error('Could not save the refreshed result to Supabase.'); }
-  };
+    async put(kind, key, params, result) { if (!await store.put(kind, key, params, result, options)) throw new Error('Could not save the refreshed result to Supabase.'); }
+  });
+  const writer = writerFor({ used: false });
   const lookup = movingFactory({ store: null, resources: createSearchResources() });
   const solutions = new Map();
   const currentSolution = async object => {
@@ -41,11 +43,21 @@ export async function refreshSearchCache({
     counts.checked++;
     try {
       const query = new URLSearchParams(row.params?.query || '');
-      if (query.has('cursor')) { counts.skipped++; continue; }
+      const outdated = row.kind === 'observations' && !isCurrent(row);
+      if (query.has('cursor')) {
+        // A later page under an old collection list can never be read; drop it.
+        if (outdated) await store.remove(row.key);
+        counts.skipped++; continue;
+      }
       let rerun;
-      if (row.kind === 'observations') {
+      if (outdated) {
+        const result = await observationsFactory({ collections, store: writerFor({ lastUsedAt: row.last_used_at }), resources: createSearchResources() })(query);
+        if (result?.trajectoryError) throw new Error(result.trajectoryError);
+        await store.remove(row.key);
+        counts.migrated++; continue;
+      } else if (row.kind === 'observations') {
         // Old fixed ranges are not re-run; they expire and refill on the next search.
-        if (!isRecentRange(query.get('endDate'), now) || !isCurrent(row)) { counts.skipped++; continue; }
+        if (!isRecentRange(query.get('endDate'), now)) { counts.skipped++; continue; }
         rerun = () => observationsFactory({ collections: row.params.collections, store: writer, resources: createSearchResources() })(query);
       } else if (row.kind === 'moving') {
         rerun = () => movingFactory({ store: writer, resources: createSearchResources() })(query);
@@ -66,7 +78,7 @@ export async function refreshSearchCache({
     }
   }
   await store.deleteUnused(now - 7 * DAY);
-  log(`Search cache: ${counts.checked} checked, ${counts.refreshed} refreshed, ${counts.unchanged} unchanged, ${counts.skipped} skipped, ${counts.failed} failed.`);
+  log(`Search cache: ${counts.checked} checked, ${counts.refreshed} refreshed, ${counts.migrated} moved to current collections, ${counts.unchanged} unchanged, ${counts.skipped} skipped, ${counts.failed} failed.`);
   return counts;
 }
 

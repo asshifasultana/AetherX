@@ -174,14 +174,15 @@ test('the daily job re-runs only what can have changed and removes unused rows',
   seed('comet-revised', 'moving', { object: 'C/2024 X', endDate: '2025-08-11' }, { solution: 'JPL#1' }, { extra: { object: 'C/2024 X' } });
   seed('comet-recent', 'moving', { object: '3I', endDate: '2026-11-01' }, { solution: 'JPL#55' }, { extra: { object: '3I' } });
   seed('forgotten', 'observations', { raDeg: '5', decDeg: '5' }, {}, { used: now - 10 * DAY });
-  // Saved before DR1: no search reads this key any more, so it is left to age out.
-  seed('star-qr2-era', 'observations', { raDeg: '3', decDeg: '4' }, {}, { extra: { collections: ['spherex_qr2', 'spherex_qr3'] } });
+  // Saved before DR1: no search reads these keys any more, so they move to the current list.
+  seed('star-qr2-era', 'observations', { raDeg: '3', decDeg: '4' }, {}, { used: now - 2 * DAY, extra: { collections: ['spherex_qr2', 'spherex_qr3'] } });
+  seed('star-qr2-page-2', 'observations', { raDeg: '3', decDeg: '4', cursor: 'abc' }, {}, { extra: { collections: ['spherex_qr2', 'spherex_qr3'] } });
 
   const reruns = [];
-  const observationsFactory = ({ store: writer }) => async query => {
+  const observationsFactory = ({ store: writer, collections }) => async query => {
     if (query.get('raDeg') === '9') throw new Error('IRSA timed out');
-    reruns.push('star ' + query.get('endDate'));
-    await writer.put('observations', [query.toString()], {}, { refreshed: true });
+    reruns.push('star ' + query.get('raDeg') + ' ' + query.get('endDate') + ' ' + collections.join(','));
+    await writer.put('observations', [query.toString()], {}, { refreshed: true, raDeg: query.get('raDeg') });
     return {};
   };
   const movingFactory = ({ store: writer }) => async query => {
@@ -193,14 +194,19 @@ test('the daily job re-runs only what can have changed and removes unused rows',
   const logs = [];
   const counts = await refreshSearchCache({ store, now, observationsFactory, movingFactory, collections: ['spherex_dr1', 'spherex_qr3'], log: message => logs.push(message) });
 
-  assert.deepEqual(counts, { checked: 8, refreshed: 3, unchanged: 1, skipped: 3, failed: 1 });
-  assert.equal(supabase.rows.get('star-qr2-era').checked_at, iso(now - 3 * DAY));
-  assert.deepEqual(reruns.sort(), ['comet 3I 2026-11-01', 'comet C/2024 X 2025-08-11', 'star null']);
+  assert.deepEqual(counts, { checked: 9, refreshed: 3, migrated: 1, unchanged: 1, skipped: 3, failed: 1 });
+  assert.deepEqual(reruns.sort(), ['comet 3I 2026-11-01', 'comet C/2024 X 2025-08-11', 'star 1 null spherex_qr3,spherex_dr1', 'star 3 null spherex_dr1,spherex_qr3']);
   assert.equal(supabase.rows.get('comet-same').checked_at, iso(now));
   assert.equal(supabase.rows.get('star-old').checked_at, iso(now - 3 * DAY));
   assert.equal(supabase.rows.has('forgotten'), false);
+  // Old-collection rows are replaced: the re-run is saved and the unreadable rows deleted.
+  assert.equal(supabase.rows.has('star-qr2-era'), false);
+  assert.equal(supabase.rows.has('star-qr2-page-2'), false);
+  const migrated = [...supabase.rows.values()].find(row => row.result.raDeg === '3');
+  assert.equal(migrated.last_used_at, iso(now - 2 * DAY));
   // Refresh writes keep the visitor-driven last-used time.
-  for (const row of supabase.rows.values()) if (row.result.refreshed) assert.equal(row.last_used_at, iso(now));
+  const refreshed = [...supabase.rows.values()].filter(row => row.result.refreshed && row !== migrated);
+  for (const row of refreshed) assert.equal(row.last_used_at, iso(now));
   assert.ok(logs.some(message => message.includes('IRSA timed out')));
 });
 

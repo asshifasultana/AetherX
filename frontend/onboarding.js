@@ -141,15 +141,17 @@ export function mountOnboarding() {
       hole.setAttribute('height', Math.max(0, Math.min(height - 8, rect.height + padding * 2)));
     }
     if (!rect) { hole.setAttribute('width', 0); hole.setAttribute('height', 0); }
-    const bounds = card.getBoundingClientRect();
     const below = (rect?.bottom ?? height / 3) + 24;
+    const belowHeader = rect && target.closest('.viewer-header') && below < height - 16;
+    card.style.maxHeight = belowHeader ? `${height - below - 16}px` : '';
+    const bounds = card.getBoundingClientRect();
     const above = (rect?.top ?? height / 2) - bounds.height - 24;
     // When the card fits neither fully below nor above, lean towards the side
     // with more room (clamped below) rather than centring it over the target.
     const roomier = rect && height - rect.bottom > rect.top ? below : above;
-    const top = !rect ? (height - bounds.height) / 2 : below + bounds.height < height - 16 ? below : above >= 16 ? above : roomier;
+    const top = !rect ? (height - bounds.height) / 2 : belowHeader || below + bounds.height < height - 16 ? below : above >= 16 ? above : roomier;
     card.style.top = `${Math.max(16, Math.min(height - bounds.height - 16, top))}px`;
-    const side = rect && rect.left > bounds.width + 40;
+    const side = rect && !belowHeader && rect.left > bounds.width + 40;
     if (side) card.style.top = `${Math.max(16, Math.min(height - bounds.height - 16, rect.top))}px`;
     const left = side ? rect.left - bounds.width - 24 : rect?.left ?? (width - bounds.width) / 2;
     card.style.left = `${Math.max(16, Math.min(width - bounds.width - 16, left))}px`;
@@ -170,13 +172,20 @@ export function mountOnboarding() {
     // The viewer page scrolls now, so bring a target that is below (or above)
     // the fold into view before drawing the spotlight around it.
     const target = stepTarget(step);
+    if (target?.closest('.viewer-header')) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      position();
+      return;
+    }
     const targetRect = target?.getBoundingClientRect();
     const viewHeight = window.innerHeight;
     const outOfView = targetRect && (targetRect.bottom < 80 || targetRect.top > viewHeight - 80);
     // On narrow screens a tall target can be cut off or leave no room for the
     // card above or below it. If the target and card fit on screen together,
     // scroll so they stack (target, then card) instead of covering the target.
-    const cardBox = root.querySelector('.tour-card').getBoundingClientRect();
+    const card = root.querySelector('.tour-card');
+    card.style.maxHeight = '';
+    const cardBox = card.getBoundingClientRect();
     const stack = targetRect ? targetRect.height + cardBox.height + 48 : 0;
     const roomForCard = targetRect && (viewHeight - targetRect.bottom >= cardBox.height + 40
       || targetRect.top >= cardBox.height + 40 || targetRect.left > cardBox.width + 40);

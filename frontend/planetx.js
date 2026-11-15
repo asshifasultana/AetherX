@@ -171,7 +171,6 @@ function selectCell(cell) {
   jumpButton.title = patch
     ? `Open case #${patch.number} at RA ${format(cell.raDeg)}°, Dec ${signedDec(cell.decDeg)} in the SPHEREx viewer`
     : `Open this candidate tile (RA ${format(cell.raDeg)}°, Dec ${signedDec(cell.decDeg)}) in the SPHEREx viewer to inspect and file it`;
-  window.dispatchEvent(new CustomEvent('sky:planetx-region-selected', { detail: { raDeg: cell.raDeg, decDeg: cell.decDeg } }));
   tooltip.hidden = false;
   tooltip.innerHTML = tooltipHtml(cell);
   tooltip.style.left = `${Math.min(82, Math.max(4, 100 * (cell._rect.x + cell._rect.w / 2) / canvas.clientWidth))}%`;

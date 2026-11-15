@@ -10,7 +10,6 @@ const planetxSteps = [
   { target: '#planetx-introduction', title: 'Meet Planet Nine', copy: 'This 30-second video explains the Planet Nine hypothesis with NASA observations. You can play it after the tour.' },
   { target: '.px-map-wrap', title: 'Find a place to look', copy: 'Brighter tiles show where the model gives Planet Nine more relative probability. Select a tile to see its coordinates on the map.' },
   { target: '.px-map-actions', title: 'Explore a coordinate', copy: 'After selecting a tile, use Jump to coordinate or Jump to case to inspect the sky in SPHEREx. Switch to Community evidence to see where others have flagged findings.' },
-  { target: '#planetx-aladin-context > summary', title: 'See the real sky there', copy: 'Open the selected tile in Aladin Lite to zoom around real survey images of that patch. It shows context, not a detection.' },
   { target: '.px-case-drawer > summary', title: 'Open a case file', copy: 'Browse the patches highlighted by the model, open a case file, and vote on whether it’s worth following up. The AI can give its own read for you to compare.' },
   // The Lab cards open the Lab and select its Plant a planet tab before pointing at its parts.
   { open: '#planetx-lab', tab: '#lab-tab-plant', target: ['.lab-tabs', '#planetx-lab > summary'], title: 'Try the Planted Planet Lab', copy: 'Four practice tabs: plant a planet, spot a methane dip, see what searches really find, and how deep we can see. We start with Plant a planet.' },

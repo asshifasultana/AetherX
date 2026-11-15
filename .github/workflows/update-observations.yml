@@ -31,6 +31,7 @@ jobs:
         with:
           node-version: '24'
       - name: Run regression tests
+        id: tests
         run: node --test frontend/coordinates.test.js frontend/tests/*.test.js
       - name: Check IRSA for new and revised observations
         run: node scripts/update-observation-index.mjs
@@ -51,6 +52,9 @@ jobs:
           fi
           echo "source_ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Refresh the shared search cache
+        # Independent of the preset index: an IRSA timeout there must not stop cache upkeep
+        # (or the Supabase keep-alive). Failed searches here leave their saved rows in place.
+        if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

@@ -4,7 +4,8 @@
 // links the D1–D6 lanes (rendered by observations-ui.js) to the zoomed strip.
 // Keep AXIS_MIN / AXIS_MAX in sync with the lane maths in observations-ui.js.
 export const AXIS_MIN = 0.38, AXIS_MAX = 5;
-export const DETECTORS = [[0.75, 1.09], [1.10, 1.62], [1.63, 2.41], [2.42, 3.82], [3.83, 4.41], [4.42, 5.00]];
+import { DETECTOR_BANDS } from './lib/detectors.js';
+export const DETECTORS = DETECTOR_BANDS;
 const pct = um => 100 * (um - AXIS_MIN) / (AXIS_MAX - AXIS_MIN);
 const VISIBLE_END = pct(0.75);
 

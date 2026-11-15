@@ -108,6 +108,12 @@ Run the app locally with `npm run dev` from this repository. Cutouts are never s
 
 See [image loading and performance verification](docs/image-loading-performance.md) for worker integration, rollback, and the opt-in live benchmark.
 
+### Across the 102 channels
+
+- **Six detectors · compare colours** puts the deep stacks of D1–D6 side by side on one sky grid. It adds a linked cursor and a false-colour composite of any three detectors. See [six-detector coverage and stacks](docs/six-detector-coverage-and-stacks.md#six-detector-view-and-false-colour-composite).
+- The quick-look spectrum bins measurements into SPHEREx's 102 channels, coloured by detector, and marks the water-ice, 3.3 μm and CO₂ features. It flags likely-saturated points and leaves them out of the channel medians. See [channel spectrum](docs/channel-spectrum.md).
+- **Order › by wavelength** turns the time-lapse into 102 wavelength slices from 0.75 to 5 μm, measured at the field centre. It also adds window stacks and continuum-subtracted line maps. See [wavelength slices and line maps](docs/wavelength-slices.md).
+
 ## Shareable links and the embeddable viewer
 
 Every part of a view that describes *where and when* you are looking can travel in the URL. The address bar is rewritten with `history.replaceState` as you work, so the link is always shareable without a "save" step, and sharing never adds entries the back button has to fight through. A bare page writes no query string until the view actually differs from the default.

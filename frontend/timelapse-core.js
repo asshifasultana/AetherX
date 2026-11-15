@@ -1,6 +1,7 @@
 // Pure helpers for the observation time-lapse. No DOM access here so the
 // frame ordering and date-gap rules can be unit tested in Node.
 import { releaseFromCollection, compareReleases } from './observation-products.js';
+import { channelOf, DETECTOR_CHANNELS, DETECTOR_CHANNEL_EDGES } from './lib/detectors.js';
 
 const DAY_MS = 86400000;
 
@@ -85,11 +86,91 @@ export function frameTime(frame) {
   return Number.isFinite(frame?.frameTime) ? frame.frameTime : observationTime(frame) ?? 0;
 }
 
-// Positions on a time-proportional axis. A long gap therefore produces a long
-// visual gap instead of an equal Index-based step.
+const medianOf = values => {
+  const sorted = [...values].sort((a, b) => a - b), middle = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+};
+
+function wavelengthFrame(group, { detector = null, channel = null, lowUm, highUm, wavelengths }) {
+  group.sort((a, b) => (observationTime(a) ?? 0) - (observationTime(b) ?? 0));
+  const first = group[0], last = group.at(-1);
+  return {
+    ...first,
+    detector: detector ?? first.detector,
+    frameAxis: 'wavelength',
+    frameWavelengthUm: medianOf(group.map(item => wavelengths.get(item.accessUrl))),
+    channel,
+    // The frame's own band, so captions show the slice instead of the detector.
+    wavelengthMinUm: lowUm, wavelengthMaxUm: highUm,
+    frameTime: observationTime(first) ?? 0,
+    observedEndUtc: last.observedEndUtc || last.observedStartUtc,
+    exposureCount: group.length,
+    exposureSeconds: group.reduce((sum, item) => sum + (Number(item.exposureSeconds) || 0), 0),
+    exposures: group,
+    ...summarizeReleases(group)
+  };
+}
+
+/**
+ * Wavelength slices: one frame per SPHEREx channel (6 detectors × 17) that has
+ * exposures, ordered by wavelength. `wavelengths` maps accessUrl to the
+ * wavelength at the target in that exposure, so a slice holds the exposures
+ * that saw the target inside that channel. Each frame stacks like a daily frame.
+ */
+export function buildWavelengthFrames(observations, wavelengths) {
+  const groups = new Map();
+  for (const observation of observations || []) {
+    const um = wavelengths?.get(observation.accessUrl), detector = Number(observation.detector);
+    const channel = channelOf(um, detector);
+    if (channel < 0) continue;
+    const key = detector * 100 + channel;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(observation);
+  }
+  return [...groups.entries()]
+    .map(([key, group]) => {
+      const detector = Math.floor(key / 100), channel = key % 100, edges = DETECTOR_CHANNEL_EDGES[detector - 1];
+      return wavelengthFrame(group, { detector, channel, lowUm: edges[channel], highUm: edges[channel + 1], wavelengths });
+    })
+    .sort((a, b) => a.frameWavelengthUm - b.frameWavelengthUm || a.detector - b.detector);
+}
+
+/**
+ * One frame of every exposure that saw the target between minUm and maxUm.
+ * A window that spans two detectors keeps both (they share the sky grid).
+ */
+export function buildWindowFrame(observations, wavelengths, minUm, maxUm) {
+  const low = Math.min(minUm, maxUm), high = Math.max(minUm, maxUm);
+  const group = (observations || []).filter(observation => {
+    const um = wavelengths?.get(observation.accessUrl);
+    return Number.isFinite(um) && um >= low && um <= high;
+  });
+  if (!group.length) return null;
+  const detectors = [...new Set(group.map(item => Number(item.detector)))].sort((a, b) => a - b);
+  return { ...wavelengthFrame(group, { lowUm: low, highUm: high, wavelengths }), detector: detectors[0], detectors, windowFrame: true };
+}
+
+/** The channel centre nearest a wavelength, as [detector, channel], or null. */
+export function nearestChannel(wavelengthUm) {
+  let best = null, distance = Infinity;
+  DETECTOR_CHANNELS.forEach((centres, index) => centres.forEach((centre, channel) => {
+    const d = Math.abs(centre - wavelengthUm);
+    if (d < distance) { distance = d; best = [index + 1, channel]; }
+  }));
+  return best;
+}
+
+/** Position of a frame on the timeline axis: its wavelength for slices, else its time. */
+export function frameAxisValue(frame) {
+  return Number.isFinite(frame?.frameWavelengthUm) ? frame.frameWavelengthUm : frameTime(frame);
+}
+
+// Positions on a time-proportional axis (or wavelength-proportional for
+// slices). A long gap therefore produces a long visual gap instead of an
+// equal Index-based step.
 export function frameFractions(frames) {
   if (!frames?.length) return [];
-  const times = frames.map(frameTime);
+  const times = frames.map(frameAxisValue);
   const first = times[0], last = times[times.length - 1];
   if (last <= first) return frames.map((_, index) => frames.length === 1 ? 0 : index / (frames.length - 1));
   return times.map(time => (time - first) / (last - first));

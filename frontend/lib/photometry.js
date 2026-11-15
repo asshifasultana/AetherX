@@ -35,6 +35,24 @@ const MIN_AREA_COVERAGE = 0.6;
 const MIN_POINT_COVERAGE = 5 / 9;
 const EDGE_SAMPLES = 10;
 
+// Flags that mark a star too bright for a trustworthy flux. OVERFLOW and
+// NONLINEAR pixels are kept by the default mask (so the star still shows), but a
+// flux summed over them reads low; BLOOM and HALO pixels are masked, so an
+// aperture that loses many of them is missing the star's core.
+const NEAR_SATURATION_BITS = (1 << 1) | (1 << 15);
+const SATURATED_CORE_BITS = (1 << 26) | (1 << 28);
+const OVERFLOW_BIT = 1 << 1, NONLINEAR_BIT = 1 << 15;
+const MAX_LOST_CORE = 0.3;
+
+/**
+ * Whether a quick-look flux is likely affected by saturation: any aperture
+ * pixel near saturation or nonlinear, or more than 30% of the aperture lost to
+ * masked bloom/halo pixels.
+ */
+export function assessSaturation({ overflowPixels = 0, nonlinearPixels = 0, lostCoreFraction = 0 } = {}) {
+  return overflowPixels > 0 || nonlinearPixels > 0 || lostCoreFraction > MAX_LOST_CORE;
+}
+
 /** Fraction of the pixel at offset (dx, dy) from the centre that lies inside a circle. */
 export function circleOverlap(dx, dy, radius) {
   const distance = Math.hypot(dx, dy);
@@ -84,14 +102,19 @@ export async function measureAt(observation, position, signal, { wavelength = tr
   const share = aperture.area ? (dx, dy) => Number(Math.hypot(dx, dy) <= aperture.radius) : (dx, dy) => circleOverlap(dx, dy, aperture.radius);
   const source = [], background = [], beyond = [];
   const limit = Math.ceil(aperture.outer), reach = limit + 1;
-  let apertureWeight = 0, usedWeight = 0;
+  let apertureWeight = 0, usedWeight = 0, overflowPixels = 0, nonlinearPixels = 0, lostCoreWeight = 0;
   for (let py = y - reach; py <= y + reach; py++) for (let px = x - reach; px <= x + reach; px++) {
     const dx = px - cx, dy = py - cy, radius = Math.hypot(dx, dy);
     const weight = share(dx, dy);
     apertureWeight += weight;
     if (px < 0 || py < 0 || px >= image.width || py >= image.height) continue;
-    const index = py * image.width + px, value = image.values[index], v = image.variance[index];
-    if (!Number.isFinite(value) || (image.flags[index] & DEFAULT_MASK_BITS) !== 0) continue;
+    const index = py * image.width + px, value = image.values[index], v = image.variance[index], flags = image.flags[index];
+    if (weight > 0 && (flags & NEAR_SATURATION_BITS)) {
+      if (flags & OVERFLOW_BIT) overflowPixels++;
+      if (flags & NONLINEAR_BIT) nonlinearPixels++;
+    }
+    if (weight > 0 && (flags & SATURATED_CORE_BITS) && (flags & DEFAULT_MASK_BITS)) lostCoreWeight += weight;
+    if (!Number.isFinite(value) || (flags & DEFAULT_MASK_BITS) !== 0) continue;
     if (weight > 0) { if (Number.isFinite(v) && v >= 0) { source.push({ value, variance: v, weight }); usedWeight += weight; } }
     else if (radius >= aperture.inner && radius <= aperture.outer) background.push(value);
     else if (aperture.area && radius > aperture.radius + 2 && radius <= limit) beyond.push(value);
@@ -113,7 +136,9 @@ export async function measureAt(observation, position, signal, { wavelength = tr
     if (!finite(wavelengthUm) || wavelengthUm <= 0) throw new Error('Wavelength calibration is unavailable at the selected position.');
   }
   const fluxMicroJy = sourceSum * scale, errorMicroJy = Math.sqrt(varianceSum) * scale;
+  const saturation = { overflowPixels, nonlinearPixels, lostCoreFraction: apertureWeight > 0 ? lostCoreWeight / apertureWeight : 0 };
   return {
+    saturation, likelySaturated: assessSaturation(saturation),
     wavelengthUm, fluxMicroJy, errorMicroJy, snr: errorMicroJy > 0 ? fluxMicroJy / errorMicroJy : 0,
     time: Date.parse(observation.observedStartUtc || '') || 0,
     observation, detector: Number(observation.detector), pixelsUsed: source.length,

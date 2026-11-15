@@ -167,3 +167,25 @@ test('loader progress sweeps to 90 quickly, slows below 100, and resets for a ne
   ui.emit('sky:deep-stack-error');
   assert.equal(ui.loader.ready, 2);
 });
+
+test('wavelength order rebuilds slices across detectors and a band sync does not undo it', async () => {
+  const ui = mount();
+  const items = [
+    { observationId: 'a', detector: 2, observedStartUtc: '2026-01-01T00:00:00Z', accessUrl: 'https://example.org/a.fits' },
+    { observationId: 'b', detector: 4, observedStartUtc: '2026-01-02T00:00:00Z', accessUrl: 'https://example.org/b.fits' },
+    { observationId: 'c', detector: 4, observedStartUtc: '2026-01-03T00:00:00Z', accessUrl: 'https://example.org/c.fits' }
+  ];
+  ui.load(items); await flush();
+  assert.ok(ui.state.frames.every(frame => !Number.isFinite(frame.frameWavelengthUm)));
+  const wavelengths = new Map([['https://example.org/a.fits', 1.2], ['https://example.org/b.fits', 3.3], ['https://example.org/c.fits', 3.301]]);
+  ui.emit('sky:timeline-axis-changed', { axis: 'wavelength', wavelengths }); await flush();
+  assert.equal(ui.state.axis, 'wavelength');
+  assert.deepEqual(ui.state.frames.map(frame => [frame.detector, frame.exposureCount]), [[2, 1], [4, 2]]);
+  assert.match(ui.get('timeline-gap-note').textContent, /WAVELENGTH/);
+  assert.equal(ui.get('timeline-start').textContent, '1.20 μm');
+  ui.emit('sky:viewer-settings-changed', { band: 4, source: 'cutout' }); await flush();
+  assert.equal(ui.state.frames.length, 2);
+  ui.emit('sky:timeline-axis-changed', { axis: 'date' }); await flush();
+  assert.equal(ui.state.axis, 'date');
+  assert.ok(ui.state.frames.every(frame => !Number.isFinite(frame.frameWavelengthUm)));
+});

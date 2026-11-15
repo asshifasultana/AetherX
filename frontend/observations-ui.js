@@ -118,6 +118,10 @@ async function search() {
 }
 $('observation-search-form').addEventListener('submit', event => { event.preventDefault(); search(); });
 $('retry-observations').addEventListener('click', () => search());
+$('compare-six-detectors')?.addEventListener('click', () => {
+  emit('sky:six-detector-requested', {});
+  document.getElementById('explorer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 // A shared link can carry a date range. Seed the inputs before the restored
 // target triggers its first search, then publish later edits to the link state.
 if (initialViewState.startDate) $('search-start').value = initialViewState.startDate;
@@ -235,6 +239,8 @@ function renderResults() {
     }
     $('detector-summary').append(card);
   }
+  const compare = $('compare-six-detectors');
+  if (compare) compare.hidden = coverage.filter(band => band.count).length < 2;
   $('results-warnings').replaceChildren();
   const actionable = (result.warnings || []).filter(text => text.startsWith('More archive products are available') || text.startsWith('IRSA was unavailable'));
   for (const warning of actionable) $('results-warnings').append(make('p', warning));

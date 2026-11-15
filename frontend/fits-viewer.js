@@ -73,6 +73,9 @@ const COMPARISON_MODES = new Set(['blink', 'difference', 'motion-trail']);
 const MODE_NAMES = { blink: 'Blink', difference: 'Difference', 'motion-trail': 'Motion trail' };
 const STRETCH_NAMES = { asinh: 'asinh', linear: 'linear', sqrt: 'square root', log: 'log', histeq: 'hist. equalised' };
 const isComparisonMode = () => COMPARISON_MODES.has(settings.viewMode);
+// The six-detector view (detector-panels.js) draws its own panels; the main
+// canvas stays idle while it is shown.
+const SIX_DETECTOR_MODE = 'six-detector';
 
 const cards = text => { status.textContent = text; };
 window.addEventListener('sky:target-selected', event => { dataGeneration++; selectedTarget = { ...event.detail }; target = viewerTarget(selectedTarget, settings.followProperMotion); comparisonScale = null; activeObservation = null; activeTimelineFrame = null; activeFrameExposures = []; timelineFrames = []; activeSequence++; cutoutController?.abort(); resetViewer('Loading observations…'); });
@@ -105,6 +108,11 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   const changed = previousDisplay !== displaySignature() || previousBand !== settings.band;
   if (changed) { dataGeneration++; activeSequence++; cutoutController?.abort(); }
   if (settings.viewMode !== 'blink') stopBlink();
+  if (settings.viewMode === SIX_DETECTOR_MODE) {
+    if (previousMode !== SIX_DETECTOR_MODE) { activeSequence++; cutoutController?.abort(); }
+    return;
+  }
+  if (previousMode === SIX_DETECTOR_MODE && activeTimelineFrame) { void showCutout(activeTimelineFrame, { quiet: true, keepImage: true }); return; }
   drawOverlay();
   if (pixelInspector) pixelInspector.hidden = !settings.inspectPixels;
   document.querySelector('.viewer')?.classList.toggle('is-inspecting', Boolean(settings.inspectPixels));
@@ -159,7 +167,9 @@ function resetViewer(message) {
 // Black and white points for a grid, honouring a locked comparison scale.
 function displayLimits(values) {
   const automatic = scaleLimits(values, settings.scaleMode, { low: settings.scaleLow, high: settings.scaleHigh });
-  if (settings.scaleMode === 'manual' || !settings.consistentBrightness) return { limits: automatic, automatic };
+  // The six-detector panels scale each detector on its own: flux levels differ
+  // too much across 0.75–5 μm for one locked scale.
+  if (settings.scaleMode === 'manual' || !settings.consistentBrightness || settings.viewMode === SIX_DETECTOR_MODE) return { limits: automatic, automatic };
   if (!comparisonScale) comparisonScale = automatic;
   return { limits: comparisonScale, automatic };
 }
@@ -191,8 +201,9 @@ function repaintForPsf() {
 // Masked star cores are rebuilt for display (see fillMaskedHoles and
 // core-fill.js); difference maps are left alone so a masked pixel never fakes
 // a residual.
-function paintGrid(element, values, width, { mapper = null, lut = null, smooth = true, covered = null, psfFrame = null } = {}) {
-  const epsf = !mapper && settings.fillMaskedCores && psfFrame ? epsfFor(settings.band) : null;
+function paintGrid(element, values, width, { mapper = null, lut = null, smooth = true, covered = null, psfFrame = null, detector = settings.band } = {}) {
+  // The PSF of the frame's own detector: wavelength slices cross detectors.
+  const epsf = !mapper && settings.fillMaskedCores && psfFrame ? epsfFor(Number(detector) || settings.band) : null;
   const psf = epsf ? gridPsf(epsf, psfFrame) : null;
   const filled = !mapper && settings.fillMaskedCores ? fillMaskedHoles(values, width, { covered, psf }) : values;
   const display = smooth && settings.smoothing ? gaussianSmooth(filled, width, settings.smoothing) : filled;
@@ -260,7 +271,7 @@ function paintCanvas(element, image) {
   if (!projected) throw new Error('This image has not been projected.');
   if (!projected.values.some(Number.isFinite)) throw new Error('No valid pixels remain after applying the quality mask.');
   const values = withSynthetic(projected.values, projected.width, image);
-  paintGrid(element, values, projected.width, { covered: projected.covered || null, psfFrame: projected.psfFrame || null });
+  paintGrid(element, values, projected.width, { covered: projected.covered || null, psfFrame: projected.psfFrame || null, detector: Number(image.header?.DETECTOR) || settings.band });
   element.spherexGrid = { values, flags: image.stackRecord ? null : projected.flags };
   return projected.coverage;
 }
@@ -272,7 +283,7 @@ async function paintStackCanvas(element, entries, observations, signal) {
   if (!grid.values.some(Number.isFinite)) throw new Error('No valid pixels remain in the daily exposure stack.');
   const width = Math.max(1, Math.round(settings.fovArcmin * 60 / PIXEL_ARCSEC));
   // The day's exposures share a detector and nearly the same orientation.
-  paintGrid(element, grid.values, width, { psfFrame: entries.find(entry => entry.image?.projection?.psfFrame)?.image.projection.psfFrame || null });
+  paintGrid(element, grid.values, width, { psfFrame: entries.find(entry => entry.image?.projection?.psfFrame)?.image.projection.psfFrame || null, detector: Number(observations[0]?.detector) || settings.band });
   element.spherexGrid = { values: grid.values, flags: null, counts: grid.counts };
   const exposureSeconds = entries.reduce((sum, entry) => sum + (Number(entry.observation.exposureSeconds) || 0), 0);
   const times = observations.map(observation => Date.parse(observation.observedStartUtc || '')).filter(Number.isFinite).sort((a, b) => a - b);
@@ -1133,10 +1144,87 @@ export async function warmCutout(observation, signal, priority = 2, onExposure =
   return entry;
 }
 
+const stackFrameLimit = () => Math.max(4, Math.min(400, Number(settings.maxStackFrames) || 80));
+
+// Build one detector's deep median stack off-screen from its UTC-day frames.
+// The main viewer's deep stack and the six-detector panels share this. Frames
+// load four at a time; `onPreview` gets a restack of the days loaded so far at
+// most once a second, so a caller can fill its image in progressively. Throws
+// an AbortError when `signal` aborts or `isCurrent()` turns false.
+export async function buildDetectorStack(available, { signal = null, isCurrent = () => true, onFirstFrame = null, onProgress = null, onPreview = null } = {}) {
+  const frames = available.slice(0, stackFrameLimit());
+  const stale = () => {
+    signal?.throwIfAborted();
+    if (!isCurrent()) throw new DOMException('Stack superseded.', 'AbortError');
+  };
+  const loaded = [], failedFrames = [];
+  assertStackBudget(frames, settings.fovArcmin);
+  let lastPreview = 0;
+  for (let offset = 0; offset < frames.length; offset += 4) {
+    stale();
+    await Promise.all(frames.slice(offset, offset + 4).map(async frame => {
+      try {
+        const entry = await warmCutout(frame, signal, 1);
+        stale();
+        const retained = entry.image.stackRecord ? entry : {
+          ...entry, image: { header: entry.image.header, pointing: entry.image.pointing, stackSourceUrls: [cutoutRequestUrl(frame)] }
+        };
+        loaded.push({ frame, entry: retained });
+        loaded.sort((a, b) => frames.indexOf(a.frame) - frames.indexOf(b.frame));
+        if (loaded.length === 1) onFirstFrame?.(entry);
+      } catch (error) {
+        if (signal?.aborted || error?.name === 'AbortError' || error?.name === 'ImageBudgetError') throw error;
+        failedFrames.push(frame);
+      }
+      if (!isCurrent()) return;
+      const usedExposures = loaded.reduce((n, item) => n + (item.entry.stackRecord?.usedExposureCount || 1), 0);
+      const failedExposures = failedFrames.reduce((n, item) => n + (item.exposures || [item]).length, 0) + loaded.reduce((n, item) => n + (item.entry.stackRecord?.failedObservationIds.length || 0), 0);
+      onProgress?.({ loadedFrames: loaded.length, failedFrames: failedFrames.length, totalFrames: frames.length, usedExposures, failedExposures });
+    }));
+    stale();
+    if (loaded.length && onPreview && performance.now() - lastPreview >= 1000) {
+      const preview = document.createElement('canvas');
+      const result = await paintStackCanvas(preview, loaded.map(item => ({ ...item.entry, observation: item.frame })), loaded.map(item => item.frame), signal);
+      stale();
+      onPreview({ canvas: preview, values: result.values, width: preview.width, coverage: result.coverage, reference: loaded[0].entry.image, loadedFrames: loaded.length, totalFrames: frames.length });
+      lastPreview = performance.now();
+    }
+  }
+  if (!loaded.length) throw new Error('No timeline frames could be loaded for the deep stack.');
+  stale();
+  const element = document.createElement('canvas');
+  const frameEntries = loaded.map(item => ({ ...item.entry, observation: item.frame }));
+  const stacked = await paintStackCanvas(element, frameEntries, loaded.map(item => item.frame), signal);
+  stale();
+  const allExposures = frames.flatMap(frame => frame.exposures || [frame]);
+  const contributorRecords = loaded.flatMap(({ frame, entry }) => entry.stackRecord?.contributors || (frame.exposures || [frame]).map(item => ({
+    observationId: item.observationId || '', productId: item.productId || '', release: item.release || item.collection || '',
+    processingVersion: item.processingVersion || '', observedStartUtc: item.observedStartUtc || '', exposureSeconds: Number(item.exposureSeconds) || 0,
+    validOutputPixels: entry.canvas.spherexGrid.values.reduce((count, value) => count + Number.isFinite(value), 0)
+  })));
+  const nestedFailed = loaded.flatMap(({ entry }) => entry.stackRecord?.failedObservationIds || []);
+  const record = {
+    ...stacked.record, deepStack: true,
+    method: `per-pixel median of UTC-day median stacks aligned by ${presetMotion(target) ? 'proper motion' : 'fixed sky position'}; unreliable input pixels are excluded`,
+    availableFrameCount: available.length, requestedFrameCount: frames.length, usedFrameCount: loaded.length,
+    excludedByFrameLimit: Math.max(0, available.length - frames.length),
+    requestedExposureCount: allExposures.length, usedExposureCount: contributorRecords.length,
+    failedObservationIds: [...failedFrames.flatMap(frame => (frame.exposures || [frame]).map(item => item.observationId)), ...nestedFailed],
+    contributors: contributorRecords,
+    observationIds: contributorRecords.map(item => item.observationId).filter(Boolean),
+    productIds: contributorRecords.map(item => item.productId).filter(Boolean),
+    exposureSeconds: contributorRecords.reduce((sum, item) => sum + (Number(item.exposureSeconds) || 0), 0)
+  };
+  const sourceUrls = loaded.flatMap(({ frame, entry }) => entry.image.stackSourceUrls || [cutoutRequestUrl(frame)]);
+  const image = stackedImage(stacked.values, stacked.counts, loaded[0].entry.image, record, sourceUrls);
+  const firstFrame = frames[0], lastFrame = frames.at(-1);
+  const observation = { ...firstFrame, observedEndUtc: lastFrame.observedEndUtc || lastFrame.observedStartUtc, exposures: allExposures, stackLabel: 'Deep median stack' };
+  return { canvas: element, image, coverage: stacked.coverage, record, observation, exposures: allExposures, values: stacked.values, counts: stacked.counts, width: image.width };
+}
+
 async function showDeepStack() {
   const available = timelineFrames.filter(frame => !settings.band || Number(frame.detector) === Number(settings.band));
   if (!available.length) { resetViewer('Search for observations in this detector before building a deep stack.'); return; }
-  const frames = available.slice(0, Math.max(4, Math.min(400, Number(settings.maxStackFrames) || 80)));
   activeSequence++;
   const sequence = activeSequence;
   cutoutController?.abort();
@@ -1145,88 +1233,33 @@ async function showDeepStack() {
   activeObservation = null;
   document.getElementById('export-sky-png').disabled = true;
   status.hidden = false; status.classList.remove('is-error');
-  cards(`Building a median stack from up to ${frames.length} UTC-day frames…`);
-  const loaded = [], failedFrames = [];
+  cards(`Building a median stack from up to ${Math.min(available.length, stackFrameLimit())} UTC-day frames…`);
   try {
-    assertStackBudget(frames, settings.fovArcmin);
-    let lastPreview = 0;
-    for (let offset = 0; offset < frames.length; offset += 4) {
-      controller.signal.throwIfAborted();
-      if (sequence !== activeSequence) return;
-      await Promise.all(frames.slice(offset, offset + 4).map(async frame => {
-        try {
-          const entry = await warmCutout(frame, controller.signal, 1);
-          controller.signal.throwIfAborted();
-          if (sequence !== activeSequence) return;
-          const retained = entry.image.stackRecord ? entry : {
-            ...entry, image: { header: entry.image.header, pointing: entry.image.pointing, stackSourceUrls: [cutoutRequestUrl(frame)] }
-          };
-          loaded.push({ frame, entry: retained });
-          loaded.sort((a, b) => frames.indexOf(a.frame) - frames.indexOf(b.frame));
-          if (loaded.length === 1) {
-            canvas.width = entry.canvas.width; canvas.height = entry.canvas.height;
-            displayedCenter = entry.image.pointing || target;
-            context.drawImage(entry.canvas, 0, 0); applyChrome(entry.coverage);
-            positionMark();
-          }
-        } catch (error) {
-          if (controller.signal.aborted || error?.name === 'AbortError' || error?.name === 'ImageBudgetError') throw error;
-          failedFrames.push(frame);
-        }
-        if (sequence !== activeSequence) return;
-        const used = loaded.reduce((n, item) => n + (item.entry.stackRecord?.usedExposureCount || 1), 0);
-        const failed = failedFrames.reduce((n, frame) => n + (frame.exposures || [frame]).length, 0) + loaded.reduce((n, item) => n + (item.entry.stackRecord?.failedObservationIds.length || 0), 0);
-        cards(`Preview · ${loaded.length}/${frames.length} days · ${used} exposures · ${failed} failed exposures`);
-        caption.textContent = 'Building the deep median stack; preview includes completed daily frames only.';
-      }));
-      controller.signal.throwIfAborted();
-      if (sequence !== activeSequence) return;
-      if (loaded.length && performance.now() - lastPreview >= 1000) {
-        const preview = document.createElement('canvas');
-        const result = await paintStackCanvas(preview, loaded.map(item => ({ ...item.entry, observation: item.frame })), loaded.map(item => item.frame), controller.signal);
-        if (sequence !== activeSequence) return;
-        canvas.width = preview.width; canvas.height = preview.height;
-        displayedCenter = loaded[0].entry.image.pointing || target;
-        context.drawImage(preview, 0, 0); applyChrome(result.coverage);
+    const built = await buildDetectorStack(available, {
+      signal: controller.signal,
+      isCurrent: () => sequence === activeSequence,
+      onFirstFrame: entry => {
+        canvas.width = entry.canvas.width; canvas.height = entry.canvas.height;
+        displayedCenter = entry.image.pointing || target;
+        context.drawImage(entry.canvas, 0, 0); applyChrome(entry.coverage);
         positionMark();
-        lastPreview = performance.now();
+      },
+      onProgress: progress => {
+        cards(`Preview · ${progress.loadedFrames}/${progress.totalFrames} days · ${progress.usedExposures} exposures · ${progress.failedExposures} failed exposures`);
+        caption.textContent = 'Building the deep median stack; preview includes completed daily frames only.';
+      },
+      onPreview: preview => {
+        canvas.width = preview.canvas.width; canvas.height = preview.canvas.height;
+        displayedCenter = preview.reference.pointing || target;
+        context.drawImage(preview.canvas, 0, 0); applyChrome(preview.coverage);
+        positionMark();
       }
-    }
-    if (!loaded.length) throw new Error('No timeline frames could be loaded for the deep stack.');
-    if (sequence !== activeSequence) return;
-    const element = document.createElement('canvas');
-    const frameEntries = loaded.map(item => ({ ...item.entry, observation: item.frame }));
-    const stacked = await paintStackCanvas(element, frameEntries, loaded.map(item => item.frame), controller.signal);
-    controller.signal.throwIfAborted();
-    if (sequence !== activeSequence) return;
-    const allExposures = frames.flatMap(frame => frame.exposures || [frame]);
-    const contributorRecords = loaded.flatMap(({ frame, entry }) => entry.stackRecord?.contributors || (frame.exposures || [frame]).map(item => ({
-      observationId: item.observationId || '', productId: item.productId || '', release: item.release || item.collection || '',
-      processingVersion: item.processingVersion || '', observedStartUtc: item.observedStartUtc || '', exposureSeconds: Number(item.exposureSeconds) || 0,
-      validOutputPixels: entry.canvas.spherexGrid.values.reduce((count, value) => count + Number.isFinite(value), 0)
-    })));
-    const nestedFailed = loaded.flatMap(({ entry }) => entry.stackRecord?.failedObservationIds || []);
-    const record = {
-      ...stacked.record, deepStack: true,
-      method: `per-pixel median of UTC-day median stacks aligned by ${presetMotion(target) ? 'proper motion' : 'fixed sky position'}; unreliable input pixels are excluded`,
-      availableFrameCount: available.length, requestedFrameCount: frames.length, usedFrameCount: loaded.length,
-      excludedByFrameLimit: Math.max(0, available.length - frames.length),
-      requestedExposureCount: allExposures.length, usedExposureCount: contributorRecords.length,
-      failedObservationIds: [...failedFrames.flatMap(frame => (frame.exposures || [frame]).map(item => item.observationId)), ...nestedFailed],
-      contributors: contributorRecords,
-      observationIds: contributorRecords.map(item => item.observationId).filter(Boolean),
-      productIds: contributorRecords.map(item => item.productId).filter(Boolean),
-      exposureSeconds: contributorRecords.reduce((sum, item) => sum + (Number(item.exposureSeconds) || 0), 0)
-    };
-    const sourceUrls = loaded.flatMap(({ frame, entry }) => entry.image.stackSourceUrls || [cutoutRequestUrl(frame)]);
-    const image = stackedImage(stacked.values, stacked.counts, loaded[0].entry.image, record, sourceUrls);
+    });
+    const { image, record, observation } = built;
     image.deepStackSignature = deepStackSignature();
-    const firstFrame = frames[0], lastFrame = frames.at(-1);
-    const observation = { ...firstFrame, observedEndUtc: lastFrame.observedEndUtc || lastFrame.observedStartUtc, exposures: allExposures, stackLabel: 'Deep median stack' };
     activeObservation = { ...observation, image };
-    activeFrameExposures = allExposures;
-    const entry = { canvas: element, image, coverage: stacked.coverage, stackRecord: record };
-    commitCutout(observation, entry, { announce: false });
+    activeFrameExposures = built.exposures;
+    commitCutout(observation, { canvas: built.canvas, image, coverage: built.coverage, stackRecord: record }, { announce: false });
     caption.textContent = `Deep median stack · ${record.usedFrameCount}/${record.availableFrameCount} UTC-day frames · ${record.usedExposureCount} exposures · ${Math.round(record.exposureSeconds)} s total · ${formatWavelength(observation)} · north up${presetMotion(target) ? ' · proper-motion aligned' : target.fixedSkyFor ? ' · fixed sky, star moves' : ''}`;
     window.dispatchEvent(new CustomEvent('sky:deep-stack-built', { detail: { record } }));
   } catch (error) {
@@ -1240,7 +1273,7 @@ async function showDeepStack() {
 }
 
 function deepStackSignature() {
-  const frames = timelineFrames.slice(0, Math.max(4, Math.min(400, Number(settings.maxStackFrames) || 80)));
+  const frames = timelineFrames.slice(0, stackFrameLimit());
   return `${displaySignature()}|${settings.band}|${frames.map(observationKey).join(',')}`;
 }
 
@@ -1275,6 +1308,7 @@ function commitCutout(observation, entry, { announce = true, preview = false } =
 }
 
 export async function showCutout(observation, { quiet = false, keepImage = false } = {}) {
+  if (settings.viewMode === SIX_DETECTOR_MODE) { activeTimelineFrame = observation; return { stackRecord: null }; }
   if (settings.viewMode === 'deep-stack' && activeObservation?.image?.stackRecord?.deepStack && activeObservation.image.deepStackSignature === deepStackSignature()) return { stackRecord: activeObservation.image.stackRecord };
   if (settings.viewMode === 'deep-stack') { activeTimelineFrame = observation; return showDeepStack(); }
   activeObservation = observation;
@@ -1328,8 +1362,77 @@ export async function showCutout(observation, { quiet = false, keepImage = false
 
 function formatWavelength(observation) {
   const low = Number(observation.wavelengthMinUm), high = Number(observation.wavelengthMaxUm);
+  if (observation.frameAxis === 'wavelength' && Number.isFinite(low) && Number.isFinite(high)) {
+    const where = observation.windowFrame ? `window ${low.toFixed(3)}–${high.toFixed(3)} μm` : `D${observation.detector} channel ${Number(observation.channel) + 1} · ${low.toFixed(3)}–${high.toFixed(3)} μm`;
+    return `${where} at field centre`;
+  }
   return Number.isFinite(low) && Number.isFinite(high) ? `${low.toFixed(2)}–${high.toFixed(2)} μm` : `D${observation.detector}`;
 }
+
+// Per-pixel mean of equal-sized grids; a pixel missing from any grid is NaN,
+// so a continuum is never one-sided at the field edge.
+function meanGrid(grids) {
+  const length = grids[0].length, out = new Float32Array(length);
+  for (let i = 0; i < length; i++) {
+    let sum = 0, count = 0;
+    for (const grid of grids) if (Number.isFinite(grid[i])) { sum += grid[i]; count++; }
+    out[i] = count === grids.length ? sum / count : Number.NaN;
+  }
+  return out;
+}
+
+/**
+ * Line map: the stack of exposures inside a spectral feature minus the mean of
+ * stacks just beside it (the continuum), shown as a difference image in units
+ * of the noise. Positive (orange) is emission at the feature, negative (blue)
+ * absorption. Wavelengths are those at the field centre; they drift by about
+ * one channel across a 10′ field.
+ */
+export async function showLineMap({ on, continuum, label = 'Line map' }) {
+  if (!on || !continuum?.length) throw new Error('A line map needs a feature window and at least one continuum window.');
+  if (settings.viewMode === SIX_DETECTOR_MODE) throw new Error('Switch to the single-image viewer to show a line map.');
+  const sequence = ++activeSequence;
+  cutoutController?.abort();
+  cutoutController = new AbortController();
+  const controller = cutoutController, signal = controller.signal;
+  stopBlink();
+  status.hidden = false; status.classList.remove('is-error');
+  cards(`Building line map · stacking ${on.exposures.length} exposures on the feature and ${continuum.reduce((n, frame) => n + frame.exposures.length, 0)} beside it…`);
+  try {
+    assertStackBudget([on, ...continuum], settings.fovArcmin);
+    const [onEntry, ...offEntries] = await Promise.all([on, ...continuum].map(frame => warmCutout(frame, signal, 0)));
+    signal.throwIfAborted();
+    if (sequence !== activeSequence) return null;
+    const current = onEntry.canvas.spherexGrid.values, width = onEntry.canvas.width;
+    const offGrids = offEntries.map(entry => entry.canvas.spherexGrid.values);
+    if (offGrids.some(grid => grid.length !== current.length)) throw new Error('The continuum stacks use a different sky grid.');
+    const reference = offGrids.length === 1 ? offGrids[0] : meanGrid(offGrids);
+    const difference = differenceImage({ current, reference, width, threshold: settings.differenceThreshold, flatten: false, smoothing: settings.smoothing });
+    if (!difference) throw new Error('The feature and continuum stacks do not overlap on the sky.');
+    const element = document.createElement('canvas');
+    paintGrid(element, difference.values, width, { mapper: differenceMapper(difference.sigma, difference.threshold * 2), lut: colormap('diverging'), smooth: false });
+    const continuumLabel = continuum.map(frame => `${Number(frame.wavelengthMinUm).toFixed(2)}–${Number(frame.wavelengthMaxUm).toFixed(2)}`).join(' + ');
+    const composed = { kind: 'difference', canvas: element, values: difference.values, unit: onEntry.image.header?.BUNIT || '', sigma: difference.sigma, threshold: difference.threshold,
+      significant: difference.significant, brighter: difference.brighter, fainter: difference.fainter, referenceLabel: `continuum ${continuumLabel} μm`, currentCanvas: onEntry.canvas, referenceCanvas: offEntries[0].canvas, referenceObservation: continuum[0] };
+    activeObservation = { ...on, image: onEntry.image };
+    commitComposite(on, onEntry, composed, { announce: false });
+    const sampled = [onEntry, ...offEntries].some(entry => entry.stackRecord?.omittedExposureCount);
+    caption.textContent = `${label} · ${Number(on.wavelengthMinUm).toFixed(2)}–${Number(on.wavelengthMaxUm).toFixed(2)} μm minus continuum ${continuumLabel} μm · σ = ${formatValue(difference.sigma)}${composed.unit ? ` ${composed.unit}` : ''} · ${difference.brighter} pixels above and ${difference.fainter} below ±${difference.threshold}σ · orange = brighter at the feature · wavelengths at field centre (they shift ≈ 1 channel across 10′)${sampled ? ' · stacks evenly sampled (Processing › Exposures per day)' : ''}${settings.subtractBackground !== false ? ' · background subtraction is on and can remove diffuse emission' : ''}`;
+    setCacheState('Line map · orange brighter at the feature, blue fainter');
+    return { sigma: difference.sigma, brighter: difference.brighter, fainter: difference.fainter };
+  } catch (error) {
+    if (sequence === activeSequence && !signal.aborted) {
+      resetViewer(error.message); status.classList.add('is-error');
+    }
+    if (isAbort(error, signal)) return null;
+    throw error;
+  }
+}
+
+/** A copy of the viewer's current settings, for modules that draw their own images. */
+export function viewerSettings() { return { ...settings }; }
+/** The sky position the aligned grid is centred on. */
+export function viewerCenter() { return { ...target }; }
 
 export function observeCutout(observation) { void showCutout(observation); }
 
@@ -1354,8 +1457,11 @@ document.getElementById('export-sky-png').addEventListener('click', () => {
 // Comparison modes: blink, difference and motion trail. All three work on the
 // projected value grids of warmed frames, which share one north-up sky grid.
 
-const frameLabel = frame => frame?.observedStartUtc?.slice(0, 10) || 'reference';
-const bandFrames = () => timelineFrames.filter(frame => !settings.band || Number(frame.detector) === Number(settings.band));
+const frameLabel = frame => Number.isFinite(frame?.frameWavelengthUm) ? `${frame.frameWavelengthUm.toFixed(3)} μm` : frame?.observedStartUtc?.slice(0, 10) || 'reference';
+// Wavelength slices span all six detectors on one sky grid, so they are not
+// filtered by the selected band.
+const wavelengthOrdered = () => timelineFrames.length > 0 && Number.isFinite(timelineFrames[0]?.frameWavelengthUm);
+const bandFrames = () => wavelengthOrdered() ? timelineFrames : timelineFrames.filter(frame => !settings.band || Number(frame.detector) === Number(settings.band));
 const isAbort = (error, signal) => signal?.aborted || error?.name === 'AbortError' || error?.name === 'ImageBudgetError';
 const setCacheState = text => { document.getElementById('cutout-cache-state').textContent = text; };
 

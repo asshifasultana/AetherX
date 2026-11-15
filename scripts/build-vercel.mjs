@@ -15,6 +15,8 @@ publicFiles.push('moving-target.js', 'moving-worker.js', 'lib/moving-view.js', '
   'lib/wavelength.js', 'lib/comet-native-fit.js', 'lib/comet-profile.js', 'lib/core-fill.js', 'lib/peak.js');
 publicFiles.push(...AGENT_PUBLIC_FILES);
 publicFiles.push('spectrum-explorer.js', 'wavelength-guide.js');
+// Six-detector view, channel spectrum and wavelength slices.
+publicFiles.push('lib/detectors.js', 'lib/composite.js', 'detector-panels.js', 'lib/spectrum-bins.js', 'lib/target-wavelengths.js', 'wavelength-slices.js');
 // The search loading screen and the constellation/distance lines it shows.
 publicFiles.push('search-loader.js', 'lib/constellation.js', 'lib/distance.js');
 publicFiles.push('media/planetx-intro.jpg', 'media/planetx-intro.mp4', 'media/planetx-intro.vtt');

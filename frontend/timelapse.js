@@ -1,5 +1,5 @@
 import {
-  buildFrames, frameDelayMs, frameFractions, frameGaps, frameTime, formatGap,
+  buildFrames, buildWavelengthFrames, frameDelayMs, frameFractions, frameGaps, frameTime, formatGap,
   formatGapShort, nearestFrameIndex, nearestFrameIndexByTime, nextSpeed, observationKey
 } from './timelapse-core.js';
 import { showCutout, warmCutout, isCutoutReady } from './fits-viewer.js';
@@ -13,7 +13,8 @@ const MODE_LABELS = {
   blink: 'Blink',
   difference: 'Difference',
   'motion-trail': 'Motion trail',
-  'deep-stack': 'Deep stack'
+  'deep-stack': 'Deep stack',
+  'six-detector': 'Six detectors'
 };
 
 const state = {
@@ -28,6 +29,10 @@ const state = {
   speed: 1,
   band: null,
   combineExposures: true,
+  // 'date', or 'wavelength' for slices ordered by the wavelength at the target
+  // (wavelength-slices.js supplies the per-exposure wavelengths).
+  axis: 'date',
+  wavelengths: null,
   timer: null,
   token: 0,
   scrubTimer: null,
@@ -79,7 +84,9 @@ function updatePreviewLoading() {
     const key = observationKey(frame);
     return prefetch.fetched.has(key) || prefetch.failed.has(key) || isCutoutReady(frame);
   }).length;
-  const busy = archivePending || selectedPending || settled < frames.length;
+  // The six-detector panels show their own progress, so the search screen can
+  // go as soon as the archive has answered.
+  const busy = archivePending || (state.viewMode !== 'six-detector' && (selectedPending || settled < frames.length));
   document.querySelector('.viewer')?.setAttribute('aria-busy', String(busy));
   if (busy) return;
   searchPending = false;
@@ -90,8 +97,11 @@ function updatePreviewLoading() {
 
 
 const dateOf = frame => new Date(frameTime(frame));
-const shortDate = frame => dateFormat.format(dateOf(frame));
-const frameDate = frame => `${shortDate(frame)} · ${timeFormat.format(dateOf(frame))} UTC`;
+const isSlice = frame => Number.isFinite(frame?.frameWavelengthUm);
+const shortDate = frame => isSlice(frame) ? `${frame.frameWavelengthUm.toFixed(2)} μm` : dateFormat.format(dateOf(frame));
+const frameDate = frame => isSlice(frame)
+  ? `${frame.frameWavelengthUm.toFixed(3)} μm · D${frame.detector} ch ${Number(frame.channel) + 1} · ${frame.exposureCount} exposure${frame.exposureCount === 1 ? '' : 's'} · at field centre`
+  : `${shortDate(frame)} · ${timeFormat.format(dateOf(frame))} UTC`;
 const formatRange = () => {
   if (!state.frames.length) return '';
   const first = state.frames[0], last = state.frames[state.frames.length - 1];
@@ -107,7 +117,8 @@ const modeLabels = {
   blink: 'Blink comparison',
   difference: 'Difference image',
   'motion-trail': 'Motion trail',
-  'deep-stack': 'Deep stack'
+  'deep-stack': 'Deep stack',
+  'six-detector': 'Six detectors'
 };
 
 function updateModeUi() {
@@ -121,7 +132,9 @@ function updateModeUi() {
     $('frame-count').textContent = count ? `DEEP STACK${detector ? ` · D${detector}` : ''}` : 'DEEP STACK · NO IMAGES LOADED';
   } else {
     $('frame-count').textContent = count
-      ? `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
+      ? state.axis === 'wavelength'
+        ? `${count} WAVELENGTH ${count === 1 ? 'SLICE' : 'SLICES'} · D1–D6 · ${formatRange()}`
+        : `${count} D${state.frames[0].detector} ${count === 1 ? 'FRAME' : 'FRAMES'} · ${formatRange()}`.toUpperCase()
       : 'NO IMAGES LOADED';
   }
 }
@@ -169,7 +182,7 @@ function nextPrefetchFrame(excluded = new Set()) {
 function schedulePrefetch(delay = 0) {
   clearTimeout(prefetch.timer);
   prefetch.timer = null;
-  if (!state.frames.length || prefetch.paused || state.viewMode === 'deep-stack' || document.documentElement?.classList.contains('is-tour-preview')) return;
+  if (!state.frames.length || prefetch.paused || state.viewMode === 'deep-stack' || state.viewMode === 'six-detector' || document.documentElement?.classList.contains('is-tour-preview')) return;
   prefetch.timer = setTimeout(() => { void runPrefetch(); }, delay);
 }
 
@@ -277,7 +290,7 @@ function renderTicks() {
     tick.title = frameDate(frame);
     ticks.append(tick);
   });
-  const significant = frameGaps(state.frames).filter(gap => gap.days >= 1);
+  const significant = state.axis === 'wavelength' ? [] : frameGaps(state.frames).filter(gap => gap.days >= 1);
   const shown = significant.length > 12
     ? [...significant].sort((a, b) => b.days - a.days).slice(0, 12).sort((a, b) => a.afterIndex - b.afterIndex)
     : significant;
@@ -395,11 +408,13 @@ function render() {
   const count = state.frames.length;
   updateModeUi();
   $('release-calibration-note').hidden = true;
-  $('timeline-start').textContent = count ? shortDate(state.frames[0]).toUpperCase() : 'FIRST FRAME';
-  $('timeline-end').textContent = count ? shortDate(state.frames[count - 1]).toUpperCase() : 'LATEST FRAME';
+  // Upper-casing would turn μ into a capital Greek M.
+  const edgeLabel = frame => isSlice(frame) ? shortDate(frame) : shortDate(frame).toUpperCase();
+  $('timeline-start').textContent = count ? edgeLabel(state.frames[0]) : 'FIRST FRAME';
+  $('timeline-end').textContent = count ? edgeLabel(state.frames[count - 1]) : 'LATEST FRAME';
   const gaps = frameGaps(state.frames);
   const largest = gaps.reduce((maximum, gap) => Math.max(maximum, gap.days), 0);
-  $('timeline-gap-note').textContent = count > 1
+  $('timeline-gap-note').textContent = state.axis === 'wavelength' ? 'SPACED BY WAVELENGTH · AT FIELD CENTRE' : count > 1
     ? largest >= 1 ? `REAL DATES · LARGEST GAP ${formatGapShort(largest).toUpperCase()}` : 'REAL DATES · SAME-DAY EXPOSURES'
     : 'SPACED BY ACTUAL DATE';
   $('timeline').disabled = count < 2;
@@ -414,11 +429,15 @@ function render() {
 
 function rebuild({ keepTime = false, announce = true } = {}) {
   pausePlayback();
-  const previous = keepTime && state.frames[state.index] ? frameTime(state.frames[state.index]) : null;
+  const previousFrame = state.frames[state.index];
+  const previous = keepTime && previousFrame && !isSlice(previousFrame) ? frameTime(previousFrame) : null;
   const requestedBand = state.band;
-  state.frames = buildFrames(state.observations, { band: requestedBand, combineExposures: state.combineExposures });
+  const slices = state.axis === 'wavelength' && state.wavelengths;
+  state.frames = slices
+    ? buildWavelengthFrames(state.observations, state.wavelengths)
+    : buildFrames(state.observations, { band: requestedBand, combineExposures: state.combineExposures });
   let fallbackBand = null;
-  if (!state.frames.length && state.observations.length && requestedBand !== null) {
+  if (!slices && !state.frames.length && state.observations.length && requestedBand !== null) {
     const counts = new Map();
     for (const item of state.observations) {
       const detector = Number(item.detector);
@@ -432,11 +451,18 @@ function rebuild({ keepTime = false, announce = true } = {}) {
     }
   }
   state.fractions = frameFractions(state.frames);
-  state.index = previous === null || !state.frames.length ? 0 : nearestFrameIndexByTime(state.frames, previous);
+  state.index = slices && isSlice(previousFrame) && state.frames.length
+    ? state.frames.reduce((best, frame, index) => Math.abs(frame.frameWavelengthUm - previousFrame.frameWavelengthUm) < Math.abs(state.frames[best].frameWavelengthUm - previousFrame.frameWavelengthUm) ? index : best, 0)
+    : previous === null || !state.frames.length ? 0 : nearestFrameIndexByTime(state.frames, previous);
   state.thumbs.clear();
   window.dispatchEvent(new CustomEvent('sky:timeline-frames-changed', { detail: { frames: state.frames } }));
   render();
-  if (!state.frames.length) {
+  if (slices) {
+    const used = state.frames.reduce((n, frame) => n + frame.exposureCount, 0);
+    setStatus(state.frames.length
+      ? `${state.frames.length} wavelength slices from ${used} exposures across D1–D6, ordered by the wavelength SPHEREx saw at the target. Wavelengths are at the field centre and shift by about one channel across a 10′ field.`
+      : 'No exposures had a usable wavelength at this position.');
+  } else if (!state.frames.length) {
     setStatus(state.observations.length
       ? `No D${state.band ?? '?'} observations in these results. Choose another detector band or run a new search.`
       : 'No observations loaded. Search the archive to build a dated time-lapse.');
@@ -471,7 +497,7 @@ async function selectFrame(index, { playback = false } = {}) {
   }
   if (!playback) prefetch.paused++;
   prefetchNote = false;
-  if (!playback) setStatus(`Loading ${frameDate(frame)} · D${frame.detector}…`);
+  if (!playback) setStatus(isSlice(frame) ? `Loading ${frameDate(frame)}…` : `Loading ${frameDate(frame)} · D${frame.detector}…`);
   try {
     // Playback stays quiet: the previous frame remains on screen until the next
     // one is ready, so there is no "loading cutout" flash between frames.
@@ -677,10 +703,13 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   const detail = event.detail || {};
   const modeChanged = detail.viewMode && detail.viewMode !== state.viewMode;
   if (modeChanged) {
+    const leavingSixDetector = state.viewMode === 'six-detector';
     state.viewMode = detail.viewMode;
     // Difference and motion trail can still be played frame by frame; blink
     // animates on its own and a deep stack has no timeline position.
-    if (state.viewMode === 'deep-stack' || state.viewMode === 'blink') pausePlayback();
+    if (state.viewMode === 'deep-stack' || state.viewMode === 'blink' || state.viewMode === 'six-detector') pausePlayback();
+    // The six-detector panels download their own frames; keep warm-up out of their way.
+    if (state.viewMode === 'six-detector') stopPrefetch(); else if (leavingSixDetector) schedulePrefetch(0);
     updateModeUi();
     updateCurrent();
   }
@@ -702,6 +731,13 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   }
   const band = detail.band === undefined ? state.band : Number(detail.band);
   const combine = detail.combineExposures === undefined ? state.combineExposures : Boolean(detail.combineExposures);
+  // Slices span every detector; showing one syncs the band, which must not
+  // rebuild the sequence.
+  if (state.axis === 'wavelength') {
+    state.band = band; state.combineExposures = combine;
+    if (modeChanged && state.viewMode === 'time-lapse') void activateTimeline();
+    return;
+  }
   if (band === state.band && combine === state.combineExposures) {
     if (modeChanged && state.viewMode === 'time-lapse') void activateTimeline();
     return;
@@ -716,9 +752,21 @@ window.addEventListener('sky:viewer-settings-changed', event => {
   void activateTimeline();
 });
 
+// wavelength-slices.js switches the order once it knows each exposure's
+// wavelength at the target; 'date' switches back.
+window.addEventListener('sky:timeline-axis-changed', event => {
+  const axis = event.detail?.axis === 'wavelength' && event.detail?.wavelengths ? 'wavelength' : 'date';
+  if (axis === state.axis && event.detail?.wavelengths === state.wavelengths) return;
+  state.axis = axis;
+  state.wavelengths = axis === 'wavelength' ? event.detail.wavelengths : null;
+  rebuild();
+  void activateTimeline();
+});
+
 window.addEventListener('sky:target-selected', () => {
   pausePlayback();
   state.userPaused = false;
+  state.axis = 'date'; state.wavelengths = null;
   state.observations = [];
   state.frames = [];
   state.token++;
@@ -750,6 +798,8 @@ async function activateTimeline() {
 
 window.addEventListener('sky:observations-loaded', event => {
   archivePending = false;
+  // New results need their own wavelengths; go back to date order.
+  state.axis = 'date'; state.wavelengths = null;
   selectedPending = Boolean(event.detail?.observations?.length) && !event.detail?.failed;
   state.observations = Array.isArray(event.detail?.observations) ? event.detail.observations : [];
   rebuild();

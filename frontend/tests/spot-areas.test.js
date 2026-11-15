@@ -178,3 +178,19 @@ test('a spot is identified once its checks find a known object, and moving or re
   assert.equal(list.resize(spot.n, 60).found, false);
   assert.equal(list.setFound(42, true), null);
 });
+
+test('a point flags itself as likely saturated when its aperture holds near-saturated or nonlinear pixels', async () => {
+  const clean = await measureAt(observation, position, null, { wavelength: false, fetchImpl: serve(discCrop().image) });
+  assert.equal(clean.likelySaturated, false);
+  assert.deepEqual(clean.saturation, { overflowPixels: 0, nonlinearPixels: 0, lostCoreFraction: 0 });
+  const { image } = discCrop();
+  image.flags[100 * 200 + 100] = (1 << 1) | (1 << 15); // OVERFLOW + NONLINEAR at the centre: kept, but flagged
+  const hot = await measureAt(observation, position, null, { wavelength: false, fetchImpl: serve(image) });
+  assert.equal(hot.likelySaturated, true);
+  assert.equal(hot.saturation.overflowPixels, 1); assert.equal(hot.saturation.nonlinearPixels, 1);
+  assert.equal(hot.pixelsUsed, clean.pixelsUsed);
+  // Flags in the background ring do not count.
+  const ring = discCrop().image;
+  ring.flags[100 * 200 + 106] = 1 << 1;
+  assert.equal((await measureAt(observation, position, null, { wavelength: false, fetchImpl: serve(ring) })).likelySaturated, false);
+});

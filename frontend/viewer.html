@@ -38,7 +38,7 @@
         </section>
         <label class="sidebar-field" for="detector-array">Detector array<select id="detector-array"><option value="1">D1 · 0.75–1.09 μm</option><option value="2" selected>D2 · 1.10–1.62 μm</option><option value="3">D3 · 1.63–2.41 μm</option><option value="4">D4 · 2.42–3.82 μm</option><option value="5">D5 · 3.83–4.41 μm</option><option value="6">D6 · 4.42–5.00 μm</option></select></label><span id="band-range" class="sr-only"></span>
         <details class="sidebar-section" data-section="view" open><summary>View</summary><div class="sidebar-section-content">
-          <label class="sidebar-field" for="view-mode">View mode<select id="view-mode"><option value="time-lapse">Time-lapse · play through dates</option><option value="blink">Blink · flip against a reference</option><option value="difference">Difference · highlight changes</option><option value="motion-trail">Motion trail · reveal moving objects</option><option value="deep-stack">Deep stack · reveal faint sources</option></select></label>
+          <label class="sidebar-field" for="view-mode">View mode<select id="view-mode"><option value="time-lapse">Time-lapse · play through dates</option><option value="blink">Blink · flip against a reference</option><option value="difference">Difference · highlight changes</option><option value="motion-trail">Motion trail · reveal moving objects</option><option value="deep-stack">Deep stack · reveal faint sources</option><option value="six-detector">Six detectors · compare colours</option></select></label>
           <p id="mode-description" class="mode-description"></p>
           <div class="setting-field" data-tooltip="Width and height of the square cutout. Larger fields show more context but take longer to download and have fewer pixels per star on screen."><div class="field-head"><label for="field-of-view">Field of view</label><output id="field-of-view-value" for="field-of-view">16′</output><button class="setting-help" type="button" aria-label="About Field of view" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div><input id="field-of-view" class="range" type="range" min="1" max="30" step="1" value="16" aria-valuetext="16 arcminutes"><div class="range-endpoints" aria-hidden="true"><span>1′</span><span>30′</span></div></div>
           <div class="setting-check" id="follow-proper-motion-row" data-tooltip="For stars with a known proper motion (Barnard’s Star, Epsilon Indi B, WISE 0855), keeps the star centred in every frame. Off by default: the sky is held fixed and the star’s own motion becomes visible in blink, difference and motion-trail views."><label class="check-row"><input id="follow-proper-motion" type="checkbox"><span>Follow the star’s proper motion</span></label><button class="setting-help" type="button" aria-label="About Follow the star’s proper motion" aria-controls="settings-tooltip" aria-expanded="false">ⓘ</button></div>
@@ -118,6 +118,19 @@
         </section>
         <div class="viewer-readouts"><div id="colour-bar" class="colour-bar" hidden><div id="colour-bar-strip" class="colour-bar-strip"></div><div class="colour-bar-labels"><span id="colour-bar-low"></span><span id="colour-bar-mid"></span><span id="colour-bar-high"></span></div><small id="colour-bar-unit"></small></div><p id="quality-hover-readout" class="hover-readout" hidden></p><div id="quality-legend" class="quality-legend" hidden></div><p id="cutout-caption"></p><p id="coverage-note" hidden></p><p id="cutout-status" role="status" aria-live="polite">Waiting for observations.</p></div>
       </div>
+      <section id="detector-panels" class="detector-panels" aria-labelledby="detector-panels-title" hidden>
+        <div class="detector-panels-head"><h3 id="detector-panels-title">Six detectors · 0.75–5 μm</h3><span id="detector-panels-progress" role="status" aria-live="polite"></span><button id="detector-panels-cancel" class="text-button" type="button" hidden>Cancel</button><button id="detector-panels-rebuild" class="text-button" type="button" hidden>Build again</button></div>
+        <div class="detector-panels-grid">
+          <figure class="detector-panel composite-panel"><div id="composite-frame" class="detector-frame"><canvas id="composite-canvas" role="img" aria-label="False-colour composite of three detectors" hidden></canvas></div>
+            <figcaption><strong>False colour</strong><span class="composite-channels"><label class="composite-red">R<select id="composite-red" aria-label="Detector shown in red"><option value="1">D1</option><option value="2">D2</option><option value="3">D3</option><option value="4">D4</option><option value="5">D5</option><option value="6" selected>D6</option></select></label><label class="composite-green">G<select id="composite-green" aria-label="Detector shown in green"><option value="1">D1</option><option value="2">D2</option><option value="3">D3</option><option value="4" selected>D4</option><option value="5">D5</option><option value="6">D6</option></select></label><label class="composite-blue">B<select id="composite-blue" aria-label="Detector shown in blue"><option value="1">D1</option><option value="2" selected>D2</option><option value="3">D3</option><option value="4">D4</option><option value="5">D5</option><option value="6">D6</option></select></label></span><button id="composite-png" class="text-button" type="button" disabled>PNG ↓</button></figcaption>
+            <p id="composite-status" class="detector-status"></p>
+          </figure>
+          <div class="detector-panels-info">
+            <p id="detector-readout" class="detector-readout" aria-live="off"></p>
+            <p class="detector-legend">Each panel is one detector’s deep median stack on the same north-up grid, scaled on its own. In the composite, longer wavelengths are redder: a source bright in D4–D6 but faint in D1–D2 is cold or dusty, and a blue one is hot.</p>
+          </div>
+        </div>
+      </section>
       <aside id="display-panel" class="display-panel" aria-labelledby="display-panel-title">
         <h2 id="display-panel-title" class="display-panel-title">Display</h2>
         <fieldset id="look" class="segmented"><legend>Look</legend>
@@ -148,7 +161,7 @@
       </aside>
       </div>
       <div class="timeline-panel" aria-labelledby="timeline-heading">
-        <div class="timeline-heading"><div><h3 id="timeline-heading">Time-lapse</h3><button id="set-reference" class="share-button reference-button" type="button" data-show-mode="blink difference" aria-pressed="false" hidden>Set as reference</button></div><span id="frame-count">NO IMAGES LOADED</span></div>
+        <div class="timeline-heading"><div><h3 id="timeline-heading">Time-lapse</h3><button id="set-reference" class="share-button reference-button" type="button" data-show-mode="blink difference" aria-pressed="false" hidden>Set as reference</button><label class="timeline-order" for="timeline-order">Order<select id="timeline-order" disabled><option value="date">by date</option><option value="wavelength">by wavelength</option></select></label></div><span id="frame-count">NO IMAGES LOADED</span></div>
         <div class="timeline-now"><strong id="timeline-date">Waiting for observations</strong><span id="timeline-meta">Search for a target to build a dated timeline.</span></div>
         <details id="frame-provenance" class="frame-provenance"><summary>Frame contribution record</summary><p id="frame-provenance-text">Search for observations to see which exposures contribute to a frame.</p><button id="export-frame-csv" class="reset-settings" type="button" disabled>Export frame contributions CSV ↓</button></details>
         <div id="playback-row" class="playback-row">
@@ -166,6 +179,11 @@
           <button id="speed-button" class="speed-button" type="button" aria-label="Playback speed, 1 times" disabled><strong id="speed-value">1×</strong> <span>speed</span></button>
         </div>
         <div id="timeline-filmstrip" class="timeline-filmstrip" role="group" aria-label="Observation thumbnails"></div>
+        <details id="wavelength-tools" class="wavelength-tools" hidden><summary>Wavelength window &amp; line map</summary>
+          <div class="wavelength-tools-row"><span class="wavelength-tools-label">Stack a window</span><label for="window-min" class="sr-only">From (μm)</label><input id="window-min" type="number" min="0.7" max="5.05" step="0.01" value="3.20"><span>–</span><label for="window-max" class="sr-only">To (μm)</label><input id="window-max" type="number" min="0.7" max="5.05" step="0.01" value="3.40"><span>μm</span><button id="stack-window" class="reset-settings" type="button">Stack window</button></div>
+          <div class="wavelength-tools-row"><span class="wavelength-tools-label">Line map</span><label for="line-preset" class="sr-only">Feature</label><select id="line-preset"><option value="ch4-pah">CH₄ / PAH 3.3 μm</option><option value="h2o-ice">H₂O ice 3.0 μm</option><option value="co2">CO₂ 4.26 μm</option><option value="custom">Custom</option></select><label for="line-min" class="sr-only">Feature from (μm)</label><input id="line-min" type="number" min="0.7" max="5.05" step="0.01" value="3.25"><span>–</span><label for="line-max" class="sr-only">Feature to (μm)</label><input id="line-max" type="number" min="0.7" max="5.05" step="0.01" value="3.35"><span>μm</span><button id="show-line-map" class="reset-settings" type="button">Show line map</button></div>
+          <p id="wavelength-tools-status" class="wavelength-tools-status" role="status" aria-live="polite">The line map subtracts the mean of two equal-width windows on either side of the feature (the continuum). Wavelengths are those at the field centre. Stars leave orange/blue residuals where their brightness changes across the windows; extended glow that is orange throughout is the signal to look for.</p>
+        </details>
         <p id="release-calibration-note" class="timeline-status calibration-note" role="note" hidden></p>
         <p id="timeline-status" class="timeline-status" role="status" aria-live="polite">Search for a target to build a dated time-lapse. Timeline ticks are placed at the real observation dates, so long gaps appear as long spaces.</p>
         <div class="share-bar" aria-label="Share this view">
@@ -314,12 +332,14 @@
         </section>
         <section id="quick-spectrum" class="quick-spectrum" aria-labelledby="quick-spectrum-heading">
           <div class="quick-spectrum-heading"><div><h3 id="quick-spectrum-heading">Explore this source across wavelengths and time</h3><p>Measure the selected sky position in the loaded spectral images. Each point uses the wavelength at that exact position.</p></div><button id="build-spectrum" class="primary-button" type="button" disabled>Measure loaded images</button></div>
-          <div class="quick-spectrum-controls"><label for="spectrum-view">Show measurements by<select id="spectrum-view"><option value="wavelength">Wavelength</option><option value="time">Observation time</option></select></label><label for="wavelength-jump">Jump to wavelength<input id="wavelength-jump" type="number" min="0.75" max="5" step="0.001" placeholder="e.g. 2.2" disabled><span>μm</span></label><button id="jump-wavelength" class="reset-settings" type="button" disabled>Open nearest image ↗</button><button id="cancel-spectrum" class="text-button" type="button" hidden>Cancel</button></div>
+          <div class="quick-spectrum-controls"><label for="spectrum-view">Show measurements by<select id="spectrum-view"><option value="wavelength">Wavelength</option><option value="time">Observation time</option></select></label><label for="wavelength-jump">Jump to wavelength<input id="wavelength-jump" type="number" min="0.75" max="5" step="0.001" placeholder="e.g. 2.2" disabled><span>μm</span></label><button id="jump-wavelength" class="reset-settings" type="button" disabled>Open nearest image ↗</button><label class="spectrum-raw-toggle" for="spectrum-raw"><input id="spectrum-raw" type="checkbox" checked>Show individual exposures</label><button id="export-spectrum-csv" class="reset-settings" type="button" disabled>Channel spectrum CSV ↓</button><button id="cancel-spectrum" class="text-button" type="button" hidden>Cancel</button></div>
           <p id="spectrum-status" role="status" aria-live="polite">Quick-look extraction uses a small aperture, local background, image quality flags, and variance. Click a point to open its source image.</p>
-          <svg id="spectrum-chart" class="spectrum-chart" viewBox="0 0 760 300" role="img" aria-label="Quick-look source measurements" hidden></svg>
-          <p class="spectrum-caveat">Exploratory measurements only: this is not IRSA’s PSF-fit spectrophotometry or a calibrated 102-plane mosaic. Points may come from different observation times; use the time view and original images to check variability and artifacts.</p>
+          <div id="spectrum-legend" class="spectrum-legend" hidden></div>
+          <svg id="spectrum-chart" class="spectrum-chart" viewBox="0 0 760 300" role="img" aria-label="Quick-look source measurements binned into SPHEREx channels" hidden></svg>
+          <p class="spectrum-caveat">Exploratory measurements only: this is not IRSA’s PSF-fit spectrophotometry or a calibrated 102-plane mosaic. Squares are the median of the exposures in each of SPHEREx’s 102 channels (17 per detector); faint dots are single exposures, which may come from different observation times. Hollow dots had near-saturated, nonlinear or bloom-masked pixels in the aperture, so their flux likely reads low; they are left out of the medians. Shaded bands mark water ice (~3.0 μm), methane/PAH (3.3 μm) and CO₂ (4.26 μm).</p>
           <p class="spectrum-official-link">For a mission-pipeline spectrum or a complete wavelength cube, use <a href="https://irsa.ipac.caltech.edu/applications/spherex/" target="_blank" rel="noopener noreferrer">IRSA’s SPHEREx Data Explorer ↗</a> and its Spectrophotometry or Mosaic Tool.</p>
         </section>
+        <div class="detector-summary-actions"><button id="compare-six-detectors" class="reset-settings" type="button" hidden>Compare all six detectors ↗</button></div>
         <div id="detector-summary" class="detector-summary" aria-label="Observations per detector"></div>
         <p id="results-provenance" class="results-provenance"></p>
         <div id="results-warnings" class="results-warnings" hidden></div>
@@ -396,6 +416,8 @@
   <script type="module" src="wavelength-guide.js?v=20261112"></script>
   <script type="module" src="fits-viewer.js"></script>
   <script type="module" src="timelapse.js"></script>
+  <script type="module" src="detector-panels.js"></script>
+  <script type="module" src="wavelength-slices.js"></script>
   <script type="module" src="search-loader.js"></script>
   <script type="module" src="share-ui.js"></script>
   <script type="module" src="workspace-ui.js"></script>

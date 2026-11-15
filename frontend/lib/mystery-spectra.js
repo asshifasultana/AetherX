@@ -4,10 +4,9 @@
 // (0.75–5.0 μm, six detectors of 17 channels), with a little seeded noise.
 // They are teaching templates, not measurements. Pure and deterministic.
 
-// SPHEREx detector bands (μm). Channels are spaced evenly in log wavelength.
-const DETECTOR_BANDS = [[0.75, 1.09], [1.10, 1.62], [1.63, 2.41], [2.42, 3.82], [3.83, 4.41], [4.42, 5.00]];
-export const CHANNELS = DETECTOR_BANDS.flatMap(([low, high]) =>
-  Array.from({ length: 17 }, (_, i) => Number((low * (high / low) ** (i / 16)).toFixed(4))));
+// SPHEREx channel centres (μm), spaced evenly in log wavelength per detector.
+import { CHANNEL_CENTERS } from './detectors.js';
+export const CHANNELS = CHANNEL_CENTERS;
 
 export const METHANE_BAND_UM = [3.2, 3.45];
 

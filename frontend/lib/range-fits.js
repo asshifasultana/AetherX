@@ -138,7 +138,30 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
     if (bytes <= 8 * 1024 * 1024) { headers.set(identity, result); headerBytes += bytes; }
     return result;
   }
-  return async function load(accessUrl, target, settings, signal, revision = '') {
+  // The IMAGE header alone (its WCS), for callers that need a pixel position
+  // but no pixels: usually one ~35 KB read, since it follows the primary HDU.
+  const imageHeaders = new Map();
+  async function imageHeader(accessUrl, signal) {
+    const url = cloudUrl(accessUrl);
+    if (headers.has(`${url}||false`)) return headers.get(`${url}||false`).image.header;
+    if (!imageHeaders.has(url)) {
+      const pending = (async () => {
+        const spans = [];
+        let offset = 0;
+        for (let hdu = 0; hdu < 16; hdu++) {
+          const info = await headerAt(url, offset, signal, spans);
+          if (info.header.EXTNAME === 'IMAGE') return info.header;
+          offset = info.dataOffset + dataLength(info.header);
+        }
+        throw new Error('IMAGE extension is unavailable.');
+      })();
+      if (imageHeaders.size >= 512) imageHeaders.delete(imageHeaders.keys().next().value);
+      imageHeaders.set(url, pending);
+      pending.catch(() => { if (imageHeaders.get(url) === pending) imageHeaders.delete(url); });
+    }
+    return imageHeaders.get(url);
+  }
+  async function load(accessUrl, target, settings, signal, revision = '') {
     const url = cloudUrl(accessUrl);
     // Revision is part of metadata identity; S3 requests retain their canonical URL.
     const identity = `${url}|${revision}|${Boolean(settings.includeVariance)}`;
@@ -217,5 +240,7 @@ export function createFitsRangeLoader({ read = createRangeReader() } = {}) {
     }
     const header = { ...h, NAXIS1: columns, NAXIS2: rows, CRPIX1: Number(h.CRPIX1) - x0, CRPIX2: Number(h.CRPIX2) - y0 };
     return { values, flags: flags ?? null, variance, width: columns, height: rows, header, matrix: matrixFor(header), sourceX: x0, sourceY: y0 };
-  };
+  }
+  load.imageHeader = imageHeader;
+  return load;
 }

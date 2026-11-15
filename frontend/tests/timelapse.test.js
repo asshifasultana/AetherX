@@ -116,3 +116,29 @@ test('observation identity prefers the product URL so thumbnails survive re-rend
   assert.equal(observationKey(item), item.accessUrl);
   assert.equal(observationKey({ observationId: 'abc', detector: 2, observedStartUtc: '2026-01-01T00:00:00Z' }), 'abc|2|2026-01-01T00:00:00Z');
 });
+
+import { buildWavelengthFrames, buildWindowFrame, frameAxisValue, nearestChannel } from '../timelapse-core.js';
+import { DETECTOR_CHANNELS } from '../lib/detectors.js';
+
+test('wavelength slices group exposures by channel across detectors, ordered by wavelength', () => {
+  const ob = (id, detector, date) => ({ accessUrl: `u${id}`, observationId: `o${id}`, detector, observedStartUtc: date, exposureSeconds: 100 });
+  const list = [ob(1, 4, '2025-09-02T00:00:00Z'), ob(2, 4, '2025-09-01T00:00:00Z'), ob(3, 2, '2025-09-03T00:00:00Z'), ob(4, 6, '2025-09-04T00:00:00Z'), ob(5, 6, '2025-09-05T00:00:00Z')];
+  const c = DETECTOR_CHANNELS;
+  const wavelengths = new Map([['u1', c[3][8]], ['u2', c[3][8] + 0.002], ['u3', c[1][0]], ['u4', 9], ['u5', c[5][16]]]);
+  const frames = buildWavelengthFrames(list, wavelengths);
+  assert.deepEqual(frames.map(frame => [frame.detector, frame.channel, frame.exposureCount]), [[2, 0, 1], [4, 8, 2], [6, 16, 1]]);
+  const d4 = frames[1];
+  assert.deepEqual(d4.exposures.map(item => item.observationId), ['o2', 'o1']);
+  assert.equal(d4.frameAxis, 'wavelength'); assert.equal(d4.exposureSeconds, 200);
+  assert.ok(d4.wavelengthMinUm < c[3][8] && d4.wavelengthMaxUm > c[3][8]);
+  assert.equal(frameAxisValue(d4), d4.frameWavelengthUm);
+  const fractions = frameFractions(frames);
+  assert.equal(fractions[0], 0); assert.equal(fractions.at(-1), 1);
+  assert.ok(Math.abs(fractions[1] - (d4.frameWavelengthUm - frames[0].frameWavelengthUm) / (frames[2].frameWavelengthUm - frames[0].frameWavelengthUm)) < 1e-12);
+  // A window keeps every exposure inside it, from any detector.
+  const window = buildWindowFrame(list, wavelengths, c[3][8] + 0.01, c[1][0] - 0.01);
+  assert.deepEqual(window.exposures.map(item => item.observationId).sort(), ['o1', 'o2', 'o3']);
+  assert.deepEqual(window.detectors, [2, 4]);
+  assert.equal(buildWindowFrame(list, wavelengths, 0.1, 0.2), null);
+  assert.deepEqual(nearestChannel(3.3), [4, nearestChannel(3.3)[1]]);
+});

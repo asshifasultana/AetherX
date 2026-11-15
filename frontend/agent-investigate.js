@@ -220,9 +220,13 @@ export function createInvestigator({ base, latest, emit, settle, needFrames, sna
         catch (error) { if (signal?.aborted) throw error; failed++; }
       }
     }));
-    const hints = spectralHints(samples);
+    // A saturated star reads low, which can fake an absorption dip; keep such
+    // points out of the hints whenever enough clean points remain.
+    const clean = samples.filter(sample => !sample.likelySaturated), saturated = samples.length - clean.length;
+    const hints = spectralHints(clean.length >= 3 ? clean : samples);
     return {
       ok: true, spot: n, ...areaNote(spot, 'This is the combined spectrum of everything inside the area.'), measured: samples.length, skipped: failed,
+      ...(saturated ? { likelySaturated: saturated, saturationNote: clean.length >= 3 ? `${saturated} point(s) had near-saturated or nonlinear pixels and were left out of the hints.` : `${saturated} point(s) look saturated and too few clean points remain, so the hints may show false dips.` } : {}),
       wavelengthRangeUm: samples.length ? [round(Math.min(...samples.map(s => s.wavelengthUm)), 2), round(Math.max(...samples.map(s => s.wavelengthUm)), 2)] : null,
       ...hints
     };

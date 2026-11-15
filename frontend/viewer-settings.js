@@ -2,13 +2,14 @@
 // presets and storage rules can be unit tested in Node. app.js binds the
 // controls generically from SETTINGS_SCHEMA.
 
-export const VIEW_MODES = ['time-lapse', 'blink', 'difference', 'motion-trail', 'deep-stack'];
+export const VIEW_MODES = ['time-lapse', 'blink', 'difference', 'motion-trail', 'deep-stack', 'six-detector'];
 export const MODE_DESCRIPTIONS = Object.freeze({
   'time-lapse': 'Plays every observation in date order. Good for watching slow changes.',
   blink: 'Flips between this frame and a reference frame. Anything that moves or changes brightness jumps out.',
   difference: 'Subtracts a reference frame. Unchanged sky goes dark; brightening glows orange, fading glows blue, in units of the noise (σ). SPHEREx sees each spot at a slightly different wavelength per visit, so some star residuals are normal.',
   'motion-trail': 'Keeps the brightest value of each pixel across nearby frames, so moving objects leave a streak.',
-  'deep-stack': 'Per-pixel combination of many observing days. Masked, missing and uncovered pixels do not count as zeros, revealing faint sources.'
+  'deep-stack': 'Per-pixel combination of many observing days. Masked, missing and uncovered pixels do not count as zeros, revealing faint sources.',
+  'six-detector': 'Deep stacks of all six detectors side by side on the same sky grid, plus a false-colour composite of three. Hover one image and the cursor follows on all of them. Stacks fill in one detector at a time.'
 });
 
 export const MASK_CATEGORIES = Object.freeze([

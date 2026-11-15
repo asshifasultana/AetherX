@@ -126,6 +126,11 @@ window.addEventListener('sky:coverage-stack-requested', event => {
   renderSettings();
   emitSettings('coverage-stack'); // FITS viewer stacks the newly selected band
 });
+window.addEventListener('sky:six-detector-requested', () => {
+  viewerSettings.viewMode = 'six-detector';
+  renderSettings();
+  emitSettings('six-detector');
+});
 const maskBoxes = () => optionLists('#mask-categories input[type="checkbox"]');
 function readControl(control, element) {
   if (control.type === 'checkbox') return element.checked;

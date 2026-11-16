@@ -7,9 +7,9 @@
     "timeZone": "UTC",
     "description": "Daily, around 10:27 AM Asia/Dhaka (04:27 UTC)"
   },
-  "lastAttemptAt": "2026-11-13T12:29:05.937Z",
-  "lastSuccessfulCheckAt": "2026-11-13T12:32:21.798Z",
-  "lastChangedAt": "2026-11-12T20:11:37.645Z",
+  "lastAttemptAt": "2026-11-16T13:00:28.200Z",
+  "lastSuccessfulCheckAt": "2026-11-16T13:03:08.319Z",
+  "lastChangedAt": "2026-11-16T13:03:08.319Z",
   "collections": [
     "spherex_dr1",
     "spherex_dr1_deep",
@@ -33,7 +33,7 @@
       "hash": "10622ed9cd9c08625b974c25337c93d06eec1da831de845cef0c2ca6e44f0fa6",
       "count": 363,
       "productCount": 363,
-      "checkedAt": "2026-11-13T12:30:03.069Z",
+      "checkedAt": "2026-11-16T13:01:44.250Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -50,7 +50,7 @@
       "hash": "0970f2e0edb517c69527a5169438602629f56f7f86957696e14c032bd669476e",
       "count": 465,
       "productCount": 465,
-      "checkedAt": "2026-11-13T12:30:30.108Z",
+      "checkedAt": "2026-11-16T13:02:10.237Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -67,7 +67,7 @@
       "hash": "43c535b79a8fa262a1f0be1e81e02eb419eb199af9f60d3c997c4ee459997194",
       "count": 258,
       "productCount": 258,
-      "checkedAt": "2026-11-13T12:30:48.962Z",
+      "checkedAt": "2026-11-16T13:02:20.830Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -78,13 +78,13 @@
     {
       "id": "aurigae",
       "name": "RW Aurigae",
-      "raDeg": 76.9567,
-      "decDeg": 30.4043,
-      "snapshot": "snapshots/aurigae-8f58fbf6d9341ad212dc444fe69ffaff63d3d2e8a6c3f84cb03a0b19e89b5c50.json",
-      "hash": "8f58fbf6d9341ad212dc444fe69ffaff63d3d2e8a6c3f84cb03a0b19e89b5c50",
+      "raDeg": 76.956526,
+      "decDeg": 30.401438,
+      "snapshot": "snapshots/aurigae-2ad977eaebb81aa59282e9ba210db340fcfb580046f81fb1940f20035ea51cbb.json",
+      "hash": "2ad977eaebb81aa59282e9ba210db340fcfb580046f81fb1940f20035ea51cbb",
       "count": 335,
       "productCount": 335,
-      "checkedAt": "2026-11-13T12:31:22.770Z",
+      "checkedAt": "2026-11-16T13:02:35.854Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -101,7 +101,7 @@
       "hash": "4b9f2b0885934413ba46c9eee7bcf7d129a069a3e4c0da1a8de77a991c735c04",
       "count": 2493,
       "productCount": 2493,
-      "checkedAt": "2026-11-13T12:32:21.798Z",
+      "checkedAt": "2026-11-16T13:03:08.319Z",
       "changes": {
         "added": 0,
         "revised": 0,

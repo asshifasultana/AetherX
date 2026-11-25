@@ -7,18 +7,18 @@
     "timeZone": "UTC",
     "description": "Daily, around 10:27 AM Asia/Dhaka (04:27 UTC)"
   },
-  "lastAttemptAt": "2026-11-24T15:03:52.853Z",
-  "lastSuccessfulCheckAt": "2026-11-24T15:04:32.686Z",
-  "lastChangedAt": "2026-11-20T13:19:50.309Z",
+  "lastAttemptAt": "2026-11-25T14:43:02.324Z",
+  "lastSuccessfulCheckAt": "2026-11-25T14:43:45.646Z",
+  "lastChangedAt": "2026-11-25T14:43:45.646Z",
   "collections": [
     "spherex_dr1",
     "spherex_dr1_deep",
     "spherex_qr3",
     "spherex_qr3_deep"
   ],
-  "totalObservations": 3956,
+  "totalObservations": 3998,
   "changes": {
-    "added": 0,
+    "added": 42,
     "revised": 0,
     "removed": 0,
     "unchanged": 3956
@@ -33,7 +33,7 @@
       "hash": "10622ed9cd9c08625b974c25337c93d06eec1da831de845cef0c2ca6e44f0fa6",
       "count": 363,
       "productCount": 363,
-      "checkedAt": "2026-11-24T15:04:02.586Z",
+      "checkedAt": "2026-11-25T14:43:18.506Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -46,13 +46,13 @@
       "name": "Epsilon Indi B",
       "raDeg": 331.0441,
       "decDeg": -56.7828,
-      "snapshot": "snapshots/epsilon-2ae6bec65ee6342de7a57b253f2c4336df1f9f58abbda1ab56be4d62b345ee70.json",
-      "hash": "2ae6bec65ee6342de7a57b253f2c4336df1f9f58abbda1ab56be4d62b345ee70",
-      "count": 501,
-      "productCount": 501,
-      "checkedAt": "2026-11-24T15:04:11.658Z",
+      "snapshot": "snapshots/epsilon-5d337b1c27bc7930180180af86aee48a1d9b4860928c2efe5f82da9006e4c06f.json",
+      "hash": "5d337b1c27bc7930180180af86aee48a1d9b4860928c2efe5f82da9006e4c06f",
+      "count": 507,
+      "productCount": 507,
+      "checkedAt": "2026-11-25T14:43:25.158Z",
       "changes": {
-        "added": 0,
+        "added": 6,
         "revised": 0,
         "removed": 0,
         "unchanged": 501
@@ -67,7 +67,7 @@
       "hash": "43c535b79a8fa262a1f0be1e81e02eb419eb199af9f60d3c997c4ee459997194",
       "count": 258,
       "productCount": 258,
-      "checkedAt": "2026-11-24T15:04:17.707Z",
+      "checkedAt": "2026-11-25T14:43:30.458Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -84,7 +84,7 @@
       "hash": "2ad977eaebb81aa59282e9ba210db340fcfb580046f81fb1940f20035ea51cbb",
       "count": 335,
       "productCount": 335,
-      "checkedAt": "2026-11-24T15:04:22.860Z",
+      "checkedAt": "2026-11-25T14:43:35.162Z",
       "changes": {
         "added": 0,
         "revised": 0,
@@ -97,13 +97,13 @@
       "name": "R Draconis",
       "raDeg": 248.1676,
       "decDeg": 66.755,
-      "snapshot": "snapshots/draconis-42406390efbc83cf6924e6c11d82e0e84cf626b3bc8a1aa313452b701eec7590.json",
-      "hash": "42406390efbc83cf6924e6c11d82e0e84cf626b3bc8a1aa313452b701eec7590",
-      "count": 2499,
-      "productCount": 2499,
-      "checkedAt": "2026-11-24T15:04:32.686Z",
+      "snapshot": "snapshots/draconis-da3d436c712af77761d290cfb882526aed3d7396e7b8ca2c40eb39eb126c6abd.json",
+      "hash": "da3d436c712af77761d290cfb882526aed3d7396e7b8ca2c40eb39eb126c6abd",
+      "count": 2535,
+      "productCount": 2535,
+      "checkedAt": "2026-11-25T14:43:45.646Z",
       "changes": {
-        "added": 0,
+        "added": 36,
         "revised": 0,
         "removed": 0,
         "unchanged": 2499
